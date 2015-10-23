@@ -54,7 +54,6 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 #include <boost/noncopyable.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/detail/atomic_count.hpp>
-#include <boost/static_assert.hpp>
 
 #include <graehl/shared/assign_traits.hpp>
 #include <graehl/shared/shell_escape.hpp>
@@ -68,6 +67,7 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 #include <graehl/shared/leaf_configurable.hpp>
 #include <graehl/shared/string_match.hpp>
 #include <graehl/shared/configure_init.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 
 #include <algorithm>
 #include <string>
@@ -76,7 +76,6 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 #include <set>
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
 #include <exception>
 
 // TODO: overridable free fn for default usage string, e.g. longer explanation of enum type meaning
@@ -92,13 +91,14 @@ namespace {
 const char path_sep = '.';
 }
 
+using graehl::shared_ptr;
+using graehl::make_shared;
 using graehl::string_consumer;
 using graehl::warn_consumer;
 using graehl::shell_quote;
 using graehl::value_str;
 using graehl::to_string;
 using graehl::string_to;
-
 
 namespace detail {
 template <class T>
@@ -254,7 +254,7 @@ struct leaf_configurable
 template <class T1>
 struct leaf_configurable<boost::optional<T1>, void> : leaf_configurable<T1> {};
 template <class T1>
-struct leaf_configurable<boost::shared_ptr<T1>, void> : leaf_configurable<T1> {};
+struct leaf_configurable<shared_ptr<T1>, void> : leaf_configurable<T1> {};
 
 template <class Val, class Enable = void>
 struct scalar_leaf_configurable : leaf_configurable<Val> {};
@@ -722,11 +722,11 @@ struct conf_opt {
   }
 };
 
-typedef boost::shared_ptr<conf_opt> p_conf_opt;
+typedef shared_ptr<conf_opt> p_conf_opt;
 
 struct conf_expr_base;
 
-typedef boost::shared_ptr<conf_expr_base> p_conf_expr_base;
+typedef shared_ptr<conf_expr_base> p_conf_expr_base;
 
 
 enum config_action_type {
@@ -984,7 +984,7 @@ struct conf_expr_destroy {
 template <class Backend, class Action, class Val>
 struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destroy {
  private:
-  mutable boost::shared_ptr<conf_expr_destroy> subconfig_deleter;
+  mutable shared_ptr<conf_expr_destroy> subconfig_deleter;
 
  public:
   bool store() const { return is_store(action); }
@@ -1277,7 +1277,7 @@ inline std::string parent_option_name(std::string const& s) {
 
 struct configure_backend {
   virtual ~configure_backend() {}
-  typedef boost::shared_ptr<configure_backend const> ptr;
+  typedef shared_ptr<configure_backend const> ptr;
 };
 
 

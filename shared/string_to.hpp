@@ -88,10 +88,9 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 
 #include <graehl/shared/warning_compiler.h>
 #include <graehl/shared/warning_push.h>
+#include <graehl/shared/shared_ptr.hpp>
 CLANG_DIAG_IGNORE_NEWER(unused-local-typedef)
 #include <boost/optional.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/smart_ptr/make_shared.hpp>
 #if GRAEHL_USE_BOOST_LEXICAL_CAST
 #ifndef BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
 #define BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
@@ -412,11 +411,11 @@ boost::optional<Val>& string_to_optional(std::string const& str, boost::optional
 }
 
 template <class Val>
-boost::shared_ptr<Val>& string_to_shared_ptr(std::string const& str, boost::shared_ptr<Val>& opt) {
+shared_ptr<Val>& string_to_shared_ptr(std::string const& str, shared_ptr<Val>& opt) {
   if (str == "none")
     opt.reset();
   else
-    opt = boost::make_shared<Val>(string_to<Val>(str));
+    opt = make_shared<Val>(string_to<Val>(str));
   return opt;
 }
 
@@ -573,7 +572,7 @@ struct is_shared_ptr {
 };
 
 template <class V>
-struct is_shared_ptr<boost::shared_ptr<V> > {
+struct is_shared_ptr<shared_ptr<V> > {
   enum { value = 1 };
 };
 
@@ -617,14 +616,19 @@ struct string_builder : string_buffer {
 
   typedef char* iterator;
 
+#if __cplusplus >= 201103L
+  iterator begin() { return this->data(); }
+  const_iterator begin() const { return this->data(); }
+#else
+  const_iterator data() const { return begin(); }
+  iterator data() const { return begin(); }
+  iterator begin() { return &*string_buffer::begin(); }
+  const_iterator begin() const { return &*string_buffer::begin(); }
+#endif
 #if _WIN32 && (!defined(_SECURE_SCL) || _SECURE_SCL)
-  iterator begin() { return empty() ? 0 : &*string_buffer::begin(); }
-  const_iterator begin() const { return empty() ? 0 : &*string_buffer::begin(); }
   iterator end() { return empty() ? 0 : &*string_buffer::begin() + string_buffer::size(); }
   const_iterator end() const { return empty() ? 0 : &*string_buffer::begin() + string_buffer::size(); }
 #else
-  iterator begin() { return &*string_buffer::begin(); }
-  const_iterator begin() const { return &*string_buffer::begin(); }
   iterator end() { return &*string_buffer::end(); }
   const_iterator end() const { return &*string_buffer::end(); }
 #endif
@@ -804,9 +808,6 @@ struct string_builder : string_buffer {
   string_builder& operator()(std::istream& i) { return (*this)(*i.rdbuf()); }
   std::string& assign(std::string& str) const { return str.assign(this->begin(), this->end()); }
   std::string& to(std::string& str) const { return str.assign(this->begin(), this->end()); }
-  boost::shared_ptr<std::string> make_shared_str() const {
-    return boost::make_shared<std::string>(this->begin(), this->end());
-  }
   std::string str() const { return std::string(this->begin(), this->end()); }
   std::string* new_str() const { return new std::string(this->begin(), this->end()); }
   std::string skipPrefix(std::size_t prefixLen) const {
@@ -924,7 +925,6 @@ struct string_builder : string_buffer {
     return begin();
   }
 
-  const_iterator data() const { return begin(); }
   friend inline std::size_t hash_value(string_builder const& self) { return self.hash(); }
   std::size_t hash() const { return boost::hash_range(begin(), end()); }
 

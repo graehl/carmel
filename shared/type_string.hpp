@@ -31,7 +31,7 @@
 #include <map>
 #include <string>
 #include <boost/optional.hpp>
-#include <boost/shared_ptr.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/int_types.hpp>
 #include <boost/type_traits/is_integral.hpp>
 
@@ -157,7 +157,7 @@ struct type_string_traits<std::pair<K, T> > {
 
 GRAEHL_TYPE_STRING_TEMPLATE_1(std::vector, "sequence of ")
 GRAEHL_TYPE_STRING_TEMPLATE_1(boost::optional, "optional ")
-GRAEHL_TYPE_STRING_TEMPLATE_1(boost::shared_ptr, "")
+GRAEHL_TYPE_STRING_TEMPLATE_1(shared_ptr, "")
 }
 
 #ifdef GRAEHL_TEST
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(TEST_type_string) {
   typedef map<int, int> II;
   typedef vector<SI> VSI;
   typedef boost::optional<VSI> OptionalVSI;
-  typedef boost::shared_ptr<VSI> SharedVSI;
+  typedef shared_ptr<VSI> SharedVSI;
   typedef std::pair<II, SI> P;
   int i;
   BOOST_CHECK_EQUAL(type_string<uint8_t>(), "non-negative byte");

@@ -23,7 +23,7 @@
 #include <sstream>
 #include <string>
 #include <graehl/shared/print_read.hpp>
-#include <boost/shared_ptr.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 
@@ -76,7 +76,7 @@ struct word_spacer {
 };
 
 struct word_spacer_f {
-  boost::shared_ptr<word_spacer> p;
+  shared_ptr<word_spacer> p;
   explicit word_spacer_f(char space = ' ') : p(new word_spacer(space)) {}
   template <class O>
   void print(O& o) const {

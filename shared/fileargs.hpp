@@ -88,11 +88,11 @@ codecvt argument, too
 #include <graehl/shared/warn.hpp>
 #include <graehl/shared/size_mega.hpp>
 #include <graehl/shared/string_match.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/convenience.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/config.hpp>
 #include <string>
 #include <iostream>
@@ -224,11 +224,11 @@ struct stream_traits<std::ostream> : stream_traits<std::ofstream> {
 };
 
 template <class S>
-inline void set_null_file_arg(boost::shared_ptr<S>& p) {
+inline void set_null_file_arg(shared_ptr<S>& p) {
   p.reset();
 }
 
-inline void set_null_file_arg(boost::shared_ptr<std::ostream>& p) {
+inline void set_null_file_arg(shared_ptr<std::ostream>& p) {
   p.reset(new null_ostream());  //(&the_null_ostream, null_deleter());
 }
 
@@ -239,10 +239,11 @@ template <class Stream>
 struct file_arg {
  protected:
   typedef large_streambuf<> buf_type;
-  typedef boost::shared_ptr<buf_type> buf_p_type;  // because iostreams don't destroy their streambufs
-  buf_p_type buf;  // this will be destroyed *after* stream pointer (and constructed before).
   typedef stream_traits<Stream> traits;
-  typedef boost::shared_ptr<Stream> pointer_type;
+  // hold large streambuf separately since iostreams don't destroy their streambufs
+  typedef shared_ptr<buf_type> buf_p_type;
+  typedef shared_ptr<Stream> pointer_type;
+  buf_p_type buf;  // this will be destroyed *after* stream pointer (and constructed before).
   pointer_type pointer;  // this will get destroyed before buf (constructed after), which may be necessary
   // since we don't require explicit flush.
   bool none;
@@ -272,9 +273,14 @@ struct file_arg {
     this->name = name;
   }
 
-  template <class Ptr>
-  void setPtr(Ptr const& ptr, std::string const& name) {
-    set(boost::dynamic_pointer_cast<Stream>(ptr), name);
+  template <class Val>
+  void setPtr(shared_ptr<Val> const& ptr, std::string const& name) {
+    set(dynamic_pointer_cast<Stream>(ptr), name);
+  }
+
+  template <class Val>
+  void setPtr(Val* ptr, std::string const& name) {
+    set(dynamic_pointer_cast<Stream>(ptr), name);
   }
 
   void set(pointer_type const& pstream, std::string const& name) {
@@ -301,8 +307,7 @@ struct file_arg {
   std::string const& str() const { return name; }
 
   void flush() {
-    if (!none)
-      pointer->flush();
+    if (!none) pointer->flush();
   }
 
   void close() { set_none(); }
@@ -359,11 +364,6 @@ struct file_arg {
     name = std::move(o.name);
     return *this;
   }
-#endif
-#if 0
-  template <class Stream2>
-  explicit file_arg(file_arg<Stream2> const& o)
-      : buf(o.buf), pointer(boost::dynamic_pointer_cast<Stream>(o.pointer)), none(o.none), name(o.name) {}
 #endif
 
   void throw_fail(std::string const& filename, std::string const& msg = "") {
@@ -593,10 +593,10 @@ OBytesIter copy_bytes(std::istream& i, OBytesIter o) {
 }
 
 
-typedef boost::shared_ptr<std::istream> Infile;
-typedef boost::shared_ptr<std::ostream> Outfile;
-typedef boost::shared_ptr<std::ifstream> InDiskfile;
-typedef boost::shared_ptr<std::ofstream> OutDiskfile;
+typedef shared_ptr<std::istream> Infile;
+typedef shared_ptr<std::ostream> Outfile;
+typedef shared_ptr<std::ifstream> InDiskfile;
+typedef shared_ptr<std::ofstream> OutDiskfile;
 
 static Infile default_in(&GRAEHL__DEFAULT_IN, null_deleter());
 static Outfile default_log(&GRAEHL__DEFAULT_LOG, null_deleter());
@@ -651,12 +651,12 @@ struct tee_file {
 
  private:
   std::ostream* log_stream;
-  boost::shared_ptr<graehl::teebuf> teebufptr;
-  boost::shared_ptr<std::ostream> teestreamptr;
+  shared_ptr<graehl::teebuf> teebufptr;
+  shared_ptr<std::ostream> teestreamptr;
 };
 
 template <class Stream>
-inline bool valid(boost::shared_ptr<Stream> const& pfile) {
+inline bool valid(shared_ptr<Stream> const& pfile) {
   return pfile && *pfile;
 }
 
@@ -763,27 +763,27 @@ inline OutDiskfile outdiskfile(std::string const& s) {
 }
 
 
-inline boost::shared_ptr<std::string> streambufContents(std::streambuf* sbuf) {
+inline shared_ptr<std::string> streambufContents(std::streambuf* sbuf) {
   typedef std::istreambuf_iterator<char> Iter;
-  return boost::shared_ptr<std::string>(new std::string(Iter(sbuf), Iter()));
+  return shared_ptr<std::string>(new std::string(Iter(sbuf), Iter()));
 }
 
-inline boost::shared_ptr<std::string> streamContents(std::istream& istream) {
+inline shared_ptr<std::string> streamContents(std::istream& istream) {
   return streambufContents(istream.rdbuf());
 }
 
 template <class Istream>
-inline boost::shared_ptr<std::string> fileContents(file_arg<Istream> const& file) {
+inline shared_ptr<std::string> fileContents(file_arg<Istream> const& file) {
   std::size_t sz = file.filesize();
   if (sz) {
-    boost::shared_ptr<std::string> r(new std::string(sz, '\0'));
+    shared_ptr<std::string> r(new std::string(sz, '\0'));
     file->rdbuf()->sgetn(&(*r)[0], sz);
   } else
     return streamContents(*file);
 }
 
 inline bool is_fstream_no_rtti(std::istream& in) {
-  if (&in == &(std::istream&)std::cin || in.tellg() == (std::streampos) - 1 || !in) return false;
+  if (&in == &(std::istream&)std::cin || in.tellg() == (std::streampos)-1 || !in) return false;
   try {
     throw & in;
   } catch (std::ifstream*) {
@@ -803,26 +803,26 @@ namespace boost {
 namespace program_options {
 
 #if GRAEHL__VALIDATE_INFILE
-/* Overload the 'validate' function for boost::shared_ptr<std::istream>. We use shared ptr
+/* Overload the 'validate' function for shared_ptr<std::istream>. We use shared ptr
    to properly kill the stream when it's no longer used.
 */
 inline void validate(boost::any& v, std::vector<std::string> const& values,
-                     boost::shared_ptr<std::istream>* target_type, int) {
+                     shared_ptr<std::istream>* target_type, int) {
   v = boost::any(graehl::infile(graehl::get_single_arg(v, values)));
 }
 
 inline void validate(boost::any& v, std::vector<std::string> const& values,
-                     boost::shared_ptr<std::ostream>* target_type, int) {
+                     shared_ptr<std::ostream>* target_type, int) {
   v = boost::any(graehl::outfile(graehl::get_single_arg(v, values)));
 }
 
 inline void validate(boost::any& v, std::vector<std::string> const& values,
-                     boost::shared_ptr<std::ofstream>* target_type, int) {
+                     shared_ptr<std::ofstream>* target_type, int) {
   v = boost::any(graehl::outdiskfile(graehl::get_single_arg(v, values)));
 }
 
 inline void validate(boost::any& v, std::vector<std::string> const& values,
-                     boost::shared_ptr<std::ifstream>* target_type, int) {
+                     shared_ptr<std::ifstream>* target_type, int) {
   v = boost::any(graehl::indiskfile(graehl::get_single_arg(v, values)));
 }
 

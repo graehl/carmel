@@ -1,4 +1,4 @@
-inkenUTIL=${UTIL:-$(echo ~graehl/u)}
+UTIL=${UTIL:-$(echo ~graehl/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
 . $UTIL/time.sh
@@ -43,7 +43,14 @@ osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 git02"
 chost=c-graehl
+jhost=git02
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+gitq() {
+    (git status -u; gitlog 3) | cat
+}
+lh() {
+    ls -1sh "$@"
+}
 mcallgrind() {
     c-s time callgrind /home/graehl/x/Release/xmt/xmt --input=/home/graehl/tmp/rep.txt --pipeline=1best --config=/local/graehl/time/config/XMTConfig.yml --log-config=/home/graehl/warn.xml
 }
@@ -354,16 +361,16 @@ xclean() {
     ccache -C
 }
 linnplm01() {
-    scpx ~/src/kpu/nplm/src c-graehl:xs/nplm01/; j-s "cd ~/xs/nplm01;clean=$clean ./make.sh"
+    scpx ~/src/kpu/nplm/src $jhost:xs/nplm01/; j-s "cd ~/xs/nplm01;clean=$clean ./make.sh"
 }
 syncnplm() {
-    scpx ~/src/nplm/src c-graehl:xs/nplm/
+    scpx ~/src/nplm/src $jhost:xs/nplm/
 }
 linnplm() {
     syncnplm; j-s "cd ~/xs/nplm;clean=$clean ./make.sh"
 }
 syncken() {
-    scpx ~/src/KenLM c-graehl:xs/
+    scpx ~/src/KenLM $jhost:xs/
 }
 linken() {
     syncken; j-s 'cd ~/xs/KenLM;./make-kenlm.sh'
@@ -768,7 +775,7 @@ inplace() {
 }
 a2c() {
     for f in aliases.sh misc.sh time.sh gcc.sh ccache-wrapper.sh; do
-        scp ~/u/$f $chost:u/$f
+        scp ~/u/$f $jhost:u/$f
     done
 }
 ospushmend() {
@@ -1948,6 +1955,29 @@ guesstbbver() {
 xmtgithash() {
     ${1:-xmt} -v -D | perl -ne 'print $1 if /^Git SHA1: (\S+)/'
 }
+ext2pub12() {
+    require_dir $2
+    (
+        from=$1/libraries
+        ken=KenLM-5.3.0/5-gram
+        libs="$ken nplm nplm01 liblbfgs-1.10 tbb-4.4.0 lmdb apr-1.4.2 apr-util-1.3.10  zeromq-4.0.4 cmph-0.6 hadoop-hdp2.1 openssl-1.0.2d svmtool++ liblinear-1.94 protobuf-2.6.1 turboparser-2.3.0 boost_1_59_0 tinycdb-0.77 icu-55.1 db-5.3.15 zlib-1.2.8 OpenBLAS-0.2.14 bzip2 log4cxx-0.10.0"
+        for d in $libs; do
+                d=$from/$d/lib
+                if [[ -d $d ]] ; then
+                    if cp -a $d/*.so* $2/; then
+                        echo $d
+                    else
+                        echo nothing for $d
+                    fi
+                fi
+        done
+        cp -a $from/$ken/bin/* $2/
+        cp -a $from/gcc-5.2.0/lib64/*.so* $2/
+    )
+}
+ext2pub() {
+    ext2pub12 $xmtext $xmtpub
+}
 bakxmt() {
     ( set -e;
         echo ${BUILD:=Release}
@@ -1959,6 +1989,8 @@ bakxmt() {
         if ! [[ $hash ]] ; then
             hash=`githash`
         fi
+        mkdir -p $pub/lib
+        ext2pub12 $xmtext $pub
         echo $pub/$1
         local bindir=$pub/$BUILD/$HOST/$hash
         echo $bindir
@@ -3426,7 +3458,7 @@ cto() {
     )
 }
 gerrit2local() {
-    perl -e '$_=shift;s{C:/jenkins/workspace/XMT-Release-Windows}{/local/graehl/xmt}g;print' "$@"
+    perl -e '$_=shift;s{C:/jenkins/workspace/XMT-Release-Windows}{/local/graehl/xmt}g;s{/local2/}{/local/}g;print' "$@"
 }
 nblanklines() {
     if grep -c -q ^$ "$@"; then
@@ -3450,13 +3482,22 @@ wcp() {
         set -x
         cd $xmtx/RegressionTests
         f=${2#C:/JENKINS/workspace/XMT-Release-Windows/RegressionTests/}
-        f=${f#C:/jenkins/workspace/XMT-Release-Windows/RegressionTests/}
+        f=${2#C:/JENKINS/workspace/XMT-Release-Windows-MSVC2015/RegressionTests/}
+        f=${f#C:/jenkins/workspace/XMT-Release-Windows-MSVC2015/RegressionTests/}
         f=${f%.expected}
+        f=${f%.stdout}
+        f=${f%-stdout}
         f=${f%.windows}
         f=$f.windows
-        scp Administrator@${wgitbuild:-wgitbuild2}:"$1" "$f"
+        local g=$1
+        echo $f
+        f=${2:-$f}
+        scp Administrator@${wgitbuild:-wgitbuild2}:"$g" "$f"
         git add $f
     )
+}
+wcpa() {
+    gitadd=1 wcp "$@"
 }
 ccp() {
     #uses: $chost for scp
@@ -8903,9 +8944,6 @@ if [[ -d $SDL_EXTERNALS_PATH ]] ; then
     export PATH=$SDL_EXTERNALS_PATH/../Shared/java/apache-maven-3.0.4/bin:$PATH
 fi
 
-cp2ken() {
-    build_kenlm_binary -q 4 -b 4 -a 255 trie $1 ${2:-${1%.arpa}.ken}
-}
 [[ $INSIDE_EMACS ]] || INSIDE_EMACS=
 uselocalgccmac() {
     if [[ -d /local/gcc/bin ]] ; then
@@ -8921,5 +8959,141 @@ uselocalgccmac() {
 #alib=~/c/xmt-externals/Apple/libraries/boost_1_58_0/lib/
 finduniq() {
     find . -exec basename {} \; | sort | uniq -c
+}
+kenplzarg="-S 80% -T /tmp/kenplz"
+cp2ken() {
+    local base=${1%.gz}
+    base=${base%.arpa}
+    local out=${2:-$base.ken}
+    local q=${3:-4}
+    local b=${4:-4}
+    local a=${5:-255}
+    build_kenlm_binary $kenplzarg -q $q -b $b -a $a trie $1 $out
+}
+cp2kenqba() {
+    local base=${1%.gz}
+    base=${base%.arpa}
+    local q=${2:-4}
+    local b=${3:-4}
+    local a=${4:-255}
+    local out=${5:-$base.$q.$b.$a.ken}
+    if ! [[ -f $out ]] || [[ $force ]] ; then
+        build_kenlm_binary $kenplzarg -q $q -b $b -a $a trie $1 $out 1>&2
+    fi
+    echo $out
+}
+cp2kenprobing() {
+    local base=${1%.gz}
+    base=${base%.arpa}
+    local out=${2:-$base.probing.ken}
+    if ! [[ -f $out ]] || [[ $force ]] ; then
+        build_kenlm_binary -p ${3:-1.5} probing $1 $out 1>&2
+    fi
+    echo $out
+}
+benchkens() {
+    local model=$1
+    local corpus=$2
+    showvars_required model corpus
+    local c=`mktemp /tmp/corpus.XXXXXXXX`
+    catz $corpus > $c
+    (
+        set -e
+    for q in 4; do
+        for b in 4; do
+            for a in 0 4 8 12 14 16 18 20 22; do
+                km=`cp2kenqba $model $q $b $a`
+                benchken1 $km $c
+            done
+        done
+    done
+    km=`cp2kenprobing $model`
+    benchken1 $km $c |  matchn '(^.*) corpus(.......)' '^\d:.*?s' 'is (\S+)'
+    ) | tee times.benchken
+}
+echosize() {
+    ls -1sh $model "$@" | tr '\n' '\t'
+}
+benchken1() {
+    local model=$1
+    local corpus=${2:-corpus}
+    require_files $model $corpus
+    (
+        set -e
+        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/graehl/pub/lib
+        kb=kenlm_benchmark
+        cid=$corpus.id
+        catz $corpus | $kb vocab $model > $cid
+        cat $model $cid > /dev/null
+        (echosize model; /usr/bin/time -f '%Es - %Mkb peak' -- $kb query $model < $cid 2>&1 ) | tee time.$model
+        rm $cid
+    ) 2>&1
+}
+match1() {
+    perl -e '$r=shift;$r=qr/($r)/;while(<>) { next unless /$r/o; print $2 ? $2 : $1, "\n"; last }' "$@"
+}
+matchn() {
+    perl -we 'use strict;
+my @r = map {qr/($_)/} @ARGV;
+my @c = map {undef} @ARGV;
+while(defined($_=<STDIN>)) {
+chomp;
+for my $i (0..$#r) {
+    my $x = $r[$i];
+    print STDERR "$_ /$x/\n" if $ENV{DEBUG};
+    my @m;
+    if (!defined($c[$i])) {
+       my @m = ( /$x/ );
+       my $N = scalar(@m);
+       $c[$i] = ($N > 1 ? join(" ", @m[1..$#m]) : $m[0]) if $N;
+    }
+}
+}
+print join("\t", @c),"\n"' "$@"
+}
+compressed() {
+    local d=$1
+    d=${d%.tar.bz2}
+    d=${d%.tar.gz}
+    d=${d%.tgz}
+    d=${d%.tar.xz}
+    [[ $d != $1 ]]
+}
+kenplz() {
+    local in=$1
+    local order=${2:-5}
+    local out=${3:-$in.arpa}
+    local args="-o $order $kenplzarg"
+    if compressed $in ; then
+        cat_compressed | kenplz $args > $out
+    else
+        kenplz $args  > $out < $in
+    fi
+    build_kenlm_binary -q 4 -b 4 -a 22 trie $out $in.ken
+}
+loadmethods() {
+lm=${1:-/local/graehl/time/MosesModel/model/europarl.ken}
+rules=/local/graehl/time/MosesModel/model/rules.db
+xmtbin=${xmt:-/home/graehl/x/Release/xmt/xmt}
+tmpout=/tmp
+mkdir -p $tmpout
+if [[ $dropcaches ]] ; then
+    echo "dropping caches before each #1"
+else
+$xmtbin -D
+cat $lm $rules  > /dev/null
+fi
+(for method in  lazy populate-or-read read; do
+     cmd="$xmtbin --input=/home/graehl/tmp/rep.txt --pipeline=1best --config=/local/graehl/time/MosesModel/config/XMTConfig.yml --log-config=/home/graehl/warn.xml --phrase-decoder-1best.heuristic-arc-pruning-num-best=20 --phrase-decoder-1best.heuristic-arc-pruning=1 --phrase-decoder-1best.heuristic-arc-pruning=lm-score-first-word-only  --phrase-decoder-1best.stack-limit=40 --nonresident-grammar.num-rules=30 --nonresident-grammar.rule-filter=topn-lm --srilm.file-path=$lm --srilm.load-method=$method -o $tmpout/out.$method"
+     if [[ $method = lazy ]] ; then
+         echo $cmd
+     fi
+     for i in `seq 1 3`; do
+         echo -n "#$i $method: "
+         if [[ $dropcaches ]]; then
+             dropcaches
+         fi
+         /usr/bin/time -f '%Es %Uuser %Ssystem - %Mkb peak' -- $cmd 2>&1; done
+ done ) | tee $tmpout/time.methods
 }
 add_ldpath $BOOST_LIBDIR

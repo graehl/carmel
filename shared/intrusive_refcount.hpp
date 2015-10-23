@@ -35,7 +35,7 @@
 #pragma once
 
 #include <graehl/shared/alloc_new_delete.hpp>
-#include <boost/shared_ptr.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 #include <boost/smart_ptr/detail/atomic_count.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <cassert>
@@ -160,7 +160,7 @@ namespace graehl {
 
 template <class T, class Enable = void>
 struct shared_ptr_maybe_intrusive {
-  typedef boost::shared_ptr<T> type;
+  typedef shared_ptr<T> type;
 };
 
 template <class T>
@@ -207,9 +207,9 @@ struct intrusive_deleter {
 };
 
 template <class T>
-boost::shared_ptr<T> shared_from_intrusive(T* p) {
+shared_ptr<T> shared_from_intrusive(T* p) {
   if (p) intrusive_ptr_add_ref(p);
-  return boost::shared_ptr<T>(p, intrusive_deleter<T>());
+  return shared_ptr<T>(p, intrusive_deleter<T>());
 }
 
 

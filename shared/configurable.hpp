@@ -24,7 +24,7 @@
 
 #include <graehl/shared/configure.hpp>
 #include <graehl/shared/null_deleter.hpp>
-#include <boost/make_shared.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 
 namespace configure {
 
@@ -57,24 +57,24 @@ struct configurable
     example(o, warn, root_path);
   }
   virtual ~configurable() {}
-  typedef boost::shared_ptr<configurable> ptr;
+  typedef shared_ptr<configurable> ptr;
 };
 
 template <class Prototype, class Backend>
 struct configure_prototype : configurable
 {
-  typedef boost::shared_ptr<Prototype> prototype_ptr;
+  typedef shared_ptr<Prototype> prototype_ptr;
   prototype_ptr proto;
   configure_backend::ptr backend;
 
   configure_prototype() {}
   configure_prototype(Prototype *proto, Backend const& backend)
-      : proto(proto, null_deleter()), backend(boost::make_shared<Backend>(backend)) {}
+      : proto(proto, null_deleter()), backend(make_shared<Backend>(backend)) {}
   // backends are intended to be lightweight-copy value-semantic options so
   // might be stack allocated - thus the make_shared copy construction instead
   // of null_deleter
   configure_prototype(prototype_ptr const& proto, Backend const& backend)
-      : proto(proto), backend(boost::make_shared<Backend>(backend)) {}
+      : proto(proto), backend(make_shared<Backend>(backend)) {}
 
   configure_prototype(Prototype *proto, configure_backend::ptr const& backend)
       : proto(proto, null_deleter()), backend(backend) {}

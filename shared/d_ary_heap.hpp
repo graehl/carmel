@@ -52,7 +52,6 @@ DECLARE_DBG_LEVEL(DDARY)
 #define DDARY(x)
 #endif
 
-#include <boost/static_assert.hpp>
 #include <boost/smart_ptr/shared_array.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <string>
@@ -224,7 +223,6 @@ do in my first uses.  plus, if keys are indices and the map is a vector, it's ba
 #include <algorithm>
 #include <utility>
 #include <cassert>
-#include <boost/static_assert.hpp>
 #include <boost/shared_array.hpp>
 
 
@@ -259,7 +257,6 @@ template <class Value, std::size_t Arity, class DistanceMap = identity_distance<
           class Container = GRAEHL_D_ARY_DEFAULT_CONTAINER(Value, Arity), class Size = unsigned,
           class Equal = std::equal_to<Value> >
 class d_ary_heap_indirect {
-  BOOST_STATIC_ASSERT(Arity >= 2);
 
  public:
 #if __cplusplus >= 201103L

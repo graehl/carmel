@@ -266,7 +266,7 @@ void init_pmap(T t, G const& g, P& p, V const& v = V()) {
 
 template <class G, class T, class V>
 typename property_factory<G, T>::template rebind<V>::reference
-make_pmap(boost::shared_ptr<typename property_factory<G, T>::template rebind<V>::impl>& pimpl) {
+make_pmap(shared_ptr<typename property_factory<G, T>::template rebind<V>::impl>& pimpl) {
   return reference(*pimpl);
 }
 

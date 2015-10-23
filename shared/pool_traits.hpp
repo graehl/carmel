@@ -21,7 +21,7 @@
 #define GRAEHL_SHARED__POOL_TRAITS
 #pragma once
 
-#include <boost/shared_ptr.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/intrusive_refcount.hpp>
 
 namespace graehl {

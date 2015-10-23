@@ -51,6 +51,7 @@ DECLARE_DBG_LEVEL(GPROGOPT)
 #include <boost/program_options/value_semantic.hpp>
 #include <boost/range/value_type.hpp>
 #include <boost/function.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>
 #include <fstream>
@@ -398,7 +399,7 @@ struct printable_options_description : boost::program_options::options_descripti
   typedef printable_options_description<Ostream> self_type;
   typedef boost::program_options::options_description options_description;
   typedef boost::program_options::option_description option_description;
-  typedef boost::shared_ptr<self_type> group_type;
+  typedef shared_ptr<self_type> group_type;
   typedef std::vector<group_type> groups_type;
   struct printable_option {
     typedef boost::shared_ptr<option_description> OD;
@@ -472,7 +473,7 @@ struct printable_options_description : boost::program_options::options_descripti
     return option(name, val, description, hidden, defaulted, opt);
   }
 
-  boost::shared_ptr<string_pool> descs;  // because opts lib only takes char *, hold them here.
+  shared_ptr<string_pool> descs;  // because opts lib only takes char *, hold them here.
   template <class T, class C>
   self_type& operator()(char const* name, boost::program_options::typed_value<T, C>* val,
                         std::string const& description, bool hidden = false) {
@@ -493,7 +494,10 @@ struct printable_options_description : boost::program_options::options_descripti
                         char const* description = NULL, bool hidden = false) {
     SHOWIF3(GPROGOPT, 1, "adding", this, name, hidden);
     ++n_this_level;
-    printable_option opt((T*)0, simple_add(name, val, description));
+    typedef option_description OD;
+    boost::shared_ptr<OD> od((description ? new OD(name, val, description) : new OD(name, val)));
+    options_description::add(od);
+    printable_option opt((T*)0, od);
     if (!hidden) pr_options.push_back(opt);
     return *this;
   }
@@ -523,7 +527,7 @@ struct printable_options_description : boost::program_options::options_descripti
     using namespace std;
     string const& name = opt.name();
     if (!only_value) {
-      boost::shared_ptr<value_semantic const> psemantic(opt.od->semantic());
+      value_semantic const * psemantic = opt.od->semantic().get();
       if (psemantic && psemantic->is_required()) o << "#REQUIRED# ";
       if (var.defaulted()) o << "#DEFAULTED# ";
       if (var.empty()) {
@@ -657,14 +661,6 @@ struct printable_options_description : boost::program_options::options_descripti
   groups_type groups;
   options_type pr_options;
   std::string caption;
-  boost::shared_ptr<option_description> simple_add(const char* name,
-                                                   const boost::program_options::value_semantic* s,
-                                                   const char* description = NULL) {
-    typedef option_description OD;
-    boost::shared_ptr<OD> od((description ? new OD(name, s, description) : new OD(name, s)));
-    options_description::add(od);
-    return od;
-  }
 };
 
 typedef printable_options_description<std::ostream> printable_opts;

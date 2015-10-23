@@ -27,7 +27,7 @@
 
 #include <graehl/shared/int_types.hpp>
 #include <graehl/shared/string_to.hpp>
-#include <boost/shared_ptr.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 #include <boost/optional.hpp>
 
 namespace graehl {
@@ -55,7 +55,7 @@ std::string example_value() {
 }
 
 template <class T>
-std::string example_value(boost::shared_ptr<T> const&) {
+std::string example_value(shared_ptr<T> const&) {
   return example_value(*(T const*)0);
 }
 

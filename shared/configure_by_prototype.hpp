@@ -36,8 +36,8 @@ struct configure_by_standard {
 
 template <class Backend>
 struct configure_by {
-  typedef boost::shared_ptr<Backend> BackendPtr;
-  typedef boost::shared_ptr<configure_by> ptr;
+  typedef shared_ptr<Backend> BackendPtr;
+  typedef shared_ptr<configure_by> ptr;
 
   virtual ~configure_by() {}
 
@@ -59,7 +59,7 @@ struct configure_by {
 template <class Val, class Backend>
 struct configure_by_prototype : configure_by<Backend> {
 
-  typedef boost::shared_ptr<Prototype> prototype_ptr;
+  typedef shared_ptr<Prototype> prototype_ptr;
   prototype_ptr proto;
   configure_backend::ptr backend;
 
@@ -99,7 +99,7 @@ enum { kSingleAllowedInstance = 1, kUnlimitedInstances = -1 };
 template <class Backend, class Base=configure_by<Backend> >
 struct configure_dynamic {
   typedef configure_by<Backend> ConfigureBy;
-  typedef boost::shared_ptr<Configurable> ConfigureByPtr;
+  typedef shared_ptr<Configurable> ConfigureByPtr;
 
   typedef std::map<std::string, ConfigureByPtr> Prototypes;
   static std::map<std::string, ConfigureByPtr> prototypes;
@@ -121,7 +121,7 @@ struct configure_dynamic {
       throw config_exception("configure_dynamic must have at most "+
                              to_string(kMaxAllowedInstances)+" type: val defined");
   }
-  boost::shared_ptr<Base> value; // the first instance goes here
+  shared_ptr<Base> value; // the first instance goes here
   std::string type;
   int limit;
   configure_dynamic(int limit = kUnlimitedInstances) : limit(limit) {
@@ -167,7 +167,7 @@ struct configure_dynamic {
     if (i == end())
       r.reset();
     else
-      r = boost::dynamic_pointer_cast<Concrete>(i->second); // could be static_pointer_cast
+      r = dynamic_pointer_cast<Concrete>(i->second); // could be static_pointer_cast
     return r;
   }
 };

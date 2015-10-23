@@ -23,7 +23,7 @@ INC= . $(TRUNK)
 LIB=
 #CXX:=g++
 
-CXXFLAGS_COMMON= -ffast-math
+CXXFLAGS_COMMON= -ffast-math -Wno-deprecated-declarations
 #-ggdb
 CPPFLAGS += -DNO_BACKTRACE -DUSE_NONDET_RANDOM -DUSE_BOOST_GZSTREAM
 # CXXFLAGS += -O

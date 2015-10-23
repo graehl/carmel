@@ -18,7 +18,7 @@
 
 #include <boost/dynamic_bitset.hpp>
 #include <iterator>
-#include <boost/shared_ptr.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 
 namespace graehl {
 

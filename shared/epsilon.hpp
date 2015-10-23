@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <boost/cstdint.hpp>
 #include <graehl/shared/nan.hpp>
+#include <graehl/shared/order_preserving.hpp>
 
 #ifndef GRAEHL_EPSILON
 /**

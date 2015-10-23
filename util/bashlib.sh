@@ -1,8 +1,5 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
-have-linux-readlink()  {
-    [[ `uname` != Darwin ]] && readlink -nfs / 2>&1 >/dev/null
-}
 wordsnl() {
     perl -e 'print "$_\n" for (@ARGV)' "$@"
 }
@@ -1156,7 +1153,7 @@ which_default() {
 
 #usage: set abspath, call, read abspath
 makeabspath() {
-    if have-linux-readlink ; then
+    if have_linux_readlink ; then
         abspath=`readlink -nfs "$abspath"`
         #  while [ -L $abspath ] ; do
         #     abspath=`readlink $abspath`
@@ -1168,7 +1165,7 @@ makeabspath() {
     fi
 }
 abspath() {
-    if have-linux-readlink ; then
+    if have_linux_readlink ; then
         readlink -nfs "$1"
     elif [ ${1:0:1} != / ] ; then #absolute path
         echo $(cd "$(dirname $1)"; pwd)/"$(basename $1)"
@@ -1930,8 +1927,11 @@ sumff() {
     perl -ane '$s+=$F[0]*$F[1];$r+=$F[1];END{print "$s $r\n"}' "$@"
 }
 
+have_linux_readlink()  {
+    [[ `uname` != Darwin ]] && readlink -nfs / 2>&1 >/dev/null
+}
 realpath() {
-    if have-linux-readlink ; then
+    if have_linux_readlink ; then
         for f in "$@"; do
             readlink -nfs $(cd "$(dirname $f)"; pwd)/"$(basename $f)"
             echo
@@ -1941,17 +1941,7 @@ realpath() {
             echo $(cd "$(dirname $f)"; pwd)/"$(basename $f)"
         done
     fi
-    #    perl -e "push @INC,'$BLOBS/libgraehl/latest';require 'libgraehl.pl';"'while($_=shift) {$_=abspath_from(".",$_,1) if -e $_; s|^/auto/|/home/|; print $_,"\n"}' -- "$@"
-    #    readlink -fs "$@"
-    #FIXME: hpc compute nodes, nlg0 have wrong readlink?
 }
-
-realpaths() {
-    perl -e "push @INC,'$BLOBS/libgraehl/latest';require 'libgraehl.pl';"'while($_=shift) {$_=abspath_from(".",$_,1) if -e $_; s|^/auto/|/home/|; print $_," "}' -- "$@"
-    #    readlink -fs "$@"
-    #FIXME: hpc compute nodes, nlg0 have wrong readlink?
-}
-
 whichreal() {
     local w=`which "$@"`
     if [ -x "$w" ] ; then

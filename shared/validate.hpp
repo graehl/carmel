@@ -27,7 +27,7 @@
 #include <map>
 #include <set>
 #include <boost/optional.hpp>
-#include <boost/shared_ptr.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 
 namespace configure {
 
@@ -150,7 +150,7 @@ void validate(boost::optional<T> const& i) {
   if (i) adl::adl_validate(*i);
 }
 template <class T>
-void validate(boost::shared_ptr<T> const& i) {
+void validate(shared_ptr<T> const& i) {
   if (i) adl::adl_validate(*i);
 }
 }

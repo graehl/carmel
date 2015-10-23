@@ -369,7 +369,7 @@ struct TailsUpHypergraph {
     EdgeCostMap ec;
 
     typedef built_pmap<vertex_tag, graph, unsigned> Rereach;
-    typedef boost::shared_ptr<Rereach> RereachPtr;
+    typedef shared_ptr<Rereach> RereachPtr;
     typedef typename Rereach::property_map_type RereachP;
     RereachPtr rereachptr;
     RereachP rereach;
