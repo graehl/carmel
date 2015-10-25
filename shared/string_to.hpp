@@ -91,6 +91,7 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #include <graehl/shared/shared_ptr.hpp>
 CLANG_DIAG_IGNORE_NEWER(unused-local-typedef)
 #include <boost/optional.hpp>
+#include <boost/shared_ptr.hpp>
 #if GRAEHL_USE_BOOST_LEXICAL_CAST
 #ifndef BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
 #define BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
@@ -571,8 +572,15 @@ struct is_shared_ptr {
   enum { value = 0 };
 };
 
+#if __cplusplus >= 201103L
 template <class V>
-struct is_shared_ptr<shared_ptr<V> > {
+struct is_shared_ptr<std::shared_ptr<V> > {
+  enum { value = 1 };
+};
+#endif
+
+template <class V>
+struct is_shared_ptr<boost::shared_ptr<V> > {
   enum { value = 1 };
 };
 

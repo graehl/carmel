@@ -522,12 +522,9 @@ struct printable_options_description : boost::program_options::options_descripti
 
   void print_option(Ostream& o, printable_option const& opt,
                     boost::program_options::variable_value const& var, bool only_value = false) const {
-    using namespace boost;
-    using namespace boost::program_options;
-    using namespace std;
-    string const& name = opt.name();
+    std::string const& name = opt.name();
     if (!only_value) {
-      value_semantic const * psemantic = opt.od->semantic().get();
+      boost::program_options::value_semantic const * psemantic = opt.od->semantic().get();
       if (psemantic && psemantic->is_required()) o << "#REQUIRED# ";
       if (var.defaulted()) o << "#DEFAULTED# ";
       if (var.empty()) {

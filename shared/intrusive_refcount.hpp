@@ -158,6 +158,8 @@ inline typename boost::enable_if<graehl::is_refcounted<T> >::type intrusive_ptr_
 
 namespace graehl {
 
+using boost::intrusive_ptr;
+
 template <class T, class Enable = void>
 struct shared_ptr_maybe_intrusive {
   typedef shared_ptr<T> type;
