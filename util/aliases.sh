@@ -44,7 +44,11 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 git02"
 chost=c-graehl
 jhost=git02
-xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DSDL_BUILD_TYPE=Production"
+xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1"
+lingsl() {
+    c-s 'cd ~/src/GSL && git pull && cp include/*.h ~/c/sdl-externals/Shared/cpp/GSL/include/ && cp include/*.h ~/c/xmt-externals/Shared/cpp/GSL/include/'
+}
+
 gitq() {
     (git status -u; gitlog 3) | cat
 }
@@ -3970,7 +3974,7 @@ jen() {
     if [[ $HOST = pwn ]] ; then
         UPDATE=0
     fi
-    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 XMT_BUILD_TYPE=${XMT_BUILD_TYPE:-Production} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -4749,7 +4753,7 @@ linjen() {
      rm $tmp2
         log=~/tmp/linjen.`csuf`.$branch.$BUILD
         mv $log ${log}2 || true
-        c-s NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE XMT_BUILD_TYPE=$XMT_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-filter-gcc-errors}
+        c-s NOLOCALGCC=$NOLOCALGCC XMT_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-filter-gcc-errors}
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -8937,8 +8941,13 @@ sshlog() {
     time ssh "$@"
 }
 if ! [[ $MAKEPROC ]] ; then
-    MAKEPROC=2
-    [[ $lwarch = Apple ]] || MAKEPROC=10
+    if [[ $lwarch = Apple ]] ; then
+        MAKEPROC=2
+    elif [[ $HOST = c-graehl ]] ; then
+        MAKEPROC=17
+    else
+        MAKEPROC=11
+    fi
 fi
 if [[ -d $SDL_EXTERNALS_PATH ]] ; then
     export PATH=$SDL_EXTERNALS_PATH/../Shared/java/apache-maven-3.0.4/bin:$PATH

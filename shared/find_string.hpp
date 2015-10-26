@@ -1,6 +1,6 @@
 /** \file \author Jonathan Graehl <graehl@gmail.com>
 
-    find_string(boost::unordered_map<std::string, ...>, pair<char const*, char
+    find_string(unordered_map<std::string, ...>, pair<char const*, char
     const*>) pair is [begin, end), a key: map.find(std:string(key.first,
     key.second)) read-only since unordered_map doesn't support lazy construction
     of string from a pair key.

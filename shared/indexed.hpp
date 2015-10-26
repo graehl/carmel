@@ -25,8 +25,9 @@
 #include <boost/functional/hash.hpp>
 #include <algorithm>
 #include <cassert>
-#include <boost/cstdint.hpp>
-#include <graehl/shared/bit_arithmetic.hpp>
+#include <string>
+#include <graehl/shared/int_types.hpp>
+#include <graehl/shared/farmhash.hpp>
 
 #ifndef GRAEHL_INDEXED_EXTRA_ASSERT
 #define GRAEHL_INDEXED_EXTRA_ASSERT 0
@@ -49,7 +50,21 @@ struct indexed_traits {
   bool operator()(T const& a, Key const& b) const {
     return a == b;
   }
-  std::size_t operator()(T const& a) const { return boost::hash<T>()(a); }
+  template <class Key>
+  std::size_t operator()(Key const& a) const { return boost::hash<T>()(a); }
+};
+
+template <>
+struct indexed_traits<std::string> {
+  typedef std::string T;
+  template <class StringView>
+  bool operator()(T const& a, StringView const& b) const {
+    return a == b;
+  }
+  template <class StringView>
+  std::size_t operator()(StringView const& s) const {
+    return farmhash(s.data(), s.length());
+  }
 };
 
 template <class T, class IndexT = unsigned, class Vector = stable_vector<T>,
@@ -266,9 +281,7 @@ struct indexed : HashEqualsTraits {
 
   template <class Key>
   I find_start(Key const& val) const {
-    boost::uint64_t h = HashEqualsTraits::operator()(val);
-    mixbits(h);
-    return h & mask_;
+    return HashEqualsTraits::operator()(val) & mask_;
   }
 
   I count_indexed() const {

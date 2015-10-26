@@ -50,9 +50,86 @@
 #define GRAEHL_HAVE_64BIT_INT64_T 1
 #endif
 
-#include <boost/cstdint.hpp>
+
+/// on recent (x86) architectures aligned reads are fine
+#define GRAEHL_FETCH_UNALIGNED_MEMCPY 0
+
+#ifndef HAVE_BUILTIN_CLZ
+#define HAVE_BUILTIN_CLZ 1
+#endif
+
+#ifndef HAVE_BUILTIN_POPCNT
+#define HAVE_BUILTIN_POPCNT 1
+#endif
+
+#ifdef _MSC_VER
+//TODO:
+#undef HAVE_BUILTIN_CLZ
+#define HAVE_BUILTIN_CLZ 0
+
+//TODO: test 0
+#undef GRAEHL_FETCH_UNALIGNED_MEMCPY
+#define GRAEHL_FETCH_UNALIGNED_MEMCPY 1
+#endif
+
+
+#if GRAEHL_FETCH_UNALIGNED_MEMCPY
+#define GRAEHL_FETCH32(p) graehl::fetch_uint32(p)
+#define GRAEHL_FETCH64(p) graehl::fetch_uint64(p)
+#else
+#define GRAEHL_FETCH32(p) (*reinterpret_cast<graehl::uint32_t const*>(p))
+#define GRAEHL_FETCH64(p) (*reinterpret_cast<graehl::uint64_t const*>(p))
+#endif
+
+
+#if HAVE_BUILTIN_POPCNT
+#ifdef _MSC_VER
+#include <intrin.h>
+#define __builtin_popcount __popcnt
+#define __builtin_popcountl __popcnt64
+#define __builtin_popcountll __popcnt64
+#endif
+#endif
+
+
+#ifndef CHAR_BIT
+#define CHAR_BIT 8
+#endif
+
+#if defined(_MSC_VER)
+
+#define GRAEHL_FORCE_INLINE static __forceinline
+#include <stdlib.h>
+#define GRAEHL_ROTL32(x, shift) _rotl(x, shift)
+#define GRAEHL_ROTL64(x, shift) _rotl64(x, shift)
+#define GRAEHL_ROTR32(x, shift) _rotr(x, shift)
+#define GRAEHL_ROTR64(x, shift) _rotr64(x, shift)
+#define GRAEHL_BIG_CONSTANT(x) (x)
+
+#else
+
+#define GRAEHL_FORCE_INLINE static inline __attribute__((always_inline))
+
+/// as always for macros expanding an argument twice, use fn calls
+/// bit_rotate_left64 etc if arg x is not a simple value (e.g. side effects)
+#define GRAEHL_ROTL32(x, shift) ((x) << shift) | ((x) >> (32 - shift))
+#define GRAEHL_ROTL64(x, shift) ((x) << shift) | ((x) >> (64 - shift))
+#define GRAEHL_ROTR32(x, shift) ((x) >> shift) | ((x) << (32 - shift))
+#define GRAEHL_ROTR64(x, shift) ((x) >> shift) | ((x) << (64 - shift))
+#define GRAEHL_BIG_CONSTANT(x) (x##LLU)
+#endif
+
+#if __cplusplus >= 201103L
+#define GRAEHL_CONSTEXPR static constexpr
 #include <cstdint>
+#else
+#define GRAEHL_CONSTEXPR static const
+#include <boost/cstdint.hpp>
+#endif
+
+#include <cassert>
 #include <limits>
+#include <cstring>
 
 namespace graehl {
 
@@ -68,14 +145,125 @@ typedef std::int16_t int16_t;
 typedef std::int8_t int8_t;
 #else
 using boost::int8_t;
-using boost::uint8_t;
 using boost::int16_t;
-using boost::uint16_t;
 using boost::int32_t;
-using boost::uint32_t;
 using boost::int64_t;
+
+using boost::uint8_t;
+using boost::uint16_t;
+using boost::uint32_t;
 using boost::uint64_t;
 #endif
+
+
+GRAEHL_FORCE_INLINE uint32_t fetch_uint32(const char* p) {
+#if GRAEHL_FETCH_UNALIGNED_MEMCPY
+  uint32_t x;
+  std::memcpy(&x, p, sizeof(x));
+  return x;
+#else
+  return *(reinterpret_cast<graehl::uint32_t const*>(p));
+#endif
+}
+
+GRAEHL_FORCE_INLINE uint64_t fetch_uint64(const char* p) {
+#if GRAEHL_FETCH_UNALIGNED_MEMCPY
+  uint64_t x;
+  std::memcpy(&x, p, sizeof(x));
+  return x;
+#else
+  return *(reinterpret_cast<graehl::uint64_t const*>(p));
+#endif
+}
+
+GRAEHL_FORCE_INLINE
+uint32_t bit_rotate_left(uint32_t x, int8_t k) {
+  return GRAEHL_ROTL32(x, k);
+}
+
+GRAEHL_FORCE_INLINE
+uint64_t bit_rotate_left_64(uint64_t x, int8_t k) {
+  return GRAEHL_ROTL64(x, k);
+}
+
+GRAEHL_FORCE_INLINE
+uint32_t bit_rotate_right(uint32_t x, int8_t k) {
+  return GRAEHL_ROTR32(x, k);
+}
+
+GRAEHL_FORCE_INLINE
+uint64_t bit_rotate_right_64(uint64_t x, int8_t k) {
+  return GRAEHL_ROTR64(x, k);
+}
+
+template <class Int>
+inline bool is_power_of_2(Int i) {
+  return (i & (i - 1)) == 0;
+}
+
+/// return power of 2 >= x
+inline uint32_t next_power_of_2(uint32_t x) {
+  if (!x) return 1;
+#ifndef HAVE_BUILTIN_CLZ
+  assert(sizeof(x) == sizeof(unsigned));
+  return 1u << (32 - __builtin_clz(x - 1));
+#else
+  assert(x <= (1 << 30));
+  --x;
+  x |= x >> 1;
+  x |= x >> 2;
+  x |= x >> 4;
+  x |= x >> 8;
+  x |= x >> 16;
+  ++x;
+  assert(is_power_of_2(x));
+  return x;
+#endif
+}
+
+/// return power of 2 >= x
+inline uint64_t next_power_of_2(uint64_t x) {
+  if (!x) return 1;
+#if HAVE_BUILTIN_CLZ
+  assert(sizeof(x) == sizeof(unsigned long));
+  return 1u << (64 - __builtin_clzl(x - 1));
+#else
+  assert(x <= (1ULL << 60));
+  --x;
+  x |= x >> 1;
+  x |= x >> 2;
+  x |= x >> 4;
+  x |= x >> 8;
+  x |= x >> 16;
+  x |= x >> 32;
+  ++x;
+  assert(is_power_of_2(x));
+  return x;
+#endif
+}
+
+inline unsigned count_set_bits(uint32_t x) {
+#if HAVE_BUILTIN_POPCNT
+  return __builtin_popcount(x);
+#else
+  x = x - ((x >> 1) & 0x55555555);
+  x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+  return (((x + (x >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+#endif
+}
+
+/// to avoid gcc 5 ambig from int -> uintX
+inline unsigned count_set_bits(int32_t x) {
+  return count_set_bits((uint32_t)x);
+}
+
+inline unsigned count_set_bits(uint64_t x) {
+#if HAVE_BUILTIN_POPCNT
+  return __builtin_popcountl(x);
+#else
+  return count_set_bits((uint32_t)x) + count_set_bits((uint32_t)(x >> 32));
+#endif
+}
 
 template <class T>
 struct signed_for_int {
