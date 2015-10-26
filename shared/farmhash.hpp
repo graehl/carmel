@@ -258,9 +258,21 @@ GRAEHL_FORCE_INLINE uint64_t farmhash_str(StringView const& s) {
 
 struct Farmhash {
   typedef std::size_t result_type;
+
+  /// hash fn object
   template <class StringView>
   std::size_t operator()(StringView const& s) const {
     return farmhash(s.data(), s.length());
+  }
+
+  /// for tbb::concurrent_hash_map
+  template <class StringView>
+  static inline std::size_t hash(StringView const& s) {
+    return farmhash(s.data(), s.length());
+  }
+  template <class StringView1, class StringView2>
+  static inline bool equal(StringView1 const& a, StringView2 const& b) {
+    return a == b;
   }
 };
 
