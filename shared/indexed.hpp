@@ -59,7 +59,8 @@ struct indexed_traits<std::string> {
   typedef std::string T;
   template <class StringView>
   bool operator()(T const& a, StringView const& b) const {
-    return a == b;
+    std::size_t sz = a.size();
+    return sz == b.size() && !std::memcmp(a.data(), b.data(), sz);
   }
   template <class StringView>
   std::size_t operator()(StringView const& s) const {
