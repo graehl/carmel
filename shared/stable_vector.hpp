@@ -33,6 +33,7 @@
 
 #include <vector>
 #include <memory>
+#include <utility>
 #include <graehl/shared/small_vector.hpp>
 
 namespace graehl {
@@ -200,8 +201,26 @@ struct stable_vector {
     ++size_;
   }
 
-  template <class Tcopy>
-  void push_back(Tcopy const& val) {
+#if __cplusplus >= 201103L
+  template <class... Args>
+  void emplace_back(Args&&... args) {
+    push_back(T(std::forward<Args>(args)...));
+  }
+
+  template <class From>
+  void push_back(From && val) {
+    if (size_ == capacity) {
+      push_back_chunk();
+      assert((size_ & posmask) == 0);
+      chunks.back()[0] = std::forward<From>(val);
+    } else
+      chunks.back()[size_ & posmask] = std::forward<From>(val);
+    ++size_;
+  }
+
+#else
+  template <class From>
+  void push_back(From const& val) {
     if (size_ == capacity) {
       push_back_chunk();
       assert((size_ & posmask) == 0);
@@ -210,6 +229,7 @@ struct stable_vector {
       chunks.back()[size_ & posmask] = val;
     ++size_;
   }
+#endif
 
   void pop_back(bool destroy = kRemoveDestroys) {
     assert(size_);

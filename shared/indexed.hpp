@@ -157,7 +157,11 @@ struct indexed : HashEqualsTraits {
     for (I i = find_start(val);;) {
       I& j = index_[i];
       if (j == (I)kNullIndex) {
+#if __cplusplus >= 201103L
+        vals_.emplace_back(val);
+#else
         vals_.push_back(val);
+#endif
         return (j = sz);
       } else if (HashEqualsTraits::operator()(vals_[j], val))
         return j;
