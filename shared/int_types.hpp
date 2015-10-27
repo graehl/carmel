@@ -63,11 +63,11 @@
 #endif
 
 #ifdef _MSC_VER
-//TODO:
+// TODO:
 #undef HAVE_BUILTIN_CLZ
 #define HAVE_BUILTIN_CLZ 0
 
-//TODO: test 0
+// TODO: test 0
 #undef GRAEHL_FETCH_UNALIGNED_MEMCPY
 #define GRAEHL_FETCH_UNALIGNED_MEMCPY 1
 #endif
@@ -241,6 +241,29 @@ inline uint64_t next_power_of_2(uint64_t x) {
   return x;
 #endif
 }
+
+#if __cplusplus >= 201103L
+/// slow but pure functional for constexpr. defaulted parameter is for impl only
+inline constexpr uint64_t ceil_log2_const(uint64_t x, bool exact = true) {
+  return (x == 0) ? (1 / x) : (x == 1) ? (exact ? 0 : 1)
+                                       : 1 + ceil_log2_const(x >> 1, ((x & 1) == 1) ? false : exact);
+}
+
+#if 0
+inline constexpr uint64_t round_up_to_pow2_const(uint64_t x) {
+  return (uint64_t)1 << ceil_log2_const(x);
+}
+#else
+/// pure functional version of next_power_of_2
+inline constexpr uint64_t next_power_of_2_const_r(uint64_t x, uint8_t shift) {
+  return shift == 64 ? x : next_power_of_2_const_r(x | (x >> shift), shift * 2);
+}
+
+inline constexpr uint64_t next_power_of_2_const(uint64_t x) {
+  return next_power_of_2_const_r(x - 1, 1) + 1;
+}
+#endif
+#endif
 
 inline unsigned count_set_bits(uint32_t x) {
 #if HAVE_BUILTIN_POPCNT

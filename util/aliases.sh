@@ -316,6 +316,17 @@ gitshowrev() {
     shift
     git show $rev -- "$@"
 }
+gitshow() {
+    local rev=$1
+    shift
+    local f=$1
+    if [[ -f $f ]] ; then
+        if ! [[ -d .git ]] ; then
+            f="./$f"
+        fi
+    fi
+    git show $rev:"$f"
+}
 gitdeleted() {
     git log --diff-filter=D --summary | grep delete
 }
@@ -961,17 +972,20 @@ linosmake() {
         set -e
         export TERM=dumb
         oscptar
-        SDL_BUILD_TYPE=Production
+        SDL_BUILD_TYPE=Development
         #list-xmt-includes.py:20:18:skip_ifs = ['SDL_ASSERT_THREAD_SPECIFIC', 'SDL_OBJECT_COUNT', 'SDL_ENCRYPT',
-        BUILD_TYPE=Release
+        BUILD_TYPE=Debug
         if [[ $debug ]] ; then
+            BUILD_TYPE=Debug
+        fi
+        if [[ $release ]] ; then
             BUILD_TYPE=Debug
         fi
         #-DSDL_BUILD_TYPE=$SDL_BUILD_TYPE
         sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE "
         local cleanpre
         [[ $noclean ]] || cleanpre="rm -rf $osdirbuild"
-        c-s ". ~/u/localgcc.sh;$cleanpre;mkdir -p $osdirbuild;cd $osdirbuild; set -x; export SDL_EXTERNALS_PATH=/home/graehl/c/sdl-externals/FC12; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j10 VERBOSE=0 && Hypergraph/hyp compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn"
+        c-s ". ~/u/localgcc.sh;$cleanpre;mkdir -p $osdirbuild;cd $osdirbuild; set -x; export SDL_EXTERNALS_PATH=/home/graehl/c/sdl-externals/FC12; cmake $sdlbuildarg $osgitdir/$hypdir  && TERM=dumb make -j15 VERBOSE=0 && Hypergraph/hyp compose  --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn" 2>&1 | filter-gcc-errors
     )
 }
 osreg() {
@@ -1080,7 +1094,7 @@ c12clang() {
     VERBOSE=1 save12 ~/tmp/c12clang cjen clang
 }
 gitcat() {
-    git cat-file blob "$@"
+    git cat-file "$@"
 }
 linuxver() {
     if [ -f /etc/redhat-release ]; then
@@ -3164,9 +3178,6 @@ upext() {
         cd $xmtextsrc
         remaster
     )
-}
-gitshow() {
-    sh -c "git show $*"
 }
 gitdiff() {
     sh -c "git diff $*"
@@ -7641,8 +7652,11 @@ function callgrind() {
     if [[ $branch ]] ; then
         brancharg=--branch-sim=yes
     fi
+    (
+    set -x
     valgrind --tool=callgrind $cachearg $brancharg --callgrind-out-file=$cgf --dump-instr=yes -- $exe "$@"
-    local anno=~/tmp/callgrind.ArcIterator.cpp
+    )
+    #local anno=~/tmp/callgrind.ArcIterator.cpp
     #callgrind_annotate $cgf $xmtxs/PhraseBased/src/ArcIterator.cpp > $anno
     #preview $anno $cgf
     #&& /Applications/qcachegrind.app $cgf

@@ -65,6 +65,12 @@ struct indexed_traits<std::string> {
   std::size_t operator()(StringView const& s) const {
     return farmhash(s.data(), s.length());
   }
+  std::size_t operator()(char const* s) const {
+    return farmhash(s, std::strlen(s));
+  }
+  std::size_t operator()(T const& a, char const* s) const {
+    return !std::strcmp(a.c_str(), s);
+  }
 };
 
 template <class T, class IndexT = unsigned, class Vector = stable_vector<T>,

@@ -44,6 +44,7 @@ gccbuild() {
             --disable-multilib \
             --with-system-zlib \
             --disable-checking \
+            --with-default-libstdcxx-abi=c++98 \
             --enable-languages=c,c++,fortran
         #            --enable-clocale=gnu \
 
