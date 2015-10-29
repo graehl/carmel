@@ -51,7 +51,6 @@ ins() {
      shift
      echo2 "in $t sec, $*"
      sleep $t
-     shift
      echo2 "$ $*"
      "$@"
     )
