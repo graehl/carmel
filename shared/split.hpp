@@ -97,7 +97,7 @@ inline std::size_t split_noquote(
     Func f,  // this returns false if we want to stop; we return the number of fields (up to N) for which f
     // returned true.
     std::string const& delim = ",",
-    std::size_t N = (std::size_t) - 1,  // max number of calls to f (even if more fields exist)
+    std::size_t N = (std::size_t)-1,  // max number of calls to f (even if more fields exist)
     bool leave_tail = true,  // if N reached and there's more string left, include it in final call to f
     bool must_complete = false  // throw if whole string isn't consumed (meaningless unless leave_tail==false)
     ) {
@@ -126,18 +126,39 @@ inline std::size_t split_noquote(
 }
 
 template <class Cont>
-inline std::size_t split_into(std::string const& str, Cont& c, std::string const& delim = ",") {
+inline std::size_t split_into(Cont& c, std::string const& str, std::string const& delim = ",") {
   return split_noquote(str, split_push_back<Cont>(c), delim);
 }
 
 template <class Cont>
-inline Cont split_string(std::string const& str, std::string const& delim = ",") {
+void split_into(Cont& r, std::string const& str, char sep = ' ') {
+  std::string::size_type start = 0, end;
+  while ((end = str.find(sep, start)) != std::string::npos) {
+    r.push_back(str.substr(start, end - start));
+    start = end + 1;
+  }
+  r.push_back(str.substr(start));
+}
+
+template <class Cont>
+inline Cont split_string(std::string const& str, std::string const& delim) {
   Cont c;
-  split_noquote(str, split_string_push_back<Cont>(c), delim);
+  split_into(c, str, delim);
   return c;
 }
 
-inline std::vector<std::string> split(std::string const& str, std::string const& delim = ",") {
+template <class Cont>
+inline Cont split_string(std::string const& str, char const delim = ',') {
+  Cont c;
+  split_into(c, str, delim);
+  return c;
+}
+
+inline std::vector<std::string> split(std::string const& str, std::string const& delim) {
+  return split_string<std::vector<std::string> >(str, delim);
+}
+
+inline std::vector<std::string> split(std::string const& str, char delim = ',') {
   return split_string<std::vector<std::string> >(str, delim);
 }
 

@@ -21,15 +21,12 @@
 
 
 #include <boost/version.hpp>
-#include <boost/ref.hpp>
+#include <graehl/shared/property_factory.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <utility>
 #include <vector>
+#include <graehl/shared/shared_ptr.hpp>
 
-#define GRAEHL_PROPERTY_REF 0
-#if GRAEHL_PROPERTY_REF
-#include <boost/ref.hpp>
-#endif
 namespace graehl {
 
 /**
@@ -89,28 +86,16 @@ unsigned get(OffsetFeatures<K> k, K p) {
   return k[p];
 }
 
-#if GRAEHL_PROPERTY_REF
-template <class P>
-typename P::value_type get(boost::reference_wrapper<P> p, typename P::key_type k) {
-  return get((typename boost::unwrap_reference<T>::type const&)p, k);
-}
-
-template <class P>
-void put(boost::reference_wrapper<P> p, typename P::key_type k, typename P::value_type v) {
-  return put((typename boost::unwrap_reference<T>::type&)p, k, v);
-}
-#endif
-
 /* usage:
  ArrayPMapImp<V, O> p;
- graph_algo(g, boost::ref(p));
+ graph_algo(g, ref(p));
  */
 template <class V, class O = boost::identity_property_map>
 struct ArrayPMapImp
     //: public  boost::put_get_helper<V &,ArrayPMapImp<V, O> >
     {
   typedef ArrayPMapImp<V, O> Self;
-  typedef boost::reference_wrapper<Self> PropertyMap;
+  typedef reference_wrapper<Self> PropertyMap;
   typedef O offset_map;
   typedef typename O::key_type key_type;
   typedef boost::lvalue_property_map_tag category;
@@ -195,7 +180,7 @@ struct ArrayPMapFactory : public std::pair<unsigned, offset_map> {
   template <class R>
   struct rebind {
     typedef ArrayPMapImp<R, offset_map> implementation;
-    typedef boost::reference_wrapper<implementation> reference;
+    typedef reference_wrapper<implementation> reference;
   };
   template <class Val>
   typename rebind<Val>::reference construct() const {
@@ -223,13 +208,11 @@ IndexedCopier<P1, P2> make_indexed_copier(P1 a, P2 b) {
 
 namespace boost {
 template <class Imp>
-struct property_traits<boost::reference_wrapper<Imp> > {
+struct property_traits<GRAEHL_SHARED_PTR_NS::reference_wrapper<Imp> > {
   typedef typename Imp::category category;
   typedef typename Imp::key_type key_type;
   typedef typename Imp::value_type value_type;
 };
-
-
 }
 
 #endif

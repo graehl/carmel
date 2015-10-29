@@ -34,7 +34,6 @@
 #include <cmath>  // also needed for boost/random :( (pow)
 #include <algorithm>  // min for boost/random
 
-
 #include <graehl/shared/warning_push.h>
 #if HAVE_GCC_DIAG_OFF
 GCC_DIAG_IGNORE(attributes)
@@ -54,6 +53,7 @@ GCC_DIAG_IGNORE(attributes)
 #include <cstdlib>
 #endif
 
+#include <graehl/shared/shared_ptr.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/optional.hpp>
 
@@ -68,6 +68,10 @@ GCC_DIAG_IGNORE(attributes)
 namespace graehl {
 
 typedef unsigned random_seed_type;  // this is what random_device actually returns.
+
+struct std_rand {
+  unsigned operator()() const { return std::rand(); }
+};
 
 /**
    for a series of runs with different, but reproducible, seeds.

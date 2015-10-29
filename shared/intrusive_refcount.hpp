@@ -34,11 +34,12 @@
 #define GRAEHL__SHARED__INTRUSIVE_REFCOUNT_HPP
 #pragma once
 
+#include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/alloc_new_delete.hpp>
 #include <graehl/shared/shared_ptr.hpp>
 #include <boost/smart_ptr/detail/atomic_count.hpp>
-#include <boost/utility/enable_if.hpp>
 #include <cassert>
+#include <utility>
 
 namespace graehl {
 
@@ -64,22 +65,29 @@ struct intrusive_refcount {
 
   // please don't call these directly - only let boost::intrusive_ptr<T> do it:
   void add_ref() const { ++refcount; }
-  void release(T const* tc) const {
-    T* t = const_cast<T*>(tc);
+  void release(T* t) const {
     if (!--refcount) {
       t->~T();
       U::free((char*)t);
     }
   }
+  void release(T const* tc) const { release(const_cast<T*>(tc)); }
   void release() const { release(derivedPtr()); }
 
   typedef T self_type;
-
+#if __cplusplus >= 201103L
   template <class A0>
   static T* construct(A0 const& a0) {
     T* r = (T*)U::malloc(sizeof(T));
     return new (&r) T(a0);
   }
+#else
+  template <class... Args>
+  static T* construct(Args&&... args) {
+    T* r = (T*)U::malloc(sizeof(T));
+    return new (&r) T(std::forward<Args>(args)...);
+  }
+#endif
 
   T const* derivedPtr() const { return static_cast<T const*>(this); }
 
@@ -91,7 +99,7 @@ struct intrusive_refcount {
   mutable R refcount;
 };
 
-template <typename UserAlloc, typename element_type>
+template <class UserAlloc, class element_type>
 element_type* construct() {
 
   element_type* const ret = (element_type*)UserAlloc::malloc(sizeof(element_type));
@@ -105,7 +113,7 @@ element_type* construct() {
   return ret;
 }
 
-template <typename UserAlloc, typename element_type>
+template <class UserAlloc, class element_type>
 element_type* construct_copy(element_type const& copy_me) {
   element_type* const ret = (element_type*)UserAlloc::malloc(sizeof(element_type));
   if (!ret) return ret;
@@ -142,12 +150,12 @@ struct is_refcounted<T, typename T::is_refcounted_enable> {
 
 namespace boost {
 template <class T>
-inline typename boost::enable_if<graehl::is_refcounted<T> >::type intrusive_ptr_add_ref(T const* p) {
+inline typename graehl::enable_if<graehl::is_refcounted<T>::value>::type intrusive_ptr_add_ref(T const* p) {
   p->add_ref();
 }
 
 template <class T>
-inline typename boost::enable_if<graehl::is_refcounted<T> >::type intrusive_ptr_release(T const* p) {
+inline typename graehl::enable_if<graehl::is_refcounted<T>::value>::type intrusive_ptr_release(T const* p) {
   p->release(p);
 }
 }
@@ -166,12 +174,11 @@ struct shared_ptr_maybe_intrusive {
 };
 
 template <class T>
-struct shared_ptr_maybe_intrusive<T, typename boost::enable_if<is_refcounted<T> >::type> {
-  typedef boost::intrusive_ptr<T> type;
+struct shared_ptr_maybe_intrusive<T, typename enable_if<is_refcounted<T>::value>::type> {
+  typedef intrusive_ptr<T> type;
 };
 
 template <class T>
-// typename boost::enable_if<is_refcountend<T>,T>::type
 inline T* intrusive_clone(
     T const& x)  // result has refcount of 0 - must delete yourself or use to build an intrusive_ptr
 {
@@ -179,22 +186,19 @@ inline T* intrusive_clone(
 }
 
 template <class T>
-// enable_if ...
-typename boost::intrusive_ptr<T> intrusive_copy_on_write(boost::intrusive_ptr<T> const& p) {
+intrusive_ptr<T> intrusive_copy_on_write(intrusive_ptr<T> const& p) {
   assert(p);
   return p->unique() ? p : intrusive_clone(*p);
 }
 
 template <class T>
-// enable_if ...
-void intrusive_make_unique(boost::intrusive_ptr<T>& p) {
+void intrusive_make_unique(intrusive_ptr<T>& p) {
   assert(p);
   if (!p->unique()) p.reset(intrusive_clone(*p));
 }
 
 template <class T>
-// typename boost::enable_if<typename intrusive_traits<T>::user_allocator>::type
-void intrusive_make_valid_unique(boost::intrusive_ptr<T>& p) {
+void intrusive_make_valid_unique(intrusive_ptr<T>& p) {
   if (!p)
     p.reset(construct<typename intrusive_traits<T>::user_allocator, T>());
   else if (!p->unique())
@@ -203,11 +207,12 @@ void intrusive_make_valid_unique(boost::intrusive_ptr<T>& p) {
 
 template <class T>
 struct intrusive_deleter {
-  void operator()(T* p) {
+  void operator()(T* p) const {
     if (p) intrusive_ptr_release(p);
   }
 };
 
+// typename enable_if<typename intrusive_traits<T>::user_allocator>::type
 template <class T>
 shared_ptr<T> shared_from_intrusive(T* p) {
   if (p) intrusive_ptr_add_ref(p);

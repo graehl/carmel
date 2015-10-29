@@ -104,7 +104,7 @@ usage:
 #include <graehl/shared/string_to.hpp>
 #include <graehl/shared/verbose_exception.hpp>
 #include <boost/property_map/property_map.hpp>
-#include <boost/type_traits/remove_reference.hpp>
+#include <graehl/shared/type_traits.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
@@ -335,9 +335,6 @@ struct TailsUpHypergraph {
     Locs loc;
     LocsP locp;
 
-    // typedef typename boost::unwrap_reference<VertexCostMap>::type::value_type Cost;
-    // typedef typename boost::unwrap_reference<EdgeCostMap>::type::value_type Cost;
-    // typedef typename boost::property_traits<EdgeCostMap>::value_type Cost;
     typedef cost_type Cost;
 
     typedef typename ET::tails_size_type Ntails;

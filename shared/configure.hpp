@@ -44,17 +44,11 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 #define CONFEXPR(x)
 #endif
 
-#include <boost/type_traits/is_fundamental.hpp>
-#include <boost/mpl/or.hpp>
-#include <boost/mpl/logical.hpp>
 #include <boost/any.hpp>
-#include <boost/type_traits/is_integral.hpp>
-#include <boost/type_traits/is_arithmetic.hpp>
-#include <boost/pointee.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/utility/enable_if.hpp>
 #include <boost/detail/atomic_count.hpp>
-
+#include <graehl/shared/shared_ptr.hpp>
+#include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/assign_traits.hpp>
 #include <graehl/shared/shell_escape.hpp>
 #include <graehl/shared/word_spacer.hpp>
@@ -67,7 +61,6 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 #include <graehl/shared/leaf_configurable.hpp>
 #include <graehl/shared/string_match.hpp>
 #include <graehl/shared/configure_init.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 
 #include <algorithm>
 #include <string>
@@ -75,7 +68,6 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 #include <map>
 #include <set>
 #include <boost/optional.hpp>
-#include <boost/function.hpp>
 #include <exception>
 
 // TODO: overridable free fn for default usage string, e.g. longer explanation of enum type meaning
@@ -99,6 +91,7 @@ using graehl::shell_quote;
 using graehl::value_str;
 using graehl::to_string;
 using graehl::string_to;
+using graehl::function;
 
 namespace detail {
 template <class T>
@@ -227,26 +220,30 @@ struct nonconst_pointer<Val const> {
   typedef Val* type;
 };
 
-using boost::mpl::false_;
-using boost::mpl::true_;
+using graehl::false_type;
+using graehl::true_type;
+using graehl::enable_if;
+using graehl::is_fundamental;
+using graehl::is_integral;
+using graehl::is_enum;
 
 template <class Val, class Enable = void>
-struct has_leaf_configure : false_ {};
+struct has_leaf_configure : false_type {};
 
 template <class Val>
-struct has_leaf_configure<Val, typename Val::leaf_configure> : true_ {};
+struct has_leaf_configure<Val, typename Val::leaf_configure> : true_type {};
 
-template <typename T>
-struct is_string : false_ {};
+template <class T>
+struct is_string : false_type {};
 
-template <typename charT, typename traits, typename Alloc>
-struct is_string<std::basic_string<charT, traits, Alloc> > : true_ {};
+template <class charT, typename traits, typename Alloc>
+struct is_string<std::basic_string<charT, traits, Alloc> > : true_type {};
 
 // leaf_configurable means don't expect a .configure member.
 template <class Val, class Enable>
 struct leaf_configurable
-    : boost::mpl::or_<has_leaf_configure<Val>, boost::is_fundamental<Val>, boost::is_enum<Val>, is_string<Val> > {
-};
+    : graehl::integral_constant<bool, has_leaf_configure<Val>::value || is_fundamental<Val>::value
+                                          || is_enum<Val>::value || is_string<Val>::value> {};
 
 //"leaf" - use this for all classes that should be configured as leaves, where you
 // can't add a member "typedef void leaf_configurable;"
@@ -259,24 +256,25 @@ struct leaf_configurable<shared_ptr<T1>, void> : leaf_configurable<T1> {};
 template <class Val, class Enable = void>
 struct scalar_leaf_configurable : leaf_configurable<Val> {};
 template <class T1>
-struct scalar_leaf_configurable<std::vector<T1>, void> : false_ {};
+struct scalar_leaf_configurable<std::vector<T1>, void> : false_type {};
 template <class T1, class T2>
-struct scalar_leaf_configurable<std::map<T1, T2>, void> : false_ {};
+struct scalar_leaf_configurable<std::map<T1, T2>, void> : false_type {};
 
 template <class Val, class Enable = void>
-struct map_leaf_configurable : false_ {};
+struct map_leaf_configurable : false_type {};
 template <class T1, class T2>
-struct map_leaf_configurable<std::map<T1, T2>, void> : true_ {};
+struct map_leaf_configurable<std::map<T1, T2>, void> : true_type {};
+// TODO: vector<pair> also map config?
 
 template <class Val, class Enable = void>
-struct set_leaf_configurable : false_ {};
+struct set_leaf_configurable : false_type {};
 template <class T1>
-struct set_leaf_configurable<std::set<T1>, void> : true_ {};
+struct set_leaf_configurable<std::set<T1>, void> : true_type {};
 
 template <class Val, class Enable = void>
-struct sequence_leaf_configurable : false_ {};
+struct sequence_leaf_configurable : false_type {};
 template <class T1>
-struct sequence_leaf_configurable<std::vector<T1>, void> : true_ {};
+struct sequence_leaf_configurable<std::vector<T1>, void> : true_type {};
 
 
 template <class Val>
@@ -288,13 +286,14 @@ bool is_config_leaf(Val const&) {
 struct conf_expr_base;
 
 template <class Val, class Enable = void>
-struct has_assign_bool : false_ {};
+struct has_assign_bool : false_type {};
 
 template <class Val>
-struct has_assign_bool<Val, typename Val::assign_bool> : true_ {};
+struct has_assign_bool<Val, typename Val::assign_bool> : true_type {};
 
 template <class Val, class Enable = void>
-struct can_assign_bool : boost::mpl::or_<has_assign_bool<Val>, boost::is_integral<Val> > {};
+struct can_assign_bool
+    : graehl::integral_constant<bool, has_assign_bool<Val>::value || is_integral<Val>::value> {};
 
 template <class Val>
 struct can_assign_bool<boost::optional<Val>, void> : can_assign_bool<Val> {};
@@ -386,26 +385,25 @@ struct sequence_configure_policy : configure_policy_base {
   }
 };
 
+// struct rather than member fn because partial member fn template spec is tricky
 template <class Val2, class Enable = void>
-struct select_configure_policy  // struct rather than member fn because partial member fn template spec is
-    // iffy
-    {
+struct select_configure_policy {
   typedef tree_configure_policy type;
 };
 template <class Val2>
-struct select_configure_policy<Val2, typename boost::enable_if<scalar_leaf_configurable<Val2> >::type> {
+struct select_configure_policy<Val2, typename enable_if<scalar_leaf_configurable<Val2>::value>::type> {
   typedef leaf_configure_policy type;
 };
 template <class Val2>
-struct select_configure_policy<Val2, typename boost::enable_if<sequence_leaf_configurable<Val2> >::type> {
+struct select_configure_policy<Val2, typename enable_if<sequence_leaf_configurable<Val2>::value>::type> {
   typedef sequence_configure_policy type;
 };
 template <class Val2>
-struct select_configure_policy<Val2, typename boost::enable_if<map_leaf_configurable<Val2> >::type> {
+struct select_configure_policy<Val2, typename enable_if<map_leaf_configurable<Val2>::value>::type> {
   typedef map_configure_policy type;
 };
 template <class Val2>
-struct select_configure_policy<Val2, typename boost::enable_if<set_leaf_configurable<Val2> >::type> {
+struct select_configure_policy<Val2, typename enable_if<set_leaf_configurable<Val2>::value>::type> {
   typedef set_configure_policy type;
 };
 
@@ -910,7 +908,7 @@ struct conf_expr_base {
   template <class Val>
   bool custom_validate(Val* pval) const {
     if (!validator) return false;
-    boost::any_cast<boost::function<void(Val&)> > (*validator)(*pval);
+    boost::any_cast<function<void(Val&)> > (*validator)(*pval);
     return true;
   }
   template <class Val>
@@ -979,7 +977,7 @@ struct conf_expr_destroy {
   virtual ~conf_expr_destroy() { SHOWIF1(CONFEXPR, 3, "processing sub-config ", what()); }
 };
 
-// template <typename> class Backends
+// template <class> class Backends
 // typedef Backends<Val> Backend;
 template <class Backend, class Action, class Val>
 struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destroy {

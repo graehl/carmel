@@ -37,10 +37,6 @@ inline V1 random_half_open(V1 const& v1, V2 const& v2) {
   return v1 + random01() * (v2 - v1);
 }
 
-struct std_rand {
-  unsigned operator()() const { return std::rand(); }
-};
-
 /// \return on [0, limit) from unigned rand()
 template <class Rand>
 unsigned random_less_than(unsigned limit, Rand rand) {
@@ -95,7 +91,12 @@ inline char random_alphanum() {
 #undef GRAEHL_RANDOM__NLETTERS
 
 inline std::string random_alpha_string(unsigned len) {
-  boost::scoped_array<char> s(new char[len + 1]);
+#if __cplusplus >= 201103L
+    unique_ptr<char[]>
+#else
+      boost::scoped_array<char>
+#endif
+             s(new char[len + 1]);
   char* e = s.get() + len;
   *e = '\0';
   while (s.get() < e--) *e = random_alpha();

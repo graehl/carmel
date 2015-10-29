@@ -60,6 +60,7 @@
 #include <iostream>
 #include <algorithm>
 #include <iterator>
+#include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/append.hpp>
 #ifndef GRAEHL_DEBUG_STRING_TO
 #define GRAEHL_DEBUG_STRING_TO 0
@@ -73,7 +74,6 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #define GRSTRINGTO(x)
 #endif
 #include <utility>
-
 
 #ifndef GRAEHL_USE_FTOA
 #define GRAEHL_USE_FTOA 0
@@ -99,7 +99,6 @@ CLANG_DIAG_IGNORE_NEWER(unused-local-typedef)
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #include <boost/lexical_cast.hpp>
 #endif
-#include <boost/type_traits/remove_reference.hpp>
 #include <graehl/shared/warning_pop.h>
 #include <limits>  //numeric_limits
 #include <string>
@@ -541,7 +540,7 @@ std::string const string_to_sep_pair = "->";
 }
 
 template <class V>
-struct to_string_select<V, typename boost::enable_if<is_pair<V> >::type> {
+struct to_string_select<V, typename enable_if<is_pair<V>::value>::type> {
   static inline std::string to_string(V const& p) {
     return graehl::to_string(p.first) + string_to_sep_pair + graehl::to_string(p.second);
   }
@@ -585,7 +584,7 @@ struct is_shared_ptr<boost::shared_ptr<V> > {
 };
 
 template <class V>
-struct to_string_select<V, typename boost::enable_if<is_optional<V> >::type> {
+struct to_string_select<V, typename enable_if<is_optional<V>::value>::type> {
   static inline std::string to_string(V const& opt) { return opt ? graehl::to_string(*opt) : "none"; }
   template <class Str>
   static inline void string_to(Str const& s, V& v) {
@@ -594,7 +593,7 @@ struct to_string_select<V, typename boost::enable_if<is_optional<V> >::type> {
 };
 
 template <class V>
-struct to_string_select<V, typename boost::enable_if<is_shared_ptr<V> >::type> {
+struct to_string_select<V, typename enable_if<is_shared_ptr<V>::value>::type> {
   static inline std::string to_string(V const& opt) { return opt ? graehl::to_string(*opt) : "none"; }
   template <class Str>
   static inline void string_to(Str const& s, V& v) {
@@ -1038,7 +1037,7 @@ struct append_string_builder_newline : append_string_builder {
 };
 
 template <class V>
-struct to_string_select<V, typename boost::enable_if<is_nonstring_container<V> >::type> {
+struct to_string_select<V, typename enable_if<is_nonstring_container<V>::value>::type> {
   static inline std::string to_string(V const& val) {
     string_builder b;
     b('[');

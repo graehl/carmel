@@ -1,10 +1,3 @@
-/** \file
-
-  simplified (+ _MSC_VER works) implementation of Google Farmhash 'farmhashna'
-  (arch-dependent hashing for hash tables). TODO: detect microarchitecture and
-  use. full FarmHash has more special cases depending on sse4.2 etc that only
-  matter for hashing very long strings (512+ bytes).
-
 // Copyright (c) 2014 Google, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,6 +22,13 @@
 
 //
 // http://code.google.com/p/farmhash/
+/** \file
+
+  simplified (+ _MSC_VER works) implementation of Google Farmhash 'farmhashna'
+  (arch-dependent hashing for hash tables). TODO: detect microarchitecture and
+  use. full FarmHash has more special cases depending on sse4.2 etc that only
+  matter for hashing very long strings (512+ bytes).
+
 
 */
 

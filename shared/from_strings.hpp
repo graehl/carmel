@@ -22,6 +22,7 @@
 #define FROM_STRINGS_JG201266_HPP
 #pragma once
 
+#include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/pointer_traits.hpp>
 #include <graehl/shared/is_container.hpp>
 #include <graehl/shared/container.hpp>
@@ -71,7 +72,7 @@ inline std::string range_to_string(Container const& container, std::string const
 }
 
 template <class Container>
-struct select_from_strings<Container, typename boost::enable_if<is_nonstring_container<Container> >::type> {
+struct select_from_strings<Container, typename enable_if<is_nonstring_container<Container>::value>::type> {
   enum { container = 1 };
   typedef std::vector<std::string> strings_type;
   typedef strings_type string_or_strings;
@@ -82,7 +83,7 @@ struct select_from_strings<Container, typename boost::enable_if<is_nonstring_con
       add(container, string_to<value_type>(*i));
   }
   static inline std::vector<std::string> to_strings(Container const& container) {
-    //TODO: test
+    // TODO: test
     strings_type r;
     for (typename Container::const_iterator i = container.begin(), e = container.end(); i != e; ++i)
       add(r, graehl::to_string(*i));

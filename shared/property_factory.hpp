@@ -23,7 +23,7 @@
   typename F::impl impl(F::init<value>(g)); // - backing which must exist (new or stack) while used. // may or
   may not have shallow-copy semantics.
   typename F::reference r=impl; // actually satisfies copyable-by-val property map semantics - may be
-  boost::reference_wrapper<implementation> or similar. shallow-copy semantics.
+  reference_wrapper<implementation> or similar. shallow-copy semantics.
 
   reminder: boost property maps (namespace usually found by ADL on map type):
 

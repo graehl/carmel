@@ -64,6 +64,7 @@ DECLARE_DBG_LEVEL(GPROGOPT)
 #include <graehl/shared/noreturn.hpp>
 #include <graehl/shared/value_str.hpp>
 #include <graehl/shared/type_string.hpp>
+#include <graehl/shared/type_traits.hpp>
 #include <deque>
 #include <list>
 #include <boost/scoped_array.hpp>
@@ -292,7 +293,7 @@ struct multiple_for_container {
 };
 
 template <class Val>
-struct multiple_for_container<Val, typename boost::enable_if<is_nonstring_container<Val> >::type> {
+struct multiple_for_container<Val, typename enable_if<is_nonstring_container<Val>::value>::type> {
   typedef std::vector<std::string> strings_value;
   typedef boost::program_options::typed_value<strings_value> typed_value;
   typedef option_options<strings_value> options;
@@ -524,7 +525,7 @@ struct printable_options_description : boost::program_options::options_descripti
                     boost::program_options::variable_value const& var, bool only_value = false) const {
     std::string const& name = opt.name();
     if (!only_value) {
-      boost::program_options::value_semantic const * psemantic = opt.od->semantic().get();
+      boost::program_options::value_semantic const* psemantic = opt.od->semantic().get();
       if (psemantic && psemantic->is_required()) o << "#REQUIRED# ";
       if (var.defaulted()) o << "#DEFAULTED# ";
       if (var.empty()) {
@@ -595,7 +596,12 @@ struct printable_options_description : boost::program_options::options_descripti
     using namespace std;
     int n = (int)args.size();
     int argc = n + 1;
-    boost::scoped_array<char*> argv((new char* [argc]));
+#if __cplusplus >= 201103L
+    unique_ptr<char* []>
+#else
+    boost::scoped_array<char*>
+#endif
+    argv((new char*[argc]));
     argv[0] = (char*)argv0.c_str();
     SHOWIF1(GPROGOPT, 1, "parse_options", to_string(args));
     for (int i = 0; i < n; ++i) argv[i + 1] = (char*)(args[i].c_str());

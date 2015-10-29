@@ -89,12 +89,12 @@ template <>
 struct nan_static_assert<true> {};
 
 // is_iec559 i.e. only IEEE 754 float has x != x <=> x is nan
-template <typename T>
+template <class T>
 inline bool is_nan(T x) {
   return GRAEHL_ISNAN(x);
 }
 
-template <typename T>
+template <class T>
 inline bool is_posinf(T x) {
 #if GRAEHL_HAVE_STD_ISINF
   return std::isinf(x);
@@ -103,7 +103,7 @@ inline bool is_posinf(T x) {
 #endif
 }
 
-template <typename T>
+template <class T>
 inline bool is_inf(T x) {
 #if GRAEHL_HAVE_STD_ISINF
   return std::isinf(x);
@@ -112,18 +112,18 @@ inline bool is_inf(T x) {
 #endif
 }
 
-template <typename T>
+template <class T>
 inline bool is_pos_inf(T x) {
   return x == std::numeric_limits<T>::infinity();
 }
 
-template <typename T>
+template <class T>
 inline bool is_neg_inf(T x) {
   return x == -std::numeric_limits<T>::infinity();
 }
 
 // c99 isfinite macro shoudl be much faster
-template <typename T>
+template <class T>
 inline bool is_finite(T x) {
 #if GRAEHL_HAVE_STD_ISINF
   return std::isfinite(x);
@@ -132,12 +132,12 @@ inline bool is_finite(T x) {
 #endif
 }
 
-template <typename T>
+template <class T>
 inline bool neither_finite(T x, T y) {
   return !is_finite(x) && !is_finite(y);
 }
 
-template <typename T>
+template <class T>
 inline bool nonfinite_same_sign(T x, T y) {
   if (is_finite(x)) return false;
   return is_nan(x) ? !is_finite(y) : (is_nan(y) || (is_pos_inf(x) ? is_pos_inf(y) : is_neg_inf(y)));

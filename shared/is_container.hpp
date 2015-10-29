@@ -22,15 +22,12 @@
 #define IS_CONTAINER_JG2012614_HPP
 #pragma once
 
-#include <boost/utility/enable_if.hpp>
-#include <boost/icl/type_traits/is_container.hpp>
+#include <graehl/shared/type_traits.hpp>
 
 namespace graehl {
 
-using boost::icl::is_container;
-
 template <class T>
-struct is_nonstring_container : boost::icl::is_container<T> {};
+struct is_nonstring_container : is_container<T> {};
 
 template <class charT, class Traits>
 struct is_nonstring_container<std::basic_string<charT, Traits> > {
@@ -47,7 +44,7 @@ struct print_maybe_container {
 };
 
 template <class Val>
-struct print_maybe_container<Val, typename boost::enable_if<is_nonstring_container<Val> >::type> {
+struct print_maybe_container<Val, typename enable_if<is_nonstring_container<Val>::value>::type> {
   template <class O>
   void print(O& o, Val const& val, bool bracket = false) {
     bool first = true;

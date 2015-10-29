@@ -13,28 +13,7 @@
 // limitations under the License.
 /** \file
 
-    C++11: N2982 std::pointer_traits<PointerType>::element_type which lives in <memory>
-
-    until then: boost has us covered
-*/
-
-#ifndef POINTER_TRAITS_JG201266_HPP
-#define POINTER_TRAITS_JG201266_HPP
-#pragma once
-
-//
-
-#include <boost/intrusive/pointer_traits.hpp>
-
-namespace graehl {
-using boost::intrusive::pointer_traits;
-/*
-  // for shared_ptr, intrusive_ptr, and regular pointer
-
-  typedef T            element_type;
-  typedef T*           pointer;
-  typedef std::ptrdiff_t difference_type;
-  typedef T &          reference;
+    C++11 or boost: N2982 std::pointer_traits<PointerType>::element_type which lives in <memory>
 
    template <class U> struct rebind_pointer
    {  typedef U* type;  };
@@ -61,9 +40,27 @@ using boost::intrusive::pointer_traits;
    template<class U>
    static pointer dynamic_cast_from(U *uptr)
    {  return dynamic_cast<pointer>(uptr);  }
+
 */
+
+#ifndef POINTER_TRAITS_JG201266_HPP
+#define POINTER_TRAITS_JG201266_HPP
+#pragma once
+
+
+#if __cplusplus >= 201103L
+#include <memory>
+namespace graehl {
+using std::pointer_traits;
+}
+#else
+#include <boost/intrusive/pointer_traits.hpp>
+namespace graehl {
+using boost::intrusive::pointer_traits;
 
 
 }
+
+#endif
 
 #endif

@@ -21,12 +21,10 @@
 #define GRAEHL__SHARED__BIT_ARITHMETIC_HPP
 #pragma once
 
+#include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/int_types.hpp>
 #include <cassert>
 #include <limits>
-#include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_integral.hpp>
-#include <boost/type_traits/remove_cv.hpp>
 #include <limits.h>
 
 namespace graehl {
@@ -39,7 +37,7 @@ inline void mixbits(uint64_t& h) {
 
 // bit i=0 = lsb
 template <class I, class J>
-inline void set(typename boost::enable_if<boost::is_integral<I> >::type& bits, J i) {
+inline void set(typename enable_if<is_integral<I>::value>::type& bits, J i) {
   assert(i < (CHAR_BIT * sizeof(I)));
   I mask = (1 << i);
   bits |= mask;
@@ -51,7 +49,7 @@ inline void set_mask(I& bits, I mask) {
 }
 
 template <class I, class J>
-inline void reset(typename boost::enable_if<boost::is_integral<I> >::type& bits, J i) {
+inline void reset(typename enable_if<is_integral<I>::value>::type& bits, J i) {
   assert(i < (CHAR_BIT * sizeof(I)));
   I mask = (1 << i);
   bits &= ~mask;
@@ -63,7 +61,7 @@ inline void reset_mask(I& bits, I mask) {
 }
 
 template <class I, class J>
-inline void set(typename boost::enable_if<boost::is_integral<I> >::type& bits, J i, bool to) {
+inline void set(typename enable_if<is_integral<I>::value>::type& bits, J i, bool to) {
   assert(i < (CHAR_BIT * sizeof(I)));
   I mask = (1 << i);
   if (to)
@@ -81,7 +79,7 @@ inline void set_mask(I& bits, I mask, bool to) {
 }
 
 template <class I, class J>
-inline bool test(typename boost::enable_if<boost::is_integral<I> >::type bits, J i) {
+inline bool test(typename enable_if<is_integral<I>::value>::type bits, J i) {
   assert(i < (CHAR_BIT * sizeof(I)));
   I mask = (1 << i);
   return mask & bits;
@@ -89,13 +87,13 @@ inline bool test(typename boost::enable_if<boost::is_integral<I> >::type bits, J
 
 // if any of mask
 template <class I>
-inline bool test_mask(typename boost::enable_if<boost::is_integral<I> >::type bits, I mask) {
+inline bool test_mask(typename enable_if<is_integral<I>::value>::type bits, I mask) {
   return mask & bits;
 }
 
 // return true if was already set, then set.
 template <class I, class J>
-inline bool latch(typename boost::enable_if<boost::is_integral<I> >::type& bits, J i) {
+inline bool latch(typename enable_if<is_integral<I>::value>::type& bits, J i) {
   assert(i < (CHAR_BIT * sizeof(I)));
   I mask = (1 << i);
   bool r = mask & bits;
@@ -104,17 +102,16 @@ inline bool latch(typename boost::enable_if<boost::is_integral<I> >::type& bits,
 }
 
 template <class I>
-inline bool latch_mask(typename boost::enable_if<boost::is_integral<I> >::type& bits, I mask) {
+inline bool latch_mask(typename enable_if<is_integral<I>::value>::type& bits, I mask) {
   bool r = mask & bits;
   bits |= mask;
   return r;
 }
 
 template <class I>
-inline bool test_mask_all(typename boost::enable_if<boost::is_integral<I> >::type bits, I mask) {
+inline bool test_mask_all(typename enable_if<is_integral<I>::value>::type bits, I mask) {
   return (mask & bits) == mask;
 }
-
 
 //
 // the reason for the remove_cv stuff is that the compiler wants to turn
@@ -127,18 +124,16 @@ inline bool test_mask_all(typename boost::enable_if<boost::is_integral<I> >::typ
 //
 
 template <class I, class J>
-inline typename boost::enable_if<typename boost::is_integral<I>, typename boost::remove_cv<I>::type>::type
-bit_rotate_left(I x, J k) {
-  typedef typename boost::remove_cv<I>::type IT;
+inline typename enable_if<is_integral<I>::value, typename remove_cv<I>::type>::type bit_rotate_left(I x, J k) {
+  typedef typename remove_cv<I>::type IT;
   assert(k < std::numeric_limits<IT>::digits);
   assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
   return ((x << k) | (x >> (std::numeric_limits<IT>::digits - k)));
 }
 
 template <class I, class J>
-inline typename boost::enable_if<typename boost::is_integral<I>, typename boost::remove_cv<I>::type>::type
-bit_rotate_right(I x, J k) {
-  typedef typename boost::remove_cv<I>::type IT;
+inline typename enable_if<is_integral<I>::value, typename remove_cv<I>::type>::type bit_rotate_right(I x, J k) {
+  typedef typename remove_cv<I>::type IT;
   assert(k < std::numeric_limits<IT>::digits);
   assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
   return ((x << (std::numeric_limits<IT>::digits - k)) | (x >> k));

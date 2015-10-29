@@ -36,6 +36,9 @@ it. any_cast requires a copy constructor (returns by value)
 #include <stdexcept>
 #include <memory>
 #include <boost/any.hpp>
+#if __cplusplus >= 201103L
+#include <utility>
+#endif
 
 namespace graehl {
 
@@ -50,6 +53,13 @@ template <class T>
 void assign_impl(T& t, T const& from) {
   t = from;
 }
+
+#if __cplusplus >= 201103L
+template <class T>
+void assign_impl(T& t, T &&from) {
+  t = std::move(from);
+}
+#endif
 
 template <class T>
 void assign_any_impl(T& t, boost::any const& from) {
@@ -90,6 +100,13 @@ void call_assign(T& t, T const& from) {
   assign_impl(t, from);
 }
 
+#if __cplusplus >= 201103L
+template <class T>
+void call_assign(T& t, T &&from) {
+  assign_impl(t, std::move(from));
+}
+#endif
+
 template <class T>
 void call_assign_any(T& t, boost::any const& from) {
   assign_any_impl(t, from);
@@ -123,10 +140,17 @@ struct assignable {
   static inline void init(T& t) {
     throw assign_traits_exception();
   }
+#if __cplusplus >= 201103L
+  template <class T>
+  static inline void call_assign_impl(T& t, T &&from) {
+    call_assign(t, std::move(from));
+  }
+#else
   template <class T>
   static inline void assign(T& t, T const& from) {
     call_assign(t, from);
   }
+#endif
   template <class T>
   static inline void assign_any(T& t, boost::any const& a) {
     call_assign_any(t, a);
@@ -137,6 +161,11 @@ template <class T, class Enable = void>
 struct assign_traits : assignable {
   static inline void init(T& t) { call_init(t); }
   static inline void assign(T& t, T const& from) { call_assign(t, from); }
+#if __cplusplus >= 201103L
+  void call_assign_impl(T& t, T &&from) {
+    call_assign(t, std::move(from));
+  }
+#endif
   static inline void assign_any(T& t, boost::any const& a) { call_assign_any(t, a); }
 };
 

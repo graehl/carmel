@@ -34,13 +34,15 @@
 #include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/int_types.hpp>
 #include <boost/type_traits/is_integral.hpp>
+#if __cplusplus >= 201103L
+#include <boost/shared_ptr.hpp>
+#endif
 
 namespace graehl {
 
 namespace {
 std::string const unnamed_type = "unnamed type";
 }
-
 
 template <class T>
 std::string type_string_impl(T const&) {
@@ -63,7 +65,7 @@ struct default_type_string {
 
 template <class Int>
 struct default_type_string<Int, true>  // note: this is the is_integral = true specialization
-    {
+{
   static std::string get() { return "integer"; }
 };
 
@@ -131,19 +133,19 @@ std::string type_string() {
 }
 
 template <class T>
-struct type_string_traits<std::map<std::string, T> > {
+struct type_string_traits<std::map<std::string, T>> {
   static std::string get() { return "map to " + type_string(*(T const*)0); }
 };
 
 template <class K, class T>
-struct type_string_traits<std::map<K, T> > {
+struct type_string_traits<std::map<K, T>> {
   static std::string get() {
     return "map from " + type_string(*(K const*)0) + " to " + type_string(*(T const*)0);
   }
 };
 
 template <class K, class T>
-struct type_string_traits<std::pair<K, T> > {
+struct type_string_traits<std::pair<K, T>> {
   static std::string get() {
     return "pair of (" + type_string(*(K const*)0) + ", " + type_string(*(T const*)0) + ")";
   }
@@ -151,13 +153,16 @@ struct type_string_traits<std::pair<K, T> > {
 
 #define GRAEHL_TYPE_STRING_TEMPLATE_1(T, prefix)                                          \
   template <class T1>                                                                     \
-  struct type_string_traits<T<T1> > {                                                     \
+  struct type_string_traits<T<T1>> {                                                      \
     static std::string get() { return std::string(prefix) + type_string(*(T1 const*)0); } \
   };
 
 GRAEHL_TYPE_STRING_TEMPLATE_1(std::vector, "sequence of ")
 GRAEHL_TYPE_STRING_TEMPLATE_1(boost::optional, "optional ")
 GRAEHL_TYPE_STRING_TEMPLATE_1(shared_ptr, "")
+#if __cplusplus >= 201103L
+GRAEHL_TYPE_STRING_TEMPLATE_1(boost::shared_ptr, "")
+#endif
 }
 
 #ifdef GRAEHL_TEST

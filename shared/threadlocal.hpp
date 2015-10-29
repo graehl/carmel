@@ -34,6 +34,11 @@
 #define THREADLOCAL
 #else
 
+#if __cplusplus >= 201103L
+#define THREADLOCAL thread_local
+#define GRAEHL_HAVE_THREADLOCAL 1
+#else
+
 #ifdef _MSC_VER
 // MSVC - see http://msdn.microsoft.com/en-us/library/9w1sdazb.aspx
 /// WARNING: doesn't work with DLLs ... use boost thread specific pointer instead
@@ -59,6 +64,8 @@
 
 #ifndef GRAEHL_HAVE_THREADLOCAL
 #define GRAEHL_HAVE_THREADLOCAL 0
+#endif
+
 #endif
 
 namespace graehl {
