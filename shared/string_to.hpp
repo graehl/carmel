@@ -601,7 +601,12 @@ struct to_string_select<V, typename enable_if<is_shared_ptr<V>::value>::type> {
   }
 };
 
+
+#if __cplusplus >= 201103L
 typedef std::vector<char> string_buffer;
+#else
+typedef std::string string_buffer;
+#endif
 
 struct string_builder : string_buffer {
   template <class Int>

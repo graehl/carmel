@@ -219,6 +219,7 @@ ifndef CXX11
 ABI_CFLAGS = -D_GLIBCXX_USE_CXX11_ABI=0
 endif
 else
+# can't use c++03 or 98 because of va_copy in graehl::C99vsnprintf
 ARCH_FLAGS += -std=c++0x
 ABI_CFLAGS =
 endif

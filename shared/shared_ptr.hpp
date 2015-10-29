@@ -57,7 +57,8 @@ struct unwrap_reference<reference_wrapper<T> > {
 };
 #else
 #define GRAEHL_SHARED_PTR_NS boost
-typedef boost::scoped_ptr unique_ptr;
+template <class T>
+struct unique_ptr : boost::scoped_ptr<T> {};
 using boost::shared_ptr;
 using boost::make_shared;
 using boost::static_pointer_cast;

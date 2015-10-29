@@ -39,6 +39,7 @@
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/string_to.hpp>
 #include <graehl/shared/split.hpp>
+#include <graehl/shared/split_noquote.hpp>
 #include <boost/config.hpp>
 #include <graehl/shared/random.hpp>
 

@@ -70,7 +70,7 @@
 #define va_copy(dst, src) ((dst) = (src))
 #endif
 #else
-// gcc/clang have real va_copy
+// gcc/clang have real va_copy if you use -std=c++0x or later
 #define GRAEHL_va_free_copy(va) va_end(va)
 #endif
 

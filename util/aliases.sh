@@ -45,6 +45,10 @@ chosts="c-ydong c-graehl c-mdreyer gitbuild1 git02"
 chost=c-graehl
 jhost=git02
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1"
+ssub() {
+    ssh c-science
+    #ssh c-dmuntuneau2
+}
 nograehl() {
     for f in *.hpp; do grep -q  'Jonathan Graehl' $f || echo $f; done
 }
@@ -7535,7 +7539,7 @@ buildgraehl() {
         #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
         set -x
         pwd
-        args="BOOST_INCLUDEDIR=$BOOST_INCLUDEDIR LIBDIR+=$BOOST_LIBDIR CMDCXXFLAGS+=-I$BOOST_INCLUDEDIR BOOST_SUFFIX=$BOOST_SUFFIX"
+        args="BOOST_INCLUDEDIR=$BOOST_INCLUDEDIR LIBDIR+=$BOOST_LIBDIR CMDCXXFLAGS+=-I$BOOST_INCLUDEDIR BOOST_SUFFIX=$BOOST_SUFFIX CXX98=$CXX98"
         make $args -j$MAKEPROC
         make $args install
         set +x
@@ -7550,6 +7554,9 @@ buildgraehl() {
 }
 buildcar() {
     TERM=dumb buildgraehl carmel "$@"
+}
+buildcar98() {
+    TERM=dumb CXX98=1 buildgraehl carmel "$@"
 }
 buildfem() {
     TERM=dumb buildgraehl forest-em "$@"

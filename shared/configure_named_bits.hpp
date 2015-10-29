@@ -175,17 +175,12 @@ struct named_bits : hex_int<Int> {
   void append(string_builder& b) const { Names::names().append(*this, b); }
 
   friend void string_to_impl(std::string const& s, named_bits& n) {
-    std::string::size_type d = s.find_first_of(bit_names_delim);
     n = 0;
-    Names parser(n);
-    if (d == std::string::npos) {
-      parser(s);
-    } else {
-      char delim[2];
-      delim[1] = 0;
-      delim[0] = s[d];
-      split_noquote(s, parser, delim);
-    }
+    bit_names<Int> const& names = Names::names();
+    typedef std::vector<std::string> Strings;
+    Strings bits = graehl::split_any(s, bit_names_delim);
+    for(Strings::const_iterator i = bits.begin(), e = bits.end(); i != e; ++i)
+      n |= names[*i];
   }
 
   friend std::string to_string_impl(named_bits const& n) {

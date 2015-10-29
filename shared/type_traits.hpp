@@ -39,7 +39,6 @@
 #endif
 
 namespace graehl {
-using GRAEHL_TYPE_TRAITS_NS::enable_if;
 using GRAEHL_TYPE_TRAITS_NS::remove_cv;
 using GRAEHL_TYPE_TRAITS_NS::remove_reference;
 using GRAEHL_TYPE_TRAITS_NS::remove_pointer;
@@ -53,17 +52,23 @@ using GRAEHL_TYPE_TRAITS_NS::is_pointer;
 using boost::icl::is_container;
 
 #if __cplusplus >= 201103L
+using std::enable_if;
 using std::true_type;
 using std::false_type;
 using std::integral_constant;
-template <bool v>
-using disable_if = enable_if<!v>;
+template <bool B, class T = void>
+using disable_if = enable_if<!B, T>;
 #else
+template <bool B, class T = void>
+struct enable_if : boost::enable_if_c<B, T> {};
+template <bool B, class T = void>
+struct disable_if : boost::enable_if_c<!B, T> {};
 typedef boost::mpl::true_ true_type;
 typedef boost::mpl::false_ false_type;
 using boost::integral_constant;
-using boost::disable_if;
 #endif
+
+
 }
 
 #endif

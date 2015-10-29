@@ -167,7 +167,7 @@ std::pair<typename std::set<T, A, B>::iterator, bool> add(std::set<T, A, B>& v, 
 struct UsetS {
   template <class K>
   struct set {
-    typedef GRAEHL_UNORDERED_NS::unordered_set<K, boost::hash<K>> type;
+    typedef GRAEHL_UNORDERED_NS::unordered_set<K, boost::hash<K> > type;
   };
 };
 
@@ -198,7 +198,7 @@ inline MapS s() {
 struct UmapS {
   template <class K, class V>
   struct map {
-    typedef GRAEHL_UNORDERED_NS::unordered_map<K, V, boost::hash<K>> type;
+    typedef GRAEHL_UNORDERED_NS::unordered_map<K, V, boost::hash<K> > type;
   };
 };
 
@@ -222,27 +222,27 @@ template <class Map>
 struct map_traits;
 
 template <class K, class V>
-struct map_traits<std::map<K, V>> {
+struct map_traits<std::map<K, V> > {
   typedef std::map<K, V> type;
   typedef typename type::iterator find_result_type;
   typedef std::pair<typename type::iterator, bool> insert_result_type;
 };
 
 template <class K, class V>
-inline typename map_traits<std::map<K, V>>::insert_result_type insert(std::map<K, V>& ht, K const& first,
-                                                                      V const& v = V()) {
+inline typename map_traits<std::map<K, V> >::insert_result_type insert(std::map<K, V>& ht, K const& first,
+                                                                       V const& v = V()) {
   return ht.insert(std::pair<K, V>(first, v));
 }
 
 template <class K, class V, class H, class E>
-struct map_traits<GRAEHL_UNORDERED_NS::unordered_map<K, V, H, E>> {
+struct map_traits<GRAEHL_UNORDERED_NS::unordered_map<K, V, H, E> > {
   typedef GRAEHL_UNORDERED_NS::unordered_map<K, V, H, E> type;
   typedef typename type::iterator find_result_type;
   typedef std::pair<typename type::iterator, bool> insert_result_type;
 };
 
 template <class K, class V, class H, class E>
-inline typename map_traits<GRAEHL_UNORDERED_NS::unordered_map<K, V, H, E>>::insert_result_type
+inline typename map_traits<GRAEHL_UNORDERED_NS::unordered_map<K, V, H, E> >::insert_result_type
 insert(GRAEHL_UNORDERED_NS::unordered_map<K, V, H, E>& ht, K const& first, V const& v = V()) {
   return ht.insert(std::pair<K, V>(first, v));
 }
