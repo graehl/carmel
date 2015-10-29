@@ -174,7 +174,7 @@ void chomped_lines_into(Cont& r, std::string const& str) {
     r.push_back(std::string(data + start, *last == '\r' ? last : last + 1));
     start = end + 1;
   }
-  char const* last = data + end - 1;
+  char const* last = data + len - 1;
   r.push_back(std::string(data + start, *last == '\r' ? last : last + 1));
 }
 
