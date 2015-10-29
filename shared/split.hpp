@@ -168,15 +168,14 @@ template <class Cont>
 void chomped_lines_into(Cont& r, std::string const& str) {
   std::string::size_type start = 0, end, len = str.size();
   if (!len) return;
-  char const* begin = str.data();
-  char const* last;
+  char const* data = str.data();
   while ((end = str.find('\n', start)) != std::string::npos) {
-    last = begin + end - 1;
-    r.push_back(std::string(begin + start, *last == '\r' ? --last : last));
+    char const* last = data + end - 1;
+    r.push_back(std::string(data + start, *last == '\r' ? last : last + 1));
     start = end + 1;
   }
-  last = begin + len - 1;
-  r.push_back(std::string(begin + start, *last == '\r' ? --last : last));
+  char const* last = data + end - 1;
+  r.push_back(std::string(data + start, *last == '\r' ? last : last + 1));
 }
 
 template <class Cont>
