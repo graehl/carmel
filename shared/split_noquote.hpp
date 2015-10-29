@@ -1,6 +1,7 @@
 /** \file
 
-    visit string fields (stopping early) of string split on arbitrary any-of-these-chars. optionally throw if string not completely consumed
+    visit string fields (stopping early) of string split on arbitrary any-of-these-chars. optionally throw if
+   string not completely consumed
 */
 
 #ifndef SPLIT_NOQUOTE_GRAEHL_2015_10_29_HPP
@@ -11,6 +12,10 @@
 #include <cstddef>
 #include <graehl/shared/input_error.hpp>
 
+#ifdef GRAEHL_TEST
+#include <graehl/shared/test.hpp>
+#endif
+
 namespace graehl {
 
 /// returns number of fields visited by f such that return of f(field) was true
@@ -19,7 +24,7 @@ inline std::size_t split_noquote(
     std::string const& csv,
     Func f,  // this returns false if we want to stop; we return the number of fields (up to N) for which f
     // returned true.
-    std::string const& delim = ",", // string find allows alternative chars here
+    std::string const& delim = ",",  // can be >1 char (string.find)
     std::size_t N = (std::size_t)-1,  // max number of calls to f (even if more fields exist)
     bool leave_tail = true,  // if N reached and there's more string left, include it in final call to f
     bool must_complete = false  // throw if whole string isn't consumed (meaningless unless leave_tail==false)
@@ -47,6 +52,35 @@ inline std::size_t split_noquote(
   }
   return n;
 }
+
+
+#ifdef GRAEHL_TEST
+char const* split_strs[] = {"", ",a", "", 0};
+char const* seps[] = {";", ";;", ",,", " ", "=,", ",=", " >||||||<", 0};
+char const* split_chrs[] = {";", ",", "a", ";"};
+
+BOOST_AUTO_TEST_CASE(TEST_split_strs) {
+  using namespace std;
+  {
+    std::string str = ";,a;";
+    BOOST_CHECK_EQUAL(split_noquote(str, make_expect_visitor(split_chrs), ""), 4);
+    BOOST_CHECK_EQUAL(split_noquote(str, make_expect_visitor(split_strs), ";"), 3);
+    for (char const** p = seps; *p; ++p) {
+      string s;
+      char const* sep = *p;
+      bool first = true;
+      for (char const** q = split_strs; *q; ++q) {
+        if (first)
+          first = false;
+        else
+          s.append(sep);
+        s.append(*q);
+      }
+      BOOST_CHECK_EQUAL(split_noquote(s, make_expect_visitor(split_strs), sep), 3);
+    }
+  }
+}
+#endif
 
 
 }

@@ -52,18 +52,6 @@
 namespace graehl {
 
 // Containers:
-
-/* todo: could extend like so:
-   template <class A=std::allocator<void> >
-   struct VectorS {
-   template <class T> struct container {
-   typedef dynamic_array<T, typename A::template rebind<T>::type> type;
-   };
-   };
-
-
-*/
-
 struct VectorS {
   template <class T>
   struct container {
@@ -250,38 +238,6 @@ insert(GRAEHL_UNORDERED_NS::unordered_map<K, V, H, E>& ht, K const& first, V con
 template <class type, class find_result_type>
 inline bool found(type const& ht, find_result_type f) {
   return f == ht.end();
-}
-
-// not a template member because we don't want pointer casting (e.g. void *) to change hash val
-template <class P>
-struct ptr_hash {
-  std::size_t operator()(void* p) const { return (P const*)p - (P const*)0; }
-};
-
-static const boost::uint32_t golden_ratio_fraction_32u = 2654435769U;  // (floor of 2^32/golden_ratio)
-inline void uint32_hash_inplace(boost::uint32_t& a) {
-  a *= golden_ratio_fraction_32u;  // mixes the lower bits into the upper bits, reversible
-  a ^= (a >> 16);  // gets some of the goodness back into the lower bits, reversible
-}
-
-inline boost::uint32_t uint32_hash_fast(boost::uint32_t a) {
-  uint32_hash_inplace(a);
-  return a;
-}
-
-inline std::size_t
-hash_rotate_left(std::size_t x)  // there is probably an ASM instruction for this; does -O3 find it?
-{
-  return x << 1 | x >> ((sizeof(std::size_t)) * CHAR_BIT - 1);
-}
-
-inline void mix_hash_inplace(std::size_t& a, std::size_t b) {
-  a ^= hash_rotate_left(b);
-}
-
-inline std::size_t mix_hash_fast(std::size_t a, std::size_t b) {
-  a ^= hash_rotate_left(b);
-  return a;
 }
 
 

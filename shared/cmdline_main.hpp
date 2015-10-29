@@ -78,6 +78,7 @@
 #include <graehl/shared/debugprint.hpp>
 #endif
 #include <iostream>
+#include <graehl/shared/int_types.hpp>
 
 #define INT_MAIN(main_class)         \
   int main(int argc, char* argv[]) { \
@@ -259,8 +260,7 @@ struct main {
   std::unique_ptr<teebuf> teebufptr;
   std::unique_ptr<std::ostream> teestreamptr;
 #endif
-
-  boost::uint32_t random_seed;
+  uint32_t random_seed;
 
   int help_exitcode;
 

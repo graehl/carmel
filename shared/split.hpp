@@ -25,11 +25,6 @@
 #include <vector>
 #include <utility>
 
-#ifdef GRAEHL_TEST
-#include <graehl/shared/test.hpp>
-#include <cstring>
-#endif
-
 namespace graehl {
 
 template <class Strings, class Sep>
@@ -112,9 +107,14 @@ void split_into(Cont& r, std::string const& str, Delimiter const& delimiter) {
   r.push_back(std::string(str, start));
 }
 
-template <class Cont>
-void split_into(Cont& r, std::string const& str) {
-  split_into(r, str, ',');
+template <class Visit, class Delimiter>
+void split_visit(Visit const& f, std::string const& str, Delimiter const& delimiter) {
+  std::string::size_type start = 0, end;
+  while ((end = str.find(delimiter, start)) != std::string::npos) {
+    f(std::string(str, start, end - start));
+    start = end + 1;
+  }
+  f(std::string(str, start));
 }
 
 template <class Cont, class Chars>
@@ -126,6 +126,22 @@ void split_into_any(Cont& r, std::string const& str, Chars const& chars) {
   }
   r.push_back(std::string(str, start));
 }
+
+template <class Visit, class Chars>
+void split_visit_any(Visit const& f, std::string const& str, Chars const& chars) {
+  std::string::size_type start = 0, end;
+  while ((end = str.find_first_of(chars, start)) != std::string::npos) {
+    f(std::string(str, start, end - start));
+    start = end + 1;
+  }
+  f(std::string(str, start));
+}
+
+template <class Cont>
+void split_into(Cont& r, std::string const& str) {
+  split_into(r, str, ',');
+}
+
 
 template <class Delimiter>
 inline std::vector<std::string> split(std::string const& str, Delimiter const& delim) {
@@ -188,35 +204,6 @@ inline std::vector<std::string> chomped_lines(std::istream& in) {
   chomped_lines_into(r, in);
   return r;
 }
-
-
-#ifdef GRAEHL_TEST
-char const* split_strs[] = {"", ",a", "", 0};
-char const* seps[] = {";", ";;", ",,", " ", "=,", ",=", " >||||||<", 0};
-char const* split_chrs[] = {";", ",", "a", ";"};
-
-BOOST_AUTO_TEST_CASE(TEST_split_strs) {
-  using namespace std;
-  {
-    std::string str = ";,a;";
-    BOOST_CHECK_EQUAL(split_noquote(str, make_expect_visitor(split_chrs), ""), 4);
-    BOOST_CHECK_EQUAL(split_noquote(str, make_expect_visitor(split_strs), ";"), 3);
-    for (char const** p = seps; *p; ++p) {
-      string s;
-      char const* sep = *p;
-      bool first = true;
-      for (char const** q = split_strs; *q; ++q) {
-        if (first)
-          first = false;
-        else
-          s.append(sep);
-        s.append(*q);
-      }
-      BOOST_CHECK_EQUAL(split_noquote(s, make_expect_visitor(split_strs), sep), 3);
-    }
-  }
-}
-#endif
 
 
 }

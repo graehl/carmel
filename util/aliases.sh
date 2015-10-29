@@ -45,6 +45,17 @@ chosts="c-ydong c-graehl c-mdreyer gitbuild1 git02"
 chost=c-graehl
 jhost=git02
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1"
+ins() {
+    (set -e
+     local t=${1?in [1] sec, [2...]}
+     shift
+     echo2 "in $t sec, $*"
+     sleep $t
+     shift
+     echo2 "$ $*"
+     "$@"
+    )
+}
 ssub() {
     ssh c-science
     #ssh c-dmuntuneau2

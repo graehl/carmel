@@ -21,17 +21,45 @@
 #pragma once
 
 #include <graehl/shared/containers.hpp>
-
+#include <graehl/shared/int_types.hpp>
 #include <vector>
-#include <cstddef>
 
 namespace graehl {
 
+
+// not a template member because we don't want pointer casting (e.g. void *) to change hash val
+template <class P>
+struct ptr_hash {
+  std::size_t operator()(void* p) const { return (P const*)p - (P const*)0; }
+};
+
+GRAEHL_CONSTEXPR uint32_t golden_ratio_fraction_32u = 2654435769U;  // (floor of 2^32/golden_ratio)
+
+inline void uint32_hash_inplace(uint32_t& a) {
+  a *= golden_ratio_fraction_32u;  // mixes the lower bits into the upper bits
+  a ^= (a >> 16);  // gets some of the goodness back into the lower bits
+}
+
+inline uint32_t uint32_hash_fast(uint32_t a) {
+  uint32_hash_inplace(a);
+  return a;
+}
+
+inline void mix_hash_inplace(uint64_t& a, uint64_t b) {
+  a ^= bit_rotate_left(b, 1);
+}
+
+inline uint64_t mix_hash_fast(uint64_t a, uint64_t b) {
+  a ^= bit_rotate_left(b, 1);
+  return a;
+}
+
+GRAEHL_CONSTEXPR uint64_t prime_64bit = GRAEHL_BIG_CONSTANT(0x2127599bf4325c37);
 /// 32 bit result. use this for collections of smaller than 4 billion items.
 struct int_hash_32 {
   unsigned operator()(std::size_t x) const {
     // (a large odd number - invertible)
-    return (x * 0x2127599bf4325c37ULL) >> 32;
+    return (x * prime_64bit) >> 32;
     // this way we get at least some of the msb into the lsbs (and of course
     // lsbs toward the msbs. i don't care that the top 24 bits are 0. if you
     // care, you can add x to the result. no hash table will be that large
@@ -43,7 +71,7 @@ struct int_hash_32 {
 struct int_hash {
   std::size_t operator()(std::size_t h) const {
     h ^= h >> 23;
-    h *= 0x2127599bf4325c37ULL;
+    h *= prime_64bit;
     h ^= h >> 47;
     return h;
   }
