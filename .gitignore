@@ -9,3 +9,4 @@ trash.*
 carmel/test/logs
 carmel/test/span.spell.trained2
 openfst
+util/reveal.js
