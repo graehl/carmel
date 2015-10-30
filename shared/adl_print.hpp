@@ -1,3 +1,16 @@
+// Copyright 2014 Jonathan Graehl - http://graehl.org/
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 /** \file
 
      several levels of indirection to ensure we can find the free 'o << val' or
@@ -41,18 +54,30 @@
 #define GRAEHL_ADL_PRINTER_MOVE_OVERLOAD 1
 #endif
 
-/// this namespace will contain no user types so should be the last resort
+/// this namespace will contain no user types so should be the last resort. but
+/// that's not how ADL works (priority ignores namespace, using, ADL), so
+/// they're made worse matches (lower priority) if possible.
 namespace adl_default {
-template <class O, class V>
-typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type operator<<(O&, V const&);
-template <class O, class V, class S>
-typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type print(O&, V const&, S const&);
+
+/// careful to avoid noncontainers (ADL doesn't help w/ ambiguity)
+template <class O, class V, class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
+O & operator<<(O& o, V const& v);
+
+#if GRAEHL_ADL_PRINT_CONTAINER3
+template <class O, class V, class S, class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
+void print(O& o, V const& v, S const& s);
+#endif
+
 template <class O, class A, class B>
 void operator<<(O&, std::pair<A, B> const&);
 template <class O, class A, class B, class S>
 void print(O&, std::pair<A, B> const&, S const&);
+
+// TODO: alternatively: make state-sequence-print decay to no state after 1 go (i.e. have a depth template
+// arg)?
+// TODO: is_fundamental?
 template <class O, class V, class S>
-void print(O& o, V const& v, S const&) {
+typename graehl::enable_if<!graehl::is_class<V>::value>::type print(O& o, V const& v, S const&) {
   o << v;
 }
 }
@@ -135,8 +160,8 @@ void adl_print(O& o, V const& v, S const& s) {
 }
 
 namespace adl_default {
-template <class O, class V>
-typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type operator<<(O& o, V const& v) {
+template <class O, class V, class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
+O & operator<<(O& o, V const& v) {
   bool first = true;
   for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) {
     if (first)
@@ -145,9 +170,12 @@ typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type opera
       o << ' ';
     adl::adl_print(o, *i);
   }
+  return o;
 }
-template <class O, class V, class S>
-typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type print(O& o, V const& v, S const& s) {
+
+#if GRAEHL_ADL_PRINT_CONTAINER3
+template <class O, class V, class S, class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
+void print(O& o, V const& v, S const& s) {
   bool first = true;
   for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) {
     if (first)
@@ -157,6 +185,7 @@ typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type print
     adl::adl_print(o, *i, s);
   }
 }
+#endif
 
 template <class O, class A, class B>
 void operator<<(O& o, std::pair<A, B> const& v) {

@@ -56,7 +56,21 @@ using GRAEHL_TYPE_TRAITS_NS::is_base_of;
 using boost::icl::is_container;
 
 #if __cplusplus >= 201103L
+template <class T>
+struct identity { using type = T; };
+template <class T>
+using not_deducible = typename identity<T>::type;
+template <bool B, typename...>
+struct dependent_bool_type : std::integral_constant<bool, B> {};
+/// usage: static_assert(Bool<false, T>::value, "T concept error msg");
+template <bool B, typename... T>
+using Bool = typename dependent_bool_type<B, T...>::type;
+
 using std::enable_if;
+template <class A, class B>
+using disable_if_same_or_derived =
+    typename enable_if<!is_base_of<A, typename remove_reference<B>::type>::value>::type;
+
 using std::true_type;
 using std::false_type;
 using std::integral_constant;
@@ -71,10 +85,6 @@ typedef boost::mpl::true_ true_type;
 typedef boost::mpl::false_ false_type;
 using boost::integral_constant;
 #endif
-
-template <class A, class B>
-using disable_if_same_or_derived =
-    typename enable_if<!is_base_of<A, typename remove_reference<B>::type>::value>::type;
 
 
 }

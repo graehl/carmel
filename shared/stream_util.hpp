@@ -37,7 +37,7 @@
 
 #if GRAEHL_BUFFER_STDOUT_NON_TTY
 #include <graehl/shared/large_streambuf.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 #endif
 
 #include <iomanip>
@@ -79,7 +79,7 @@ inline void unsync_cout() {
 */
 struct use_fast_cout {
 #if GRAEHL_BUFFER_STDOUT_NON_TTY
-  boost::scoped_ptr<bigger_streambuf> pbuf;
+  unique_ptr<bigger_streambuf> pbuf;
 #endif
   use_fast_cout(std::size_t bufsize = 256 * 1024, bool no_buffer_for_terminal = true) {
     unsync_stdio();
