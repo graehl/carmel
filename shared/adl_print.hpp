@@ -40,7 +40,13 @@
 #define GRAEHL_ADL_PRINTER_MOVE_OVERLOAD 1
 #endif
 
-namespace graehl {}
+/// this namespace will contain no user types so should be the last resort
+namespace adl_default {
+template <class O, class V, class S>
+void print(O &o, V const& v, S const&) {
+  o << v;
+}
+}
 
 /// several levels of indirection to ensure we can find the free 'o << val' or
 /// 'print(o, val, state)' member in the same namespace as val (or o or state)
@@ -55,12 +61,11 @@ template <class V, class Enable = void>
 struct Print {
   template <class O>
   static void call(O& o, V const& v) {
-    using namespace graehl;
     o << v;
   }
   template <class O, class S>
   static void call(O& o, V const& v, S const& s) {
-    using namespace graehl;
+    using namespace adl_default;
     print(o, v, s);
   }
 #if 0
@@ -99,23 +104,23 @@ struct Print<V, typename graehl::enable_if<graehl::is_nonstring_container<V>::va
   template <class O>
   static void call(O& o, V const& v) {
     bool first = true;
-    for (W const& x : v) {
+    for (W const& w : v) {
       if (first)
         first = false;
       else
         o << ' ';
-      adl::adl_print(o, v);
+      Print<W>::call(o, w);
     }
   }
   template <class O, class S>
   static void call(O& o, V const& v, S const& s) {
     bool first = true;
-    for (W const& x : v) {
+    for (W const& w : v) {
       if (first)
         first = false;
       else
         o << ' ';
-      adl::adl_print(o, v, s);
+      Print<W>::call(o, w, s);
     }
   }
 };
