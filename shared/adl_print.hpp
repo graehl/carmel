@@ -30,6 +30,7 @@
 #include <string>
 #include <utility>
 #include <iostream>
+#include <sstream>
 #include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/is_container.hpp>
 
@@ -42,8 +43,16 @@
 
 /// this namespace will contain no user types so should be the last resort
 namespace adl_default {
+template <class O, class V>
+typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type operator<<(O&, V const&);
 template <class O, class V, class S>
-void print(O &o, V const& v, S const&) {
+typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type print(O&, V const&, S const&);
+template <class O, class A, class B>
+void operator<<(O&, std::pair<A, B> const&);
+template <class O, class A, class B, class S>
+void print(O&, std::pair<A, B> const&, S const&);
+template <class O, class V, class S>
+void print(O& o, V const& v, S const&) {
   o << v;
 }
 }
@@ -61,6 +70,7 @@ template <class V, class Enable = void>
 struct Print {
   template <class O>
   static void call(O& o, V const& v) {
+    using namespace adl_default;
     o << v;
   }
   template <class O, class S>
@@ -68,15 +78,22 @@ struct Print {
     using namespace adl_default;
     print(o, v, s);
   }
+
+// TODO: maybe. need to test in C++98, msvc. for now use adl_to_string.hpp
 #if 0
-  //TODO: maybe. need to test in C++98, msvc. for now use adl_to_string.hpp
-  std::string str(V const& v) {
+  static std::string str(V const& v) {
+#if 0
     std::string r;
     call(r, v);
     return r;
+#else
+    std::stringstream r;
+    call((std::ostream&)r, v);
+    return r.str();
+#endif
   }
   template <class S>
-  std::string str(V const& v, S &s) {
+  static std::string str(V const& v, S& s) {
     std::string r;
     call(r, v, s);
     return r;
@@ -93,54 +110,18 @@ struct Print<std::string, void> {
   }
   template <class O, class S>
   static void call(O& o, V const& v, S const& s) {
-    using namespace graehl;
+    using namespace adl_default;
     print(o, v, s);
   }
-};
-
-template <class V>
-struct Print<V, typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type> {
-  typedef typename V::value_type W;
-  template <class O>
-  static void call(O& o, V const& v) {
-    bool first = true;
-    for (W const& w : v) {
-      if (first)
-        first = false;
-      else
-        o << ' ';
-      Print<W>::call(o, w);
-    }
+  static std::string const& str(V const& v) { return v; }
+#if 0
+  template <class S>
+  static std::string str(V const& v, S& s) {
+    std::string r;
+    call(r, v, s);
+    return r;
   }
-  template <class O, class S>
-  static void call(O& o, V const& v, S const& s) {
-    bool first = true;
-    for (W const& w : v) {
-      if (first)
-        first = false;
-      else
-        o << ' ';
-      Print<W>::call(o, w, s);
-    }
-  }
-};
-
-template <class A, class B>
-struct Print<std::pair<A, B>, void> {
-  static const char sep = '=';
-  typedef std::pair<A, B> V;
-  template <class O>
-  static void call(O& o, V const& p) {
-    adl::adl_print(o, p.first);
-    o << sep;
-    adl::adl_print(o, p.second);
-  }
-  template <class O, class S>
-  static void call(O& o, V const& p, S const& s) {
-    adl::adl_print(o, p.first, s);
-    o << sep;
-    adl::adl_print(o, p.second, s);
-  }
+#endif
 };
 
 template <class O, class V>
@@ -152,6 +133,45 @@ void adl_print(O& o, V const& v, S const& s) {
   Print<V>::call(o, v, s);
 }
 }
+
+namespace adl_default {
+template <class O, class V>
+typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type operator<<(O& o, V const& v) {
+  bool first = true;
+  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) {
+    if (first)
+      first = false;
+    else
+      o << ' ';
+    adl::adl_print(o, *i);
+  }
+}
+template <class O, class V, class S>
+typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type print(O& o, V const& v, S const& s) {
+  bool first = true;
+  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) {
+    if (first)
+      first = false;
+    else
+      o << ' ';
+    adl::adl_print(o, *i, s);
+  }
+}
+
+template <class O, class A, class B>
+void operator<<(O& o, std::pair<A, B> const& v) {
+  adl::adl_print(o, v.first);
+  o << '=';
+  adl::adl_print(o, v.second);
+}
+template <class O, class A, class B, class S>
+void print(O& o, std::pair<A, B> const& v, S const& s) {
+  adl::adl_print(o, v.first, s);
+  o << '=';
+  adl::adl_print(o, v.second, s);
+}
+}
+
 
 namespace graehl {
 
@@ -313,7 +333,7 @@ struct AdlPrinterType<V, false_type> {
   typedef AdlPrinterMove<V> type;
 };
 
-template <class V, class S, class Lvalue = true_type >
+template <class V, class S, class Lvalue = true_type>
 struct PrinterType {
   typedef Printer<V const&, S> type;
 };
@@ -324,13 +344,13 @@ struct PrinterType<V, S, false_type> {
 };
 
 template <class V>
-typename AdlPrinterType<V, is_lvalue_reference<V>>::type printer(V&& v) {
+typename AdlPrinterType<V, is_lvalue_reference<V> >::type printer(V&& v) {
   return std::forward<V>(v);
 }
 
 template <class V, class S>
-typename PrinterType<V, S, is_lvalue_reference<V>>::type printer(V&& v, S const& s) {
-  return typename PrinterType<V, S, is_lvalue_reference<V>>::type(std::forward<V>(v), s);
+typename PrinterType<V, S, is_lvalue_reference<V> >::type printer(V&& v, S const& s) {
+  return typename PrinterType<V, S, is_lvalue_reference<V> >::type(std::forward<V>(v), s);
 }
 #endif
 
