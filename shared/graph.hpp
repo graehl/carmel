@@ -66,11 +66,12 @@ struct graph_object<G, vertex_tag> {
 template <class Tag, class G, class E, class F>
 void visit(Tag t, G& g, F f);
 
+#if 0
 template <class Tag, class G, class E>
 inline typename graph_object<G, Tag>::iterator_pair begin_end(Tag t, G& g) {
   return typename graph_object<G, Tag>::iterator_pair(boost::begin(t, g), boost::end(t, g));
 }
-
+#endif
 template <class Tag, class G, class E>
 inline typename graph_object<G, Tag>::iterator_pair begin_end(vertex_tag, G& g) {
   return vertices(g);

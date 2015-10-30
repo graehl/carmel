@@ -14,7 +14,9 @@
 /** \file
 
     boost type_traits for 'is a container' (for printing containers, for
-    e.g. show.hpp debug prints)
+    e.g. show.hpp debug prints) possibly excluding std::string (which you
+    usually want to print normally). does not exclude char* or other
+    string-likes.
 */
 
 

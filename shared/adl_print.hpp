@@ -260,12 +260,6 @@ typename enable_if<is_container<std::ostream>::value, O>::type& operator<<(O& ou
   return out;
 }
 
-/// warning: captures reference.
-template <class V>
-AdlPrinter<V> printer(V const& v) {
-  return v;
-}
-
 #if __cplusplus >= 201103L && GRAEHL_ADL_PRINTER_MOVE_OVERLOAD
 template <class V, class S>
 struct PrinterMove {
@@ -296,10 +290,6 @@ struct AdlPrinterMove {
   AdlPrinterMove(V&& v) : v(std::forward<V>(v)) {}
 };
 
-template <class V>
-AdlPrinterMove<V> printer(V&& v) {
-  return AdlPrinterMove<V>(std::forward<V>(v));
-}
 
 /// it's important to return ostream and not the more specific stream.
 template <class V>
@@ -316,7 +306,6 @@ typename enable_if<is_container<std::ostream>::value, O>::type& operator<<(O& ou
   ::adl::Print<V>::call(out, x.v);
   return out;
 }
-
 
 #if 0
 // is_lvalue_reference
@@ -350,6 +339,12 @@ template <class V, class S>
 auto printer(V&& v, S const& s) -> decltype(printer_impl(std::forward<V>(v), s, is_lvalue_reference<V>())) {
   return printer_impl(std::forward<V>(v), s, is_lvalue_reference<V>());
 }
+
+template <class V>
+AdlPrinterMove<V> printer(V&& v) {
+  return AdlPrinterMove<V>(std::forward<V>(v));
+}
+
 #else
 
 template <class V, class Lvalue = true_type>
@@ -381,8 +376,15 @@ template <class V, class S>
 typename PrinterType<V, S, is_lvalue_reference<V> >::type printer(V&& v, S const& s) {
   return typename PrinterType<V, S, is_lvalue_reference<V> >::type(std::forward<V>(v), s);
 }
+
 #endif
 
+#else
+/// warning: captures reference.
+template <class V>
+AdlPrinter<V> printer(V const& v) {
+  return v;
+}
 #endif
 
 
