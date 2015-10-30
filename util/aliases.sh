@@ -5420,7 +5420,7 @@ gitlogp() {
     git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -p -$1
 }
 gitlog() {
-    PAGER=cat git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -n ${1:-30}
+    PAGER=cat git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -n ${1:-20}
 }
 gitlog1() {
     gitlog 1
@@ -8978,7 +8978,7 @@ if ! [[ $MAKEPROC ]] ; then
     if [[ $lwarch = Apple ]] ; then
         MAKEPROC=2
     elif [[ $HOST = c-graehl ]] ; then
-        MAKEPROC=17
+        MAKEPROC=13
     else
         MAKEPROC=11
     fi

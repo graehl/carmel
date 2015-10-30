@@ -26,6 +26,7 @@
 #include <graehl/shared/pointer_traits.hpp>
 #include <graehl/shared/is_container.hpp>
 #include <graehl/shared/container.hpp>
+#include <graehl/shared/string_buffer.hpp>
 #include <graehl/shared/string_to.hpp>
 #include <stdexcept>
 
@@ -57,7 +58,7 @@ struct select_from_strings {
 template <class Container>
 inline std::string range_to_string(Container const& container, std::string const& sep_each = " ",
                                    std::string const& pre_each = "") {
-  std::vector<char> o;
+  string_buffer o;
   o.reserve(20 * container.size());
   bool first = true;
   for (typename Container::const_iterator i = container.begin(), e = container.end(); i != e; ++i) {
@@ -68,7 +69,7 @@ inline std::string range_to_string(Container const& container, std::string const
     append(o, pre_each);
     append(o, graehl::to_string(*i));
   }
-  return std::string(o.begin(), o.end());
+  return str(o);
 }
 
 template <class Container>

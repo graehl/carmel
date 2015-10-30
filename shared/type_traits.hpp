@@ -30,6 +30,8 @@
 #include <boost/type_traits/is_integral.hpp>
 #include <boost/type_traits/remove_cv.hpp>
 #include <boost/type_traits/is_fundamental.hpp>
+#include <boost/type_traits/is_base_of.hpp>
+#include <boost/type_traits/is_lvalue_reference.hpp>
 #include <boost/type_traits/is_class.hpp>
 #include <boost/type_traits/is_pointer.hpp>
 #include <boost/type_traits/remove_reference.hpp>
@@ -43,12 +45,14 @@ using GRAEHL_TYPE_TRAITS_NS::remove_cv;
 using GRAEHL_TYPE_TRAITS_NS::remove_reference;
 using GRAEHL_TYPE_TRAITS_NS::remove_pointer;
 
+using GRAEHL_TYPE_TRAITS_NS::is_lvalue_reference;
 using GRAEHL_TYPE_TRAITS_NS::is_integral;
 using GRAEHL_TYPE_TRAITS_NS::is_fundamental;
 using GRAEHL_TYPE_TRAITS_NS::is_arithmetic;
 using GRAEHL_TYPE_TRAITS_NS::is_enum;
 using GRAEHL_TYPE_TRAITS_NS::is_class;
 using GRAEHL_TYPE_TRAITS_NS::is_pointer;
+using GRAEHL_TYPE_TRAITS_NS::is_base_of;
 using boost::icl::is_container;
 
 #if __cplusplus >= 201103L
@@ -67,6 +71,10 @@ typedef boost::mpl::true_ true_type;
 typedef boost::mpl::false_ false_type;
 using boost::integral_constant;
 #endif
+
+template <class A, class B>
+using disable_if_same_or_derived =
+    typename enable_if<!is_base_of<A, typename remove_reference<B>::type>::value>::type;
 
 
 }

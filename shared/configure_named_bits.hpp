@@ -161,7 +161,7 @@ struct named_bits : hex_int<Int> {
 
   typedef parse_bit_names<NameList, Int> Names;
 
-  std::string type_string_impl(named_bits const&) {
+  friend inline std::string type_string_impl(named_bits const&) {
     return Names::names().usage() + " or 0xfaceb00c hex or decimal";
   }
 

@@ -46,7 +46,6 @@
 
 #include <iostream>
 
-
 #define TO_OSTREAM_PRINT                                                                                  \
   template <class Char, class CharTraits>                                                                 \
   friend inline std::basic_ostream<Char, CharTraits>& operator<<(std::basic_ostream<Char, CharTraits>& o, \
@@ -79,25 +78,5 @@
     return i;                                                                                                \
   }
 
-namespace graehl {
-template <class Val, class State>
-struct printer {
-  Val v;
-  State s;
-  printer(Val v, State s) : v(v), s(s) {}
-  friend inline std::ostream& operator<<(std::ostream& o, printer<Val, State> const& x) {
-    // must be found by ADL - note: typedefs won't help
-    print(o, x.v, x.s);
-    return o;
-  }
-};
-
-template <class Val, class State>
-printer<Val const&, State const&> print(Val const& v, State const& s) {
-  return printer<Val const&, State const&>(v, s);
-}
-
-
-}
 
 #endif

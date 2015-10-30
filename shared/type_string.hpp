@@ -11,10 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-/** \file type names for end users. override free function type_string_impl(T) in T's namespace to define T's
+/** \file type names for end users. override free function type_string_impl(T const&) in T's namespace to
+   define T's
    name
 
-   or, override type_string_traits<T>::get() if adding a method to the namespace of T isn't an option
+   or, override adl::TypeString<T>::get() if adding a method to the namespace of T isn't an option
 
    note: type_string returns empty string if nobody specifies a nice name. type_name will return "unnamed
    type" instead.
@@ -29,70 +30,74 @@
 
 #include <vector>
 #include <map>
+#include <set>
 #include <string>
 #include <boost/optional.hpp>
+#include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/int_types.hpp>
+#include <graehl/shared/unordered.hpp>
 #include <boost/type_traits/is_integral.hpp>
-#if __cplusplus >= 201103L
-#include <boost/shared_ptr.hpp>
-#endif
+
 
 namespace graehl {
-
-namespace {
-std::string const unnamed_type = "unnamed type";
-}
-
 template <class T>
 std::string type_string_impl(T const&) {
   return std::string();
 }
+}
 
 namespace adl {
-template <class T>
-std::string call_type_string_impl(T const& t) {
-  return type_string_impl(t);
-}
-}
-
-template <class T, bool = boost::is_integral<T>::value>
-struct default_type_string {
-  // is_integral = false. you can override the type_string free function, or, in case you want to use some
-  // template specialization, override type_string_traits
-  static std::string get() { return adl::call_type_string_impl(*(T const*)0); }
+template <class T, class Enable = void>
+struct TypeString {
+  static std::string get() {
+    using namespace graehl;
+    return type_string_impl(*(T*)0);
+  }
 };
 
-template <class Int>
-struct default_type_string<Int, true>  // note: this is the is_integral = true specialization
-{
+template <class T>
+struct TypeString<T, typename graehl::enable_if<graehl::is_integral<T>::value>::type> {
   static std::string get() { return "integer"; }
 };
 
 template <class T>
-struct type_string_traits {
-  static std::string get() { return default_type_string<T>::get(); }
+struct TypeString<std::map<std::string, T> > {
+  static std::string get() { return "map to " + TypeString<T>::get(); }
 };
 
-template <class T>
-std::string type_string(T const&) {
-  return type_string_traits<T>::get();
-}
+template <class K, class T>
+struct TypeString<std::map<K, T> > {
+  static std::string get() { return "map from " + TypeString<K>::get() + " to " + TypeString<T>::get(); }
+};
 
-template <class T>
-bool no_type_string(T const& t) {
-  return type_string(t).empty();
-}
+template <class K, class T>
+struct TypeString<graehl::unordered_map<K, T> > {
+  static std::string get() { return "map from " + TypeString<K>::get() + " to " + TypeString<T>::get(); }
+};
 
-template <class T>
-std::string type_name(T const& t) {
-  std::string const& n = type_string(t);
-  return n.empty() ? unnamed_type : n;
-}
+template <class K, class T>
+struct TypeString<std::pair<K, T> > {
+  static std::string get() {
+    return "pair of (" + TypeString<K>::get() + ", " + TypeString<T>::get() + ")";
+  }
+};
+
+#define GRAEHL_TYPE_STRING_TEMPLATE_1(TT, prefix)                                   \
+  template <class T>                                                                \
+  struct TypeString<TT<T> > {                                                       \
+    static std::string get() { return std::string(prefix) + TypeString<T>::get(); } \
+  };
+
+GRAEHL_TYPE_STRING_TEMPLATE_1(std::vector, "sequence of ")
+GRAEHL_TYPE_STRING_TEMPLATE_1(std::set, "set of ")
+GRAEHL_TYPE_STRING_TEMPLATE_1(graehl::unordered_set, "set of ")
+GRAEHL_TYPE_STRING_TEMPLATE_1(boost::optional, "optional ")
+GRAEHL_TYPE_STRING_TEMPLATE_1(graehl::shared_ptr, "")
 
 #define GRAEHL_PRIMITIVE_TYPE_STRING(T, name) \
   template <>                                 \
-  struct type_string_traits<T> {              \
+  struct TypeString<T, void> {                \
     static std::string get() { return name; } \
   };
 
@@ -125,45 +130,42 @@ GRAEHL_PRIMITIVE_TYPE_STRING(unsigned long, "large non-negative integer");
 GRAEHL_PRIMITIVE_TYPE_STRING(float, "real number");
 GRAEHL_PRIMITIVE_TYPE_STRING(double, "double-precision real number");
 GRAEHL_PRIMITIVE_TYPE_STRING(long double, "long-double-precision real number");
+}
 
+
+namespace graehl {
+
+template <class T>
+std::string type_string(T const& t) {
+  return adl::TypeString<T>::get();
+}
 
 template <class T>
 std::string type_string() {
-  return graehl::type_string(*(T const*)0);
+  return adl::TypeString<T>::get();
 }
 
 template <class T>
-struct type_string_traits<std::map<std::string, T>> {
-  static std::string get() { return "map to " + type_string(*(T const*)0); }
-};
-
-template <class K, class T>
-struct type_string_traits<std::map<K, T>> {
-  static std::string get() {
-    return "map from " + type_string(*(K const*)0) + " to " + type_string(*(T const*)0);
-  }
-};
-
-template <class K, class T>
-struct type_string_traits<std::pair<K, T>> {
-  static std::string get() {
-    return "pair of (" + type_string(*(K const*)0) + ", " + type_string(*(T const*)0) + ")";
-  }
-};
-
-#define GRAEHL_TYPE_STRING_TEMPLATE_1(T, prefix)                                          \
-  template <class T1>                                                                     \
-  struct type_string_traits<T<T1>> {                                                      \
-    static std::string get() { return std::string(prefix) + type_string(*(T1 const*)0); } \
-  };
-
-GRAEHL_TYPE_STRING_TEMPLATE_1(std::vector, "sequence of ")
-GRAEHL_TYPE_STRING_TEMPLATE_1(boost::optional, "optional ")
-GRAEHL_TYPE_STRING_TEMPLATE_1(shared_ptr, "")
-#if __cplusplus >= 201103L
-GRAEHL_TYPE_STRING_TEMPLATE_1(boost::shared_ptr, "")
-#endif
+bool no_type_string(T const& t) {
+  return adl::TypeString<T>::get().empty();
 }
+
+template <class T>
+bool no_type_string() {
+  return adl::TypeString<T>::get().empty();
+}
+
+namespace {
+std::string const unnamed_type = "unnamed type";
+}
+
+template <class T>
+std::string type_name(T const& t) {
+  std::string const& n = type_string(t);
+  return n.empty() ? unnamed_type : n;
+}
+}
+
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
