@@ -167,15 +167,16 @@ inline std::vector<std::string> split(std::string const& str) {
 template <class Cont>
 void chomped_lines_into(Cont& r, std::string const& str) {
   std::string::size_type start = 0, end, len = str.size();
-  if (!len) return;
   char const* data = str.data();
   while ((end = str.find('\n', start)) != std::string::npos) {
     char const* last = data + end - 1;
     r.push_back(std::string(data + start, *last == '\r' ? last : last + 1));
     start = end + 1;
   }
-  char const* last = data + len - 1;
-  r.push_back(std::string(data + start, *last == '\r' ? last : last + 1));
+  if (start < end) {
+    char const* last = data + len - 1;
+    r.push_back(std::string(data + start, *last == '\r' ? last : last + 1));
+  }
 }
 
 template <class Cont>

@@ -61,10 +61,11 @@ namespace adl_default {
 
 /// careful to avoid noncontainers (ADL doesn't help w/ ambiguity)
 template <class O, class V, class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
-O & operator<<(O& o, V const& v);
+O& operator<<(O& o, V const& v);
 
 #if GRAEHL_ADL_PRINT_CONTAINER3
-template <class O, class V, class S, class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
+template <class O, class V, class S,
+          class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
 void print(O& o, V const& v, S const& s);
 #endif
 
@@ -157,33 +158,61 @@ template <class O, class V, class S>
 void adl_print(O& o, V const& v, S const& s) {
   Print<V>::call(o, v, s);
 }
+
+
+/// 0 char means no output
+template <char Space = ' ', char Open = '[', char Close = ']'>
+struct list_format {
+  bool first;
+  list_format() : first(true) {}
+
+  typedef Print<char> CharPrint;
+  template <class O>
+  void open(O& o) {
+    if (Open) CharPrint::call(o, Open);
+  }
+  template <class O>
+  void close(O& o) {
+    if (Close) CharPrint::call(o, Close);
+  }
+  template <class O>
+  void space(O& o) {
+    if (first)
+      first = false;
+    else
+      CharPrint::call(o, Open);
+  }
+  template <class O, class V>
+  void element(O& o, V const& v) {
+    space(o);
+    adl::Print<V>::call(o, v);
+  }
+  template <class O, class V, class S>
+  void element(O& o, V const& v, S const& s) {
+    space(o);
+    adl::Print<V>::call(o, v, s);
+  }
+};
 }
 
 namespace adl_default {
 template <class O, class V, class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
-O & operator<<(O& o, V const& v) {
-  bool first = true;
-  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) {
-    if (first)
-      first = false;
-    else
-      o << ' ';
-    adl::adl_print(o, *i);
-  }
+O& operator<<(O& o, V const& v) {
+  adl::list_format<> format;
+  format.open(o);
+  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) format.element(o, *i);
+  format.close(o);
   return o;
 }
 
 #if GRAEHL_ADL_PRINT_CONTAINER3
-template <class O, class V, class S, class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
+template <class O, class V, class S,
+          class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
 void print(O& o, V const& v, S const& s) {
-  bool first = true;
-  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) {
-    if (first)
-      first = false;
-    else
-      o << ' ';
-    adl::adl_print(o, *i, s);
-  }
+  adl::list_format<> format;
+  format.open(o);
+  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) format.element(o, v, s);
+  format.close(o);
 }
 #endif
 
@@ -228,7 +257,7 @@ inline std::ostream& operator<<(std::ostream& out, Printer<V, S> const& x) {
 
 /// for O = e.g. string_builder
 template <class O, class V, class S>
-typename enable_if<is_container<std::ostream>::value, O>::type& operator<<(O& out, Printer<V, S> const& x) {
+typename enable_if<is_container<O>::value, O>::type& operator<<(O& out, Printer<V, S> const& x) {
   ::adl::Print<V>::call(out, x.v, x.s);
   return out;
 }
@@ -255,7 +284,7 @@ inline std::ostream& operator<<(std::ostream& out, AdlPrinter<V> const& x) {
 
 /// for O = e.g. string_builder
 template <class O, class V>
-typename enable_if<is_container<std::ostream>::value, O>::type& operator<<(O& out, AdlPrinter<V> const& x) {
+typename enable_if<is_container<O>::value, O>::type& operator<<(O& out, AdlPrinter<V> const& x) {
   ::adl::Print<V>::call(out, x.v);
   return out;
 }
@@ -279,7 +308,7 @@ inline std::ostream& operator<<(std::ostream& out, PrinterMove<V, S> const& x) {
 
 /// for O = e.g. string_builder
 template <class O, class V, class S>
-typename enable_if<is_container<std::ostream>::value, O>::type& operator<<(O& out, PrinterMove<V, S> const& x) {
+typename enable_if<is_container<O>::value, O>::type& operator<<(O& out, PrinterMove<V, S> const& x) {
   ::adl::Print<V>::call(out, x.v, x.s);
   return out;
 }
@@ -302,7 +331,7 @@ inline std::ostream& operator<<(std::ostream& out, AdlPrinterMove<V> const& x) {
 
 /// for O = e.g. string_builder
 template <class O, class V>
-typename enable_if<is_container<std::ostream>::value, O>::type& operator<<(O& out, AdlPrinterMove<V> const& x) {
+typename enable_if<is_container<O>::value, O>::type& operator<<(O& out, AdlPrinterMove<V> const& x) {
   ::adl::Print<V>::call(out, x.v);
   return out;
 }

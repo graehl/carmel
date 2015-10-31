@@ -22,6 +22,18 @@
 #define GRAEHL_SHARED__RANDOM_HPP
 #pragma once
 
+/// std mt19937_64 is not as fast as boost lagged_fibonacci607 and have not
+/// heard any quality complaints against latter (only downside: uses 4kbyte of
+/// memory but probably only touches some of it for each gen). recommend preferring boost
+#define GRAEHL_PREFER_BOOST_RANDOM 1
+
+#if __cplusplus >= 201103L && !GRAEHL_PREFER_BOOST_RANDOM
+//TODO: implement 1 here
+#define GRAEHL_PREFER_CPP11_RANDOM 0
+#else
+#define GRAEHL_PREFER_CPP11_RANDOM 0
+#endif
+
 #ifndef GRAEHL_USE_RANDOM_DEVICE
 #define GRAEHL_USE_RANDOM_DEVICE 1
 #endif
@@ -39,12 +51,24 @@
 GCC_DIAG_IGNORE(attributes)
 #endif
 
-#include <boost/random/uniform_01.hpp>
-#include <boost/random/lagged_fibonacci.hpp>
-#include <boost/random/variate_generator.hpp>
 
 #if GRAEHL_USE_RANDOM_DEVICE
 #include <boost/random/random_device.hpp>
+#endif
+
+//TODO: c++11 std::random
+
+#if GRAEHL_PREFER_CPP11_RANDOM
+#include <random>
+#else
+//#include <boost/random.hpp>
+//#include <boost/random/generate_canonical.hpp>
+//#include <boost/random/seed_seq.hpp>
+#include <boost/random/random_number_generator.hpp>
+
+#include <boost/random/uniform_01.hpp>
+#include <boost/random/lagged_fibonacci.hpp>
+#include <boost/random/variate_generator.hpp>
 #endif
 
 #include <graehl/shared/warning_pop.h>
@@ -54,7 +78,6 @@ GCC_DIAG_IGNORE(attributes)
 #endif
 
 #include <graehl/shared/shared_ptr.hpp>
-#include <boost/scoped_array.hpp>
 #include <boost/optional.hpp>
 
 #include <ctime>
@@ -103,11 +126,22 @@ struct random_seed {
   operator random_seed_type() const { return seed ? *seed : default_random_seed(); }
 };
 
+#if GRAEHL_PREFER_CPP11_RANDOM
+//TODO: different API:
+/**
+   random_generator random_gen;
+   uniform_real_dist uniform01(0, 1);
+   double r = uniform01(random_gen);
+*/
+typedef std::mt19937_64 random_generator;
+typedef std::uniform_real_distribution<double> uniform_real_dist;
+#else
 typedef boost::lagged_fibonacci607 random_generator;
 // lagged_fibonacci607 is the fastest for generating random floats and only 20% slower for ints - see
-// http://www.boost.org/doc/libs/1_52_0/doc/html/boost_random/performance.html
+// http://www.boost.org/doc/libs/1_59_0/doc/html/boost_random/performance.html
 typedef boost::uniform_01<double> uniform_01_dist;
 typedef boost::variate_generator<random_generator, uniform_01_dist> random_01_generator;
+#endif
 
 
 #if !GRAEHL_GLOBAL_RANDOM_USE_STD
