@@ -2672,24 +2672,27 @@ newbranch() {
 }
 pushg() {
     (
-        cd ~/g
-        mend
+        #cd ~/g
+        #mend
+        #git rebase origin/master
+        #cd ~
+        #pushc master g
+        #c-s 'forceco master g'
         cd ~
-        pushc master g
-        c-s 'forceco master g'
+        syncc g
     )
 }
 lincar() {
     (set -e
      cd ~
      pushg
-     c-s '. ~/.e;cd g; BOOST_SUFFIX=-mt buildcar'
+     c-s '. ~/.e;cd g; BOOST_SUFFIX=-gcc51-mt-1_59 buildcar'
     )
 }
 linfem() {
     (set -e
      pushg
-     c-s 'BOOST_SUFFIX=-mt buildfem'
+     c-s 'BOOST_SUFFIX=-gcc51-mt-1_59 buildfem'
     )
 }
 pushc() {
@@ -7583,7 +7586,7 @@ buildgraehl() {
         #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
         set -x
         pwd
-        args="BOOST_INCLUDEDIR=$BOOST_INCLUDEDIR LIBDIR+=$BOOST_LIBDIR CMDCXXFLAGS+=-I$BOOST_INCLUDEDIR BOOST_SUFFIX=$BOOST_SUFFIX CXX98=$CXX98"
+        args="BOOST_INCLUDEDIR=$BOOST_INCLUDEDIR LIBDIR+=$BOOST_LIBDIR CMDCXXFLAGS+=-I$BOOST_INCLUDEDIR BOOST_SUFFIX=$BOOST_SUFFIX"
         make $args -j$MAKEPROC
         make $args install
         set +x

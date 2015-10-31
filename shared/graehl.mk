@@ -213,17 +213,9 @@ INC += $(BOOST_INCLUDEDIR)
 list_src: $(BOOST_SERIALIZATION_SRCS)
 	echo $(BOOST_SERIALIZATION_SRCS)
 
-ifndef CXX98
 ARCH_FLAGS += -std=c++11
-ifndef CXX11
+# if you use c++11 abi for glibc, boost then comment this out
 ABI_CFLAGS = -D_GLIBCXX_USE_CXX11_ABI=0
-endif
-else
-# can't use c++03 or 98 because of va_copy in graehl::C99vsnprintf
-ARCH_FLAGS += -std=c++0x
-ABI_CFLAGS =
-endif
-
 CXXFLAGS_COMMON += $(ARCH_FLAGS) $(CMDCXXFLAGS) $(ABI_CFLAGS)
 
 LARGEFILEFLAGS = -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
