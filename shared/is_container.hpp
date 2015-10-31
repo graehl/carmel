@@ -60,7 +60,7 @@ struct print_maybe_container<Val, typename enable_if<is_nonstring_container<Val>
   }
 };
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 template <class T>
 using is_container_t = typename is_container<T>::type;
 template <class T>

@@ -22,7 +22,8 @@
 #define INTERRUPTION_POINT_GRAEHL_2015_10_28_HPP
 #pragma once
 
-#if __cplusplus < 201103L
+#include <graehl/shared/cpp11.hpp>
+#if !GRAEHL_CPP11
 #include <boost/thread.hpp>
 namespace graehl {
 inline void interruption_point() {

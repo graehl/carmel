@@ -20,8 +20,9 @@
 #ifndef SHARED_PTR_GRAEHL_2015_10_24_HPP
 #define SHARED_PTR_GRAEHL_2015_10_24_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 #include <memory>
 #include <functional>
 #else
@@ -36,7 +37,7 @@
 
 namespace graehl {
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 #define GRAEHL_SHARED_PTR_NS std
 using std::unique_ptr;
 using std::shared_ptr;

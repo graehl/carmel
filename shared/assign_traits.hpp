@@ -33,10 +33,11 @@ it. any_cast requires a copy constructor (returns by value)
 #define GRAEHL_SHARED__ASSIGN_TRAITS_JG_HPP
 #pragma once
 
+#include <graehl/shared/cpp11.hpp>
 #include <stdexcept>
 #include <memory>
 #include <boost/any.hpp>
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 #include <utility>
 #endif
 
@@ -54,7 +55,7 @@ void assign_impl(T& t, T const& from) {
   t = from;
 }
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 template <class T>
 void assign_impl(T& t, T &&from) {
   t = std::move(from);
@@ -100,7 +101,7 @@ void call_assign(T& t, T const& from) {
   assign_impl(t, from);
 }
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 template <class T>
 void call_assign(T& t, T &&from) {
   assign_impl(t, std::move(from));
@@ -140,7 +141,7 @@ struct assignable {
   static inline void init(T& t) {
     throw assign_traits_exception();
   }
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class T>
   static inline void call_assign_impl(T& t, T &&from) {
     call_assign(t, std::move(from));
@@ -161,7 +162,7 @@ template <class T, class Enable = void>
 struct assign_traits : assignable {
   static inline void init(T& t) { call_init(t); }
   static inline void assign(T& t, T const& from) { call_assign(t, from); }
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   void call_assign_impl(T& t, T &&from) {
     call_assign(t, std::move(from));
   }

@@ -14,8 +14,9 @@
 #ifndef GRAEHL_SHARED__LOCK_POLICY_HPP
 #define GRAEHL_SHARED__LOCK_POLICY_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 #include <mutex>
 #endif
 
@@ -49,7 +50,7 @@ namespace graehl {
 // scoped_lock(spin_locking&,bool)
 
 struct locking {
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   typedef std::mutex mutex_type;
   typedef std::lock_guard<mutex_type> guard_type;
 #else

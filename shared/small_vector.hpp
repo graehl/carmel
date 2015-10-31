@@ -14,6 +14,7 @@
 #ifndef GRAEHL_SHARED___SMALL_VECTOR
 #define GRAEHL_SHARED___SMALL_VECTOR
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 /** \file
 
@@ -223,7 +224,7 @@ struct small_vector {
   void push_back() { new (push_back_uninitialized()) T; }
 
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   /// move
   small_vector(small_vector&& o) noexcept {
     std::memcpy(this, &o, sizeof(small_vector));

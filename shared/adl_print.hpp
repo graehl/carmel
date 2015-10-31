@@ -288,7 +288,7 @@ typename enable_if<is_container<O>::value, O>::type& operator<<(O& out, AdlPrint
   return out;
 }
 
-#if __cplusplus >= 201103L && GRAEHL_ADL_PRINTER_MOVE_OVERLOAD
+#if GRAEHL_CPP11 && GRAEHL_ADL_PRINTER_MOVE_OVERLOAD
 template <class V, class S>
 struct PrinterMove {
   V v;

@@ -54,6 +54,7 @@
 #ifndef GRAEHL__SHARED__STRING_TO_HPP
 #define GRAEHL__SHARED__STRING_TO_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 #include <cmath>
 #include <cstdio>
@@ -572,7 +573,7 @@ struct is_shared_ptr {
   enum { value = 0 };
 };
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 template <class V>
 struct is_shared_ptr<std::shared_ptr<V> > {
   enum { value = 1 };

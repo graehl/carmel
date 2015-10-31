@@ -7579,8 +7579,8 @@ buildgraehl() {
         #export TRUNK=$GRAEHLSRC
         #export SHARED=$TRUNK/shared
         #export BOOST=$BOOST_INCLUDE
-        [ "$clean" ] && make clean
-        # [ "$noclean" ] || make clean
+        #[ "$clean" ] && make clean
+         [ "$noclean" ] || make clean
 
         #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
         #LDFLAGS+="-ldl -pthread -lpthread -L$FIRST_PREFIX/lib"
@@ -7622,7 +7622,7 @@ buildcar98() {
      )
 }
 buildfem() {
-    TERM=dumb buildgraehl forest-em "$@"
+    TERM=dumb  buildgraehl forest-em "$@"
 }
 buildboost() {(
         set -e
@@ -9046,10 +9046,11 @@ uselocalgccmac() {
     export PATH=/local/gcc/bin:$PATH
     export LD_LIBRARY_PATH=/local/gcc/lib64:$LD_LIBRARY_PATH
     else
-        if [[ -f /usr/local/bin/gcc-5 ]] ; then
-            export CC=ccache-gcc-5
-            export CXX=ccache-g++-5
-        fi
+            ccachepre=ccache-
+            ccachepre=
+            ccsuffix=-5
+            export CC=${ccachepre}gcc$ccsuffix
+            export CXX=${ccachepre}g++$ccsuffix
     fi
 }
 #alib=~/c/xmt-externals/Apple/libraries/boost_1_58_0/lib/

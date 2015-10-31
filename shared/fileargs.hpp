@@ -353,7 +353,7 @@ struct file_arg {
     name = o.name;
   }
   file_arg(file_arg const& o) : buf(o.buf), pointer(o.pointer), none(o.none), name(o.name) {}
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   file_arg(file_arg&& o)
       : buf(std::move(o.buf)), pointer(std::move(o.pointer)), none(o.none), name(std::move(o.name)) {}
   file_arg& operator=(file_arg&& o) {
@@ -411,7 +411,7 @@ struct file_arg {
   // warning: if you call with incompatible filestream type ... crash!
   template <class filestream>
   void set_new(std::string const& filename, std::string const& fail_msg = "Couldn't open file") {
-#if __cplusplus < 201103L
+#if !GRAEHL_CPP11
     std::auto_ptr
 #else
     std::unique_ptr
@@ -449,7 +449,7 @@ struct file_arg {
   void set_new_buf(std::string const& filename, std::string const& fail_msg = "Couldn't open file",
                    bool large_buf = kDefaultLargeBuf) {
     filestream* f = new filestream();
-#if __cplusplus < 201103L
+#if !GRAEHL_CPP11
     std::auto_ptr
 #else
     std::unique_ptr
@@ -462,7 +462,7 @@ struct file_arg {
     typedef stream_traits<filestream> traits;
     const bool read = traits::read;
     f->open(
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
         filename,
 #else
         filename.c_str(),

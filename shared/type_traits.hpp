@@ -19,27 +19,30 @@
 #ifndef TYPE_TRAITS_GRAEHL_2015_10_28_HPP
 #define TYPE_TRAITS_GRAEHL_2015_10_28_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
-#include <boost/icl/type_traits/is_container.hpp>
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 #define GRAEHL_TYPE_TRAITS_NS std
 #include <type_traits>
 #else
 #define GRAEHL_TYPE_TRAITS_NS boost
 #include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_integral.hpp>
 #include <boost/type_traits/remove_cv.hpp>
-#include <boost/type_traits/is_fundamental.hpp>
-#include <boost/type_traits/is_base_of.hpp>
-#include <boost/type_traits/is_enum.hpp>
-#include <boost/type_traits/is_lvalue_reference.hpp>
-#include <boost/type_traits/is_class.hpp>
-#include <boost/type_traits/is_pointer.hpp>
 #include <boost/type_traits/remove_reference.hpp>
 #include <boost/type_traits/remove_pointer.hpp>
-#include <boost/type_traits/integral_constant.hpp>
+#include <boost/type_traits/is_lvalue_reference.hpp>
+#include <boost/type_traits/is_integral.hpp>
+#include <boost/type_traits/is_arithmetic.hpp>
+#include <boost/type_traits/is_fundamental.hpp>
+#include <boost/type_traits/is_enum.hpp>
+#include <boost/type_traits/is_class.hpp>
+#include <boost/type_traits/is_pointer.hpp>
+#include <boost/type_traits/is_base_of.hpp>
 #include <boost/mpl/bool_fwd.hpp>
+#include <boost/type_traits/integral_constant.hpp>
 #endif
+
+#include <boost/icl/type_traits/is_container.hpp>
 
 namespace graehl {
 using GRAEHL_TYPE_TRAITS_NS::remove_cv;
@@ -48,15 +51,15 @@ using GRAEHL_TYPE_TRAITS_NS::remove_pointer;
 
 using GRAEHL_TYPE_TRAITS_NS::is_lvalue_reference;
 using GRAEHL_TYPE_TRAITS_NS::is_integral;
-using GRAEHL_TYPE_TRAITS_NS::is_fundamental;
 using GRAEHL_TYPE_TRAITS_NS::is_arithmetic;
+using GRAEHL_TYPE_TRAITS_NS::is_fundamental;
 using GRAEHL_TYPE_TRAITS_NS::is_enum;
 using GRAEHL_TYPE_TRAITS_NS::is_class;
 using GRAEHL_TYPE_TRAITS_NS::is_pointer;
 using GRAEHL_TYPE_TRAITS_NS::is_base_of;
 using boost::icl::is_container;
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 template <class T>
 struct identity { using type = T; };
 template <class T>

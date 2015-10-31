@@ -34,6 +34,7 @@
 #define GRAEHL__SHARED__INTRUSIVE_REFCOUNT_HPP
 #pragma once
 
+#include <graehl/shared/cpp11.hpp>
 #include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/alloc_new_delete.hpp>
 #include <graehl/shared/shared_ptr.hpp>
@@ -75,7 +76,7 @@ struct intrusive_refcount {
   void release() const { release(derivedPtr()); }
 
   typedef T self_type;
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class A0>
   static T* construct(A0 const& a0) {
     T* r = (T*)U::malloc(sizeof(T));

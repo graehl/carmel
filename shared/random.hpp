@@ -21,13 +21,14 @@
 #ifndef GRAEHL_SHARED__RANDOM_HPP
 #define GRAEHL_SHARED__RANDOM_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 /// std mt19937_64 is not as fast as boost lagged_fibonacci607 and have not
 /// heard any quality complaints against latter (only downside: uses 4kbyte of
 /// memory but probably only touches some of it for each gen). recommend preferring boost
 #define GRAEHL_PREFER_BOOST_RANDOM 1
 
-#if __cplusplus >= 201103L && !GRAEHL_PREFER_BOOST_RANDOM
+#if GRAEHL_CPP11 && !GRAEHL_PREFER_BOOST_RANDOM
 //TODO: implement 1 here
 #define GRAEHL_PREFER_CPP11_RANDOM 0
 #else
@@ -88,7 +89,7 @@ GCC_DIAG_IGNORE(attributes)
 #include <cctype>
 #endif
 
-#if __cplusplus < 201103L
+#if !GRAEHL_CPP11
 #include <boost/scoped_array.hpp>
 #endif
 

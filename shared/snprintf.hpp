@@ -34,18 +34,19 @@
 
 #ifndef SPRINTF_JG_2013_05_21_HPP
 #define SPRINTF_JG_2013_05_21_HPP
+#pragma once
+#include <graehl/shared/cpp11.hpp>
 #include <cstdio>
 #include <cstddef>
 #include <cstdarg>
 #include <cassert>
 #include <cstdlib>
-#pragma once
 // for MS, this has some microsoft-only _snprintf etc fns that aren't fully C99 compliant - we'll provide a
 // ::snprintf that is
 #include <string>
 
 #ifndef GRAEHL_MUTABLE_STRING_DATA
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 /// see http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2668.htm
 /// - &str[0] required to be a writable array just like std::vector
 #define GRAEHL_MUTABLE_STRING_DATA 1

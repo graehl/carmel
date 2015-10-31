@@ -34,7 +34,7 @@
 #ifndef GRAEHL__UNTHREADED_PTR
 #define GRAEHL__UNTHREADED_PTR
 #pragma once
-
+#include <graehl/shared/cpp11.hpp>
 #include <graehl/shared/alloc_new_delete.hpp>
 #include <cassert>
 #include <cstring>
@@ -52,7 +52,7 @@ struct unthreaded_ptr {
 
   unthreaded_ptr() : p_() {}
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   unthreaded_ptr(unthreaded_ptr&& o) : p_(o.val), others_(o.others_) {
     o.p_ = NULL;  // so o.others_ value won't matter
   }

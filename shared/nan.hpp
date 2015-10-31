@@ -19,6 +19,7 @@
 #ifndef GRAEHL_SHARED__NAN_HPP
 #define GRAEHL_SHARED__NAN_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 #ifndef GRAEHL_HAVE_STD_ISINF
 #if defined(_MSC_VER)
@@ -34,7 +35,7 @@
 #define WIN32_NAN
 #define GRAEHL_ISNAN(x) (_isnan(x) != 0)
 #else
-#if defined(__FAST_MATH__) || __cplusplus < 201103L || defined(ANDROID)
+#if defined(__FAST_MATH__) || !GRAEHL_CPP11 || defined(ANDROID)
 // gcc 4.x -ffast-math breaks std::isnan - revisit for 5.1?
 #include <stdint.h>
 #include <math.h>

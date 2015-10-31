@@ -21,8 +21,9 @@
 #ifndef THREAD_GROUP_GRAEHL_2015_10_28_HPP
 #define THREAD_GROUP_GRAEHL_2015_10_28_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
-#if __cplusplus < 201103L
+#if !GRAEHL_CPP11
 #include <boost/thread/thread_group.hpp>
 namespace graehl {
 using boost::thread_group;

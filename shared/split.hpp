@@ -185,7 +185,7 @@ void chomped_lines_into(Cont& r, std::istream& in) {
   while (std::getline(in, line)) {
     std::string::size_type len = line.size();
     if (len && line[--len] == '\r') line.resize(len);
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
     r.push_back(std::move(line));
 #else
     r.push_back(line);

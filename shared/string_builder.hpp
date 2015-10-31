@@ -35,7 +35,7 @@ struct string_builder : string_buffer {
 
   typedef char* iterator;
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   iterator begin() { return const_cast<iterator>(this->data()); }
   const_iterator begin() const { return this->data(); }
 #else

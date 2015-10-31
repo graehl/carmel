@@ -25,6 +25,7 @@
 #ifndef GRAEHL__SHARED__PROGRAM_OPTIONS_HPP
 #define GRAEHL__SHARED__PROGRAM_OPTIONS_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 #ifndef GRAEHL_DEBUG_PROGRAM_OPTIONS
 #define GRAEHL_DEBUG_PROGRAM_OPTIONS 0
@@ -596,7 +597,7 @@ struct printable_options_description : boost::program_options::options_descripti
     using namespace std;
     int n = (int)args.size();
     int argc = n + 1;
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
     unique_ptr<char* []>
 #else
     boost::scoped_array<char*>

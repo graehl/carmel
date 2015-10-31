@@ -60,6 +60,7 @@
 #define GRAEHL_CMDLINE_MAIN_USE_CONFIGURE 1
 #endif
 
+#include <graehl/shared/cpp11.hpp>
 #if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
 #include <graehl/shared/configure_program_options.hpp>
 #include <graehl/shared/configurable.hpp>
@@ -253,7 +254,7 @@ struct main {
 
   std::string cmdname, cmdline_str;
   std::ostream* log_stream;
-#if __cplusplus < 201103L
+#if !GRAEHL_CPP11
   std::auto_ptr<teebuf> teebufptr;
   std::auto_ptr<std::ostream> teestreamptr;
 #else

@@ -46,7 +46,7 @@ I hash_capacity_for_size(I sz) {
 
 template <class T>
 struct indexed_traits {
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class Cont, class Key>
   void push_back(Cont& c, Key&& val) {
     c.emplace_back(std::forward<Key>(val));
@@ -70,7 +70,7 @@ struct indexed_traits {
 template <>
 struct indexed_traits<std::string> {
   typedef std::string T;
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class Cont>
   void push_back(Cont& c, T&& val) {
     c.emplace_back(std::move(val));
@@ -86,7 +86,7 @@ struct indexed_traits<std::string> {
 #endif
   template <class Cont, class Key>
   void push_back(Cont& c, Key const& val) {
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
     c.emplace_back(val.data(), val.length());
 #else
     c.push_back(val);

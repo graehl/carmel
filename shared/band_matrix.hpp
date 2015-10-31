@@ -25,6 +25,7 @@
 
 #include <cstdlib>
 #include <cassert>
+#include <graehl/shared/cpp11.hpp>
 
 namespace graehl {
 
@@ -71,7 +72,7 @@ struct band_matrix {
   band_matrix(size_type rows, size_type band, T const& fill) { init(rows, band, fill); }
   ~band_matrix() { free(); }
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   /// move
   band_matrix(band_matrix&& o) noexcept {
     std::memcpy(this, &o, sizeof(band_matrix));

@@ -30,6 +30,7 @@
 #ifndef GRAEHL_SHARED__STABLE_VECTOR
 #define GRAEHL_SHARED__STABLE_VECTOR
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 #include <vector>
 #include <memory>
@@ -201,7 +202,7 @@ struct stable_vector {
     ++size_;
   }
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class... Args>
   void emplace_back(Args&&... args) {
     push_back(T(std::forward<Args>(args)...));
@@ -282,7 +283,7 @@ struct stable_vector {
       push_back_chunk(clone_chunk(*i));
   }
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   stable_vector(stable_vector&& o) : chunks(std::move(o.chunks)), size_(o.size_), capacity() {}
   stable_vector& operator=(stable_vector&& o) {
     assert(this != &o);

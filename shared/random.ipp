@@ -91,7 +91,7 @@ inline char random_alphanum() {
 #undef GRAEHL_RANDOM__NLETTERS
 
 inline std::string random_alpha_string(unsigned len) {
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
     unique_ptr<char[]>
 #else
       boost::scoped_array<char>

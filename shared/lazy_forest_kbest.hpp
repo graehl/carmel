@@ -14,6 +14,7 @@
 #ifndef GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 // you may override this with a fully namespace qualified type - but be careful
 // to do so consistently before every inclusion!  in practice unsigned would be
@@ -427,7 +428,7 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
                     {
 
  public:
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   /// move
   lazy_forest(lazy_forest&& o) noexcept : pq(std::move(o.pq)), memo(std::move(o.memo)) {
     assert(&o != this);

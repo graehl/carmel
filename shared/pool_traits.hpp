@@ -20,10 +20,12 @@
 #ifndef GRAEHL_SHARED__POOL_TRAITS
 #define GRAEHL_SHARED__POOL_TRAITS
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 #include <graehl/shared/shared_ptr.hpp>
 #include <utility>
 #include <graehl/shared/intrusive_refcount.hpp>
+#include <graehl/shared/cpp11.hpp>
 
 namespace graehl {
 
@@ -81,7 +83,7 @@ struct untracked_pool {
     p->~T();
     free(p);
   }
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class... Args>
   element_type* construct(Args&&... args) {
     element_type* const ret = malloc();
@@ -131,7 +133,7 @@ struct intrusive_pool {
   static inline void destroy(pointer_type p) {}  // noop!
 // FIXME: can intrusive_ptrs safely destroy early? i.e. do we need to check if count was 0 first and not
 // decrease? if so, implement free/destroy
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class... Args>
   element_type* construct(Args&&... args) {
     element_type* const ret = malloc();

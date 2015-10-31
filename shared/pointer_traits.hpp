@@ -46,9 +46,10 @@
 #ifndef POINTER_TRAITS_JG201266_HPP
 #define POINTER_TRAITS_JG201266_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 #include <memory>
 namespace graehl {
 using std::pointer_traits;

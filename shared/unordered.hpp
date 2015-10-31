@@ -19,9 +19,10 @@
 #ifndef UNORDERED_GRAEHL_2015_10_25_HPP
 #define UNORDERED_GRAEHL_2015_10_25_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 // reminder: undefined macros eval to 0
-#if __cplusplus >= 201103L || defined(__clang__) && defined(_LIBCPP_VERSION)
+#if GRAEHL_CPP11 || defined(__clang__) && defined(_LIBCPP_VERSION)
 #include <unordered_map>
 #include <unordered_set>
 #define GRAEHL_UNORDERED_NS ::std

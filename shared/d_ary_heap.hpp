@@ -37,6 +37,7 @@
 #define GRAEHL_SHARED__D_ARY_HEAP_HPP
 #pragma once
 
+#include <graehl/shared/cpp11.hpp>
 #ifndef GRAEHL_DEBUG_D_ARY_HEAP
 #define GRAEHL_DEBUG_D_ARY_HEAP 0
 #endif
@@ -259,7 +260,7 @@ template <class Value, std::size_t Arity, class DistanceMap = identity_distance<
 class d_ary_heap_indirect {
 
  public:
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   // TODO: use perfect forwarding of universal reftype args
   typedef Value&& MoveableValueRef;
 #define GRAEHL_D_ARY_FORWARD_REF(x) std::forward<Value>(x)
@@ -341,7 +342,7 @@ class d_ary_heap_indirect {
     data.push_back(v);
   }
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class... Args>
   void emplace_unsorted(Args&&... args) {
     Size i = data.size();
@@ -494,7 +495,7 @@ This is definitely linear to n.
 /**
    you must have put v's distance in the DistanceMap before pushing
 */
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class Univ>
   void push(Univ&& v)
 #else
@@ -503,7 +504,7 @@ This is definitely linear to n.
   {
     size_type index = data.size();
     if (index) {
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
       data.emplace_back();
 #else
       data.push_back(Value());  // (hoping default construct is cheap, construct-copy inline)
@@ -513,7 +514,7 @@ This is definitely linear to n.
       verify_heap();
     } else {
       put(index_in_heap, v, 0);
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
       data.emplace_back(GRAEHL_D_ARY_FORWARD_REF(v));
 #else
       data.push_back(v);  // (hoping default construct is cheap, construct-copy inline)
@@ -553,7 +554,7 @@ This is definitely linear to n.
 // This function assumes the key has been improved
 // (distance has become smaller, so it may need to rise toward top().
 // i.e. decrease-key in a min-heap
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class Univ>
   void update(Univ&& v)
 #else
@@ -599,7 +600,7 @@ This is definitely linear to n.
 
 /** insert if not present, else update (update means *improve* (move closer to top) only) as in best-first
  * search*/
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class Univ>
   void push_or_update(Univ&& v)
 #else
@@ -760,11 +761,11 @@ This is definitely linear to n.
    index_in_heap for v. on first call currently_being_moved must have been at
    index.  .
 */
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   template <class Univ>
 #endif
   void preserve_heap_property_down(
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
       Univ&& move_to_index_first,
 #else
       MoveableValueRef move_to_index_first,

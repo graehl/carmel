@@ -21,12 +21,13 @@
 #ifndef GRAEHL_SHARED__SWAP_POD
 #define GRAEHL_SHARED__SWAP_POD
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 namespace graehl {
 
 #include <cstring>
 #include <utility>
-#if __cplusplus < 201103L
+#if !GRAEHL_CPP11
 #include <algorithm> //swap
 #endif
 
@@ -45,7 +46,7 @@ inline void swap_pod(T& a, T& b) {
 
 template <class T>
 void move_swap(T& a, T& b) {
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   T tmp(std::move(b));
   b = std::move(a);
   a = std::move(tmp);

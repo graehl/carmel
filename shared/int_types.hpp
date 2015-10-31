@@ -20,6 +20,8 @@
 #define INT_TYPES_JG2012531_HPP
 #pragma once
 
+#include <graehl/shared/cpp11.hpp>
+
 #if defined(__APPLE__) && defined(__GNUC__)
 #define GRAEHL_INT_DIFFERENT_FROM_INTN 0
 #define GRAEHL_PTRDIFF_DIFFERENT_FROM_INTN 0
@@ -119,7 +121,7 @@
 #define GRAEHL_BIG_CONSTANT(x) (x##LLU)
 #endif
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 #define GRAEHL_CONSTEXPR static constexpr
 #include <cstdint>
 #else
@@ -133,7 +135,7 @@
 
 namespace graehl {
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 typedef std::uint64_t uint64_t;
 typedef std::uint32_t uint32_t;
 typedef std::uint16_t uint16_t;
@@ -242,7 +244,7 @@ inline uint64_t next_power_of_2(uint64_t x) {
 #endif
 }
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 /// slow but pure functional for constexpr. defaulted parameter is for impl only
 inline constexpr uint64_t ceil_log2_const(uint64_t x, bool exact = true) {
   return (x == 0) ? (1 / x) : (x == 1) ? (exact ? 0 : 1)

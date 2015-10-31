@@ -26,6 +26,7 @@
 #ifndef GRAEHL_SHARED__THREADLOCAL_HPP
 #define GRAEHL_SHARED__THREADLOCAL_HPP
 #pragma once
+#include <graehl/shared/cpp11.hpp>
 
 
 #include <boost/utility.hpp>  // for BOOST_NO_MT
@@ -34,7 +35,7 @@
 #define THREADLOCAL
 #else
 
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 #define THREADLOCAL thread_local
 #define GRAEHL_HAVE_THREADLOCAL 1
 #else

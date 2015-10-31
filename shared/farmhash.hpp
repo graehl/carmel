@@ -62,9 +62,10 @@
 #endif
 #endif
 
+#include <graehl/shared/cpp11.hpp>
 #include <sdl/graehl/shared/int_types.hpp>
 #include <string>
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
 #include <utility>
 #else
 #include <algorithm>
@@ -198,7 +199,7 @@ static inline
     farmhash_long(const char* s, std::size_t len) {
   const uint64_t seed = 81;
   uint64_t x = seed, y = seed * k_bigprime1 + 113, z = fast_mixbits(y * k_bigprime2 + 113) * k_bigprime2;
-#if __cplusplus >= 201103L
+#if GRAEHL_CPP11
   Uint128p v = {0, 0}, w = {0, 0};
 #else
   Uint128p v, w;
