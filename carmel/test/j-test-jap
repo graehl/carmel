@@ -1,17 +1,23 @@
+preview() {
+echo -----------
+tail -5 $1
+echo -----------
+echo $1
+}
 
-
-echo 'a n ji ra na i to' |
-sed 's/^/"/' | sed 's/$/"/' | sed 's/ /" "/g' > test.asciikana
+echo 'a n ji ra na i to' | sed 's/^/"/' | sed 's/$/"/' | sed 's/ /" "/g' > test.asciikana
 
 cmd="$B -li -k 1 -OEW test.asciikana asciikana-katakana.transducer"
 echo $cmd
 $cmd > test.katakana
-sed 's/ //g' test.katakana | sed 's/"//g' >test.kana
+preview test.katakana
+tr -d ' "' < test.katakana  >test.kana
+preview test.kana
 
 #rm -f test.asciikana test.jpron test.jpron3 test.jpron2 test.epron test.word test.final
 
 echo ""
-echo "Katakana:                      " 
+echo "Katakana:                      "
 echo ""
 cmd="$B -iIEQ -k 1 test.katakana"
 echo $cmd
@@ -20,13 +26,15 @@ echo ""
 $B $BARGS -ri jpron.transducer vowel-separator.transducer \
         jpron-asciikana.transducer asciikana-katakana.transducer \
   test.katakana > test.jpron2
+preview test.jpron2
 
-echo "Japanese pronunciation:        " 
+echo "Japanese pronunciation:        "
 echo ""
 $B -IEQ -k 1 test.jpron2
 echo ""
 
 $B $BARGS -r epron-jpron.1.transducer test.jpron2 > test.epron
+preview test.epron
 
 echo "Top English pronunciations:         "
 echo ""
@@ -35,7 +43,8 @@ echo "  ..."
 echo ""
 
 $B $BARGS -r word-epron.names.55000wds.transducer test.epron > test.word
-$B -rk 1 word-epron.names.55000wds.transducer test.epron 
+preview test.word
+$B -rk 1 word-epron.names.55000wds.transducer test.epron
 
 echo "Top English word sequences:         "
 echo ""
@@ -44,10 +53,10 @@ echo "  ..."
 echo ""
 
 $B $BARGS -r word.names.50000wds.transducer test.word  > test.final
+preview test.final
 
-echo "Top Re-scored English word sequence:  " 
+echo "Top Re-scored English word sequence:  "
 echo ""
 $B -IEQ -k 5 test.final
 echo "  ..."
 echo ""
-

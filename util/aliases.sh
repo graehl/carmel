@@ -10,7 +10,9 @@ xmtc=$(echo ~/c)
 xmtx=$(echo ~/x)
 xmtxs=$xmtx/sdl
 xmtextbase=$(echo ~/c/xmt-externals)
-SDL_SHARED_EXTERNALS_PATH=$xmtextbase/Shared
+xmtexts=$xmtextbase/Shared
+xmtextc=$xmtexts/cpp
+SDL_SHARED_EXTERNALS_PATH=$xmtexts
 case $(uname) in
     Darwin)
         lwarch=Apple
@@ -45,6 +47,32 @@ chosts="c-ydong c-graehl c-mdreyer gitbuild1 git02"
 chost=c-graehl
 jhost=git02
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1"
+gsldiff() {
+    (
+        set -e
+    sub=GSL/include
+    cd ~/src/$sub
+        set -x
+    for f in *; do
+        diff $f $xmtextc/$sub/$f || echo $f
+    done
+    )
+}
+overgsl() {
+    sub=GSL/include
+    cd ~/src/$sub
+    (gsldiff
+    for f in *; do
+        cp $xmtextc/$sub/$f $f
+    done
+    )
+}
+gcjen() {
+    (cd;
+     sync2 $chost c/xmt-externals/Shared/cpp/GSL
+     cjen "$@"
+    )
+}
 substkraken() {
     (set -e
      cd ~/c/ct/main/kraken/Test/TestCases/kraken
@@ -1640,7 +1668,7 @@ edit12() {
 }
 kills() {
     for f in "$@"; do
-        pgrepkill $f
+        pgkill $f
         pkill $f
     done
 }
@@ -5057,7 +5085,7 @@ pgrepn() {
     pgrep "$@" | cut -f1 -d' '
 }
 pgrepkill() {
-    pkill "$@"
+    pgkill "$@"
 }
 overwrite() {
     if [[ $3 ]] ; then
@@ -7568,11 +7596,27 @@ buildgraehl() {
         fi
     )
 }
+testcar() {
+    (set -e
+    cd ~/g/carmel/test
+    ./runtests.sh
+    dir=$(pwd)/logs/
+    log=$dir/`ls -rt $dir | head -1`
+    preview $log
+    )
+
+}
 buildcar() {
-    TERM=dumb buildgraehl carmel "$@"
+    (set -e;
+     TERM=dumb buildgraehl carmel "$@"
+     testcar
+    )
 }
 buildcar98() {
-    TERM=dumb CXX98=1 buildgraehl carmel "$@"
+    (set -e;
+     TERM=dumb CXX98=1 buildgraehl carmel "$@"
+     testcar
+     )
 }
 buildfem() {
     TERM=dumb buildgraehl forest-em "$@"

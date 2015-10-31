@@ -31,6 +31,7 @@
 #include <boost/type_traits/remove_cv.hpp>
 #include <boost/type_traits/is_fundamental.hpp>
 #include <boost/type_traits/is_base_of.hpp>
+#include <boost/type_traits/is_enum.hpp>
 #include <boost/type_traits/is_lvalue_reference.hpp>
 #include <boost/type_traits/is_class.hpp>
 #include <boost/type_traits/is_pointer.hpp>

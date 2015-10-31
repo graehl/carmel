@@ -46,32 +46,64 @@ I hash_capacity_for_size(I sz) {
 
 template <class T>
 struct indexed_traits {
+#if __cplusplus >= 201103L
+  template <class Cont, class Key>
+  void push_back(Cont& c, Key&& val) {
+    c.emplace_back(std::forward<Key>(val));
+  }
+#else
+  template <class Cont, class Key>
+  void push_back(Cont& c, Key const& val) {
+    c.push_back(val);
+  }
+#endif
   template <class Key>
   bool operator()(T const& a, Key const& b) const {
     return a == b;
   }
   template <class Key>
-  std::size_t operator()(Key const& a) const { return boost::hash<T>()(a); }
+  std::size_t operator()(Key const& a) const {
+    return boost::hash<T>()(a);
+  }
 };
 
 template <>
 struct indexed_traits<std::string> {
   typedef std::string T;
-  template <class StringView>
-  bool operator()(T const& a, StringView const& b) const {
+#if __cplusplus >= 201103L
+  template <class Cont>
+  void push_back(Cont& c, T&& val) {
+    c.emplace_back(std::move(val));
+  }
+  template <class Cont>
+  void push_back(Cont& c, T const& val) {
+    c.emplace_back(val);
+  }
+  template <class Cont>
+  void push_back(Cont& c, char const* val) {
+    c.emplace_back(val);
+  }
+#endif
+  template <class Cont, class Key>
+  void push_back(Cont& c, Key const& val) {
+#if __cplusplus >= 201103L
+    c.emplace_back(val.data(), val.length());
+#else
+    c.push_back(val);
+#endif
+  }
+
+  template <class Key>
+  bool operator()(T const& a, Key const& b) const {
     std::size_t sz = a.size();
     return sz == b.size() && !std::memcmp(a.data(), b.data(), sz);
   }
-  template <class StringView>
-  std::size_t operator()(StringView const& s) const {
-    return farmhash(s.data(), s.length());
+  std::size_t operator()(T const& a, char const* s) const { return !std::strcmp(a.c_str(), s); }
+  template <class Key>
+  std::size_t operator()(Key const& s) const {
+    return farmhash(s.data(), s.size());
   }
-  std::size_t operator()(char const* s) const {
-    return farmhash(s, std::strlen(s));
-  }
-  std::size_t operator()(T const& a, char const* s) const {
-    return !std::strcmp(a.c_str(), s);
-  }
+  std::size_t operator()(char const* s) const { return farmhash(s, std::strlen(s)); }
 };
 
 template <class T, class IndexT = unsigned, class Vector = stable_vector<T>,
@@ -158,11 +190,7 @@ struct indexed : HashEqualsTraits {
     for (I i = find_start(val);;) {
       I& j = index_[i];
       if (j == (I)kNullIndex) {
-#if __cplusplus >= 201103L
-        vals_.emplace_back(val);
-#else
-        vals_.push_back(val);
-#endif
+        HashEqualsTraits::push_back(vals_, val);
         return (j = sz);
       } else if (HashEqualsTraits::operator()(vals_[j], val))
         return j;
@@ -262,8 +290,7 @@ struct indexed : HashEqualsTraits {
 
   template <class VisitNameId>
   void visit(VisitNameId const& v) {
-    for (I i = 0, e = size(); i < e; ++i)
-      v(vals_[i], i);
+    for (I i = 0, e = size(); i < e; ++i) v(vals_[i], i);
   }
 
  private:

@@ -40,7 +40,7 @@ struct string_builder : string_buffer {
   const_iterator begin() const { return this->data(); }
 #else
   const_iterator data() const { return begin(); }
-  iterator data() const { return begin(); }
+  iterator data() { return begin(); }
   iterator begin() { return &*string_buffer::begin(); }
   const_iterator begin() const { return &*string_buffer::begin(); }
 #endif

@@ -196,7 +196,7 @@ struct list_format {
 }
 
 namespace adl_default {
-template <class O, class V, class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
+template <class O, class V, class If>
 O& operator<<(O& o, V const& v) {
   adl::list_format<> format;
   format.open(o);
@@ -206,8 +206,7 @@ O& operator<<(O& o, V const& v) {
 }
 
 #if GRAEHL_ADL_PRINT_CONTAINER3
-template <class O, class V, class S,
-          class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
+template <class O, class V, class S, class If>
 void print(O& o, V const& v, S const& s) {
   adl::list_format<> format;
   format.open(o);

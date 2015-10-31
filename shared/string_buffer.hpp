@@ -18,6 +18,7 @@ typedef std::string string_buffer;
 #else
 typedef std::vector<char> string_buffer;
 #endif
+
 #if __cplusplus >= 201103L
 inline std::string const& str(graehl::string_buffer const& buf) {
   return buf;
@@ -33,7 +34,7 @@ namespace std {
 #if __cplusplus >= 201103L
 #else
 inline graehl::string_buffer& operator+=(graehl::string_buffer& buf, std::string const& str) {
-  append(buf, str);
+  graehl::append(buf, str);
   return buf;
 }
 #endif

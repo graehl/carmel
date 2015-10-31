@@ -88,6 +88,10 @@ GCC_DIAG_IGNORE(attributes)
 #include <cctype>
 #endif
 
+#if __cplusplus < 201103L
+#include <boost/scoped_array.hpp>
+#endif
+
 namespace graehl {
 
 typedef unsigned random_seed_type;  // this is what random_device actually returns.
