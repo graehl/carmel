@@ -308,7 +308,11 @@ struct small_vector {
     if (data.stack.sz_) ar >> GRAEHL_BOOST_SERIALIZATION_NVP(make_array(begin(), data.stack.sz_));
   }
 
-  small_vector() { data.stack.sz_ = 0; }
+  #if GRAEHL_CPP11
+   constexpr small_vector() : data{} {}
+  #else
+   small_vector() { data.stack.sz_ = 0; }
+  #endif
   /**
      default constructed T() * s. since T is probably POD, this means its pod
      members are default constructed (i.e. set to 0). If T isn't POD but can be memmoved, then you probably
@@ -1150,7 +1154,9 @@ struct small_vector {
      sizeof(small_vector<...>) - the idea would be not to use the smaller of two kMaxInlineSize that both
      result in the same size union
   */
+  //TODO: mv sz_ outside here? put dummy struct inside storage_union_variants for constexpr ctor?
   union storage_union_variants {
+    size_type sz_only_;
     struct heap_storage_variant {
       size_type sz_;  // common prefix with small_storage.sz_
       size_type capacity_;  // only initialized when size_ > kMaxInlineSize. must not initialize when copying
@@ -1167,18 +1173,7 @@ struct small_vector {
   storage_union_variants data;
 };
 
-template <class T, bool UseSmall = true, unsigned kMaxInlineSize = kDefaultMaxInlineSize,
-          class Size = small_vector_default_size_type>
-struct use_small_vector {
-  typedef small_vector<T, kMaxInlineSize, Size> type;
-};
-
-template <class T, unsigned kMaxInlineSize, class Size>
-struct use_small_vector<T, false, kMaxInlineSize, Size> {
-  typedef std::vector<T> type;
-};
-
-}  // ns
+}
 
 namespace std {
 template <class V, unsigned MaxInline, class Size>

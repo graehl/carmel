@@ -185,12 +185,12 @@ struct list_format {
   template <class O, class V>
   void element(O& o, V const& v) {
     space(o);
-    adl::Print<V>::call(o, v);
+    ::adl::Print<V>::call(o, v);
   }
   template <class O, class V, class S>
   void element(O& o, V const& v, S const& s) {
     space(o);
-    adl::Print<V>::call(o, v, s);
+    ::adl::Print<V>::call(o, v, s);
   }
 };
 }
@@ -198,7 +198,7 @@ struct list_format {
 namespace adl_default {
 template <class O, class V, class If>
 O& operator<<(O& o, V const& v) {
-  adl::list_format<> format;
+  ::adl::list_format<> format;
   format.open(o);
   for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) format.element(o, *i);
   format.close(o);
@@ -208,7 +208,7 @@ O& operator<<(O& o, V const& v) {
 #if GRAEHL_ADL_PRINT_CONTAINER3
 template <class O, class V, class S, class If>
 void print(O& o, V const& v, S const& s) {
-  adl::list_format<> format;
+  ::adl::list_format<> format;
   format.open(o);
   for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) format.element(o, v, s);
   format.close(o);

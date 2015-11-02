@@ -16,4 +16,9 @@
 #define GRAEHL_CPP14 0
 #define GRAEHL_CPP14_TYPETRAITS 0
 #endif
+#if GRAEHL_CPP11
+#define GRAEHL_CONSTEXPR constexpr
+#else
+#define GRAEHL_CONSTEXPR
+#endif
 #endif

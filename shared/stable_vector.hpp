@@ -45,6 +45,17 @@ inline void reinit(T& val) {
   new (&val) T();
 }
 
+template <class T, bool UseSmall = true, unsigned kMaxInlineSize = kDefaultMaxInlineSize,
+          class Size = small_vector_default_size_type>
+struct use_small_vector {
+  typedef small_vector<T, kMaxInlineSize, Size> type;
+};
+
+template <class T, unsigned kMaxInlineSize, class Size>
+struct use_small_vector<T, false, kMaxInlineSize, Size> {
+  typedef std::vector<T> type;
+};
+
 template <class T, class IndexT = unsigned, unsigned Log2ChunkSize = 9, bool UseSmallVector = false>
 struct stable_vector {
   /// if true, then shrinking the vector ensures that subsequent grow() still
