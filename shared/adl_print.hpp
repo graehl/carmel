@@ -217,15 +217,15 @@ void print(O& o, V const& v, S const& s) {
 
 template <class O, class A, class B>
 void operator<<(O& o, std::pair<A, B> const& v) {
-  adl::adl_print(o, v.first);
+  ::adl::adl_print(o, v.first);
   o << '=';
-  adl::adl_print(o, v.second);
+  ::adl::adl_print(o, v.second);
 }
 template <class O, class A, class B, class S>
 void print(O& o, std::pair<A, B> const& v, S const& s) {
-  adl::adl_print(o, v.first, s);
+  ::adl::adl_print(o, v.first, s);
   o << '=';
-  adl::adl_print(o, v.second, s);
+  ::adl::adl_print(o, v.second, s);
 }
 }
 

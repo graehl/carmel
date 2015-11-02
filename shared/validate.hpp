@@ -116,7 +116,6 @@ struct one_of {
 }
 
 namespace adl {
-
 template <class T>
 void validate(T&, void* lowerPriorityMatch = 0) {
 }
@@ -131,27 +130,27 @@ void adl_validate(T& t) {
 namespace std {
 template <class T>
 void validate(std::set<T> const& v) {
-  for (typename std::vector<T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i) adl::adl_validate(*i);
+  for (typename std::vector<T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i) ::adl::adl_validate(*i);
 }
 template <class T>
 void validate(std::vector<T> const& v) {
-  for (typename std::vector<T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i) adl::adl_validate(*i);
+  for (typename std::vector<T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i) ::adl::adl_validate(*i);
 }
 template <class Key, class T>
 void validate(std::map<Key, T> const& v) {
   for (typename std::map<Key, T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i)
-    adl::adl_validate(i->second);
+    ::adl::adl_validate(i->second);
 }
 }
 
 namespace boost {
 template <class T>
 void validate(boost::optional<T> const& i) {
-  if (i) adl::adl_validate(*i);
+  if (i) ::adl::adl_validate(*i);
 }
 template <class T>
 void validate(shared_ptr<T> const& i) {
-  if (i) adl::adl_validate(*i);
+  if (i) ::adl::adl_validate(*i);
 }
 }
 
