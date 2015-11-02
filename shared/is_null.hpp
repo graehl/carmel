@@ -77,6 +77,18 @@ inline bool non_null(C const& c) {
 struct as_null {};
 // tag for constructors
 
+namespace adl {
+template <class T>
+bool adl_is_null(T const& t) {
+  return is_null(t);
+}
+template <class T>
+void adl_set_null(T & t) {
+  return set_null(t);
+}
+}
+
+
 #ifdef GRAEHL_TEST
 BOOST_AUTO_TEST_CASE(TEST_is_null) {
   using namespace std;
