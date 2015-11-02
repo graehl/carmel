@@ -2047,6 +2047,17 @@ ext2pub12() {
 ext2pub() {
     ext2pub12 $xmtext $xmtpub
 }
+rpathorigin() {
+    for f in "$@"; do
+        if [[ -f $f ]] ; then
+            echo $f
+            chrpath -r '$ORIGIN' $f
+        fi
+        if [[ -d $f ]] ; then
+            rpathorigin `ls $f/*.so*`
+        fi
+    done
+}
 bakxmt() {
     ( set -e;
         echo ${BUILD:=Release}
@@ -2083,7 +2094,9 @@ bakxmt() {
             fi
         done
         grep "export LD_LIBRARY_PATH" $bindir/xmt.sh > $bindir/env.sh
-        rmrpath $bindir || true
+        #rmrpath $bindir || true
+        #rmrpath $pub/lib
+        rpathorigin $pub/lib
         cat $bindir/README
         local pub2=~/bugs/leak
         if [[ $1 ]] ; then

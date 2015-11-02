@@ -83,7 +83,7 @@ inline uint32_t order_preserving_u(float x) {
 }
 
 inline float float_from_order_preserving_u(uint32_t x) {
-  uint32_t t = bits4float_u(x) ^ 1u << 31;
+  uint32_t t = x ^ 1u << 31;
   return float4bits(t ^ t >> 31);
 }
 

@@ -19,8 +19,8 @@
 #ifndef TYPE_TRAITS_GRAEHL_2015_10_28_HPP
 #define TYPE_TRAITS_GRAEHL_2015_10_28_HPP
 #pragma once
-#include <graehl/shared/cpp11.hpp>
 
+#include <graehl/shared/cpp11.hpp>
 #if GRAEHL_CPP11
 #define GRAEHL_TYPE_TRAITS_NS std
 #include <type_traits>

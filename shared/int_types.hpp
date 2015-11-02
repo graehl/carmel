@@ -121,11 +121,16 @@
 #define GRAEHL_BIG_CONSTANT(x) (x##LLU)
 #endif
 
+
 #if GRAEHL_CPP11
-#define GRAEHL_CONSTEXPR static constexpr
+#if GRAEHL_CPP14
+#define GRAEHL_STATIC_CONSTEXPR static constexpr const
+#else
+#define GRAEHL_STATIC_CONSTEXPR static constexpr
+#endif
 #include <cstdint>
 #else
-#define GRAEHL_CONSTEXPR static const
+#define GRAEHL_STATIC_CONSTEXPR static const
 #include <boost/cstdint.hpp>
 #endif
 

@@ -76,10 +76,10 @@ namespace graehl {
 
 // Some primes between 2^63 and 2^64 for various uses.
 
-GRAEHL_CONSTEXPR uint64_t k_bigprime0 = GRAEHL_BIG_CONSTANT(0xc3a5c85c97cb3127);
-GRAEHL_CONSTEXPR uint64_t k_bigprime1 = GRAEHL_BIG_CONSTANT(0xb492b66fbe98f273);
-GRAEHL_CONSTEXPR uint64_t k_bigprime2 = GRAEHL_BIG_CONSTANT(0x9ae16a3b2f90404f);
-GRAEHL_CONSTEXPR uint64_t k_bigprime3 = GRAEHL_BIG_CONSTANT(0x9ddfea08eb382d69);
+GRAEHL_STATIC_CONSTEXPR uint64_t k_bigprime0 = GRAEHL_BIG_CONSTANT(0xc3a5c85c97cb3127);
+GRAEHL_STATIC_CONSTEXPR uint64_t k_bigprime1 = GRAEHL_BIG_CONSTANT(0xb492b66fbe98f273);
+GRAEHL_STATIC_CONSTEXPR uint64_t k_bigprime2 = GRAEHL_BIG_CONSTANT(0x9ae16a3b2f90404f);
+GRAEHL_STATIC_CONSTEXPR uint64_t k_bigprime3 = GRAEHL_BIG_CONSTANT(0x9ddfea08eb382d69);
 
 GRAEHL_FORCE_INLINE uint64_t fast_mixbits(uint64_t v) {
   return v ^ (v >> 47);
