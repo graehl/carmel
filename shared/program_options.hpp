@@ -351,7 +351,7 @@ void must_complete_read(I& in, std::string const& msg = "Couldn't parse") {
   if (in >> c) program_options_fatal(msg + " - got extra char: " + std::string(c, 1));
 }
 
-//TODO: std::function ok?
+//TODO: std function ok?
 template <class Ostream>
 struct any_printer : public boost::function<void(Ostream&, boost::any const&)> {
   typedef boost::function<void(Ostream&, boost::any const&)> F;

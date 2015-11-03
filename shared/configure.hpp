@@ -1183,7 +1183,7 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
   conf_expr const& init(V2 const& v2) const {
     return init(true, v2);
   }
-  conf_expr const& self_init(bool enable = true) const {
+  conf_expr const& defaulted(bool enable = true) const {
     if (enable)
       init(enable, *pval);
     else
@@ -1191,12 +1191,12 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
     return *this;
   }
   /**
-     like self_init, but configure_init.hpp treats this differently (actually
+     liked defaulted() but configure_init.hpp treats this differently (actually
      assigns v2, for default constructors)
   */
   template <class V2>
   conf_expr const& inits(V2 const& v2) {
-    return self_init(true);
+    return defaulted(true);
   }
 
   template <class V2>

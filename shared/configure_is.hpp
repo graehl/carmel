@@ -91,7 +91,7 @@ struct is_expr
   is_expr const& implicit(bool enable, V2 const& v2) const { return *this; }
   template <class V2>
   is_expr const& implicit(V2 const& v2) const { return *this; }
-  is_expr const& self_init(bool enable = true) const { return *this; }
+  is_expr const& defaulted(bool enable = true) const { return *this; }
   template <class V2>
   is_expr const& validate(V2 const& validator) const { return *this; }
 };

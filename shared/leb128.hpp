@@ -178,7 +178,7 @@ struct fixed_codec {
   template <class Config>
   void configure(Config& config) {
     config("fixed-bytes", &fixed_bytes)
-        .self_init()("(for non-leb128) use this many bytes (must be <= actual size of int)");
+        .defaulted()("(for non-leb128) use this many bytes (must be <= actual size of int)");
   }
   const_byteptr decode(Uint& x, const_byteptr p) const {
     x = 0;
@@ -207,7 +207,7 @@ struct maybe_leb128_codec : fixed_codec<Uint> {
   template <class Config>
   void configure(Config& config) {
     config("leb128", &leb128)
-        .self_init()(
+        .defaulted()(
             "enable little endian base 128 encoding (false means use fixed width integers (base 256 bytes as "
             "usual))");
   }
