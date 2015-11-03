@@ -13,45 +13,50 @@
 // limitations under the License.
 /** \file
 
-  char container with O(1) push_back.
+    pre-c++11 function, reference_wrapper (MSVC 2015 bug: force boost::function)
 */
 
-#ifndef STRING_BUFFER_GRAEHL_2015_10_29_HPP
-#define STRING_BUFFER_GRAEHL_2015_10_29_HPP
+#ifndef FUNCTION_GRAEHL_2015_10_24_HPP
+#define FUNCTION_GRAEHL_2015_10_24_HPP
 #pragma once
 #include <graehl/shared/cpp11.hpp>
 
-#include <string>
-#include <vector>
-#include <graehl/shared/append.hpp>
+#if GRAEHL_CPP11
+#include <functional>
+#else
+#include <boost/ref.hpp>
+#endif
+
+#if !GRAEHL_CPP11 || (defined(_MSC_VER) && _MSC_VER <= 1900)
+#define GRAEHL_FUNCTION_NS boost
+#include <boost/function.hpp>
+#else
+#include <functional>
+#define GRAEHL_FUNCTION_NS std
+#endif
 
 namespace graehl {
 
 #if GRAEHL_CPP11
-typedef std::string string_buffer;
+using std::ref;
+using std::reference_wrapper;
+template <class T>
+struct unwrap_reference {
+  typedef T type;
+};
+template <class T>
+struct unwrap_reference<reference_wrapper<T> > {
+  typedef T type;
+};
 #else
-typedef std::vector<char> string_buffer;
+using boost::ref;
+using boost::reference_wrapper;
+using boost::unwrap_reference;
 #endif
 
-#if GRAEHL_CPP11
-inline std::string const& str(graehl::string_buffer const& buf) {
-  return buf;
-}
-#else
-inline std::string str(graehl::string_buffer const& buf) {
-  return std::string(buf.begin(), buf.end());
-}
-#endif
-}
+using GRAEHL_FUNCTION_NS::function;
 
-namespace std {
-#if GRAEHL_CPP11
-#else
-inline graehl::string_buffer& operator+=(graehl::string_buffer& buf, std::string const& str) {
-  graehl::append(buf, str);
-  return buf;
-}
-#endif
+
 }
 
 #endif

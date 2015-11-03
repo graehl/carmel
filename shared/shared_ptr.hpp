@@ -24,16 +24,15 @@
 
 #if GRAEHL_CPP11
 #include <memory>
-#include <functional>
 #else
 #include <graehl/shared/warning_push.h>
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/function.hpp>
 #include <graehl/shared/warning_pop.h>
 #include <boost/smart_ptr/make_shared.hpp>
 #endif
+
 
 namespace graehl {
 
@@ -45,17 +44,6 @@ using std::make_shared;
 using std::static_pointer_cast;
 using std::dynamic_pointer_cast;
 using std::const_pointer_cast;
-using std::ref;
-using std::reference_wrapper;
-using std::function;
-template <class T>
-struct unwrap_reference {
-  typedef T type;
-};
-template <class T>
-struct unwrap_reference<reference_wrapper<T> > {
-  typedef T type;
-};
 #else
 #define GRAEHL_SHARED_PTR_NS boost
 template <class T>
@@ -65,10 +53,6 @@ using boost::make_shared;
 using boost::static_pointer_cast;
 using boost::dynamic_pointer_cast;
 using boost::const_pointer_cast;
-using boost::ref;
-using boost::reference_wrapper;
-using boost::unwrap_reference;
-using boost::function;
 #endif
 
 

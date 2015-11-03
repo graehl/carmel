@@ -22,14 +22,14 @@
 #pragma once
 
 #include <iostream>
-#include <boost/function.hpp>
+#include <graehl/shared/function.hpp>
 #include <graehl/shared/noreturn.hpp>
 #include <stdexcept>
 
 namespace graehl {
 
 
-typedef boost::function<void(std::string const&)> string_consumer;
+typedef function<void(std::string const&)> string_consumer;
 
 // a string_consumer
 struct warn_consumer {
@@ -45,22 +45,16 @@ struct warn_consumer {
 };
 
 struct assign_string_consumer {
-  std::string *o;
-  assign_string_consumer(std::string *o)
-      : o(o) {}
-  assign_string_consumer(std::string &o)
-      : o(&o) {}
-  void operator()(std::string const& msg) const {
-    o->assign(msg);
-  }
+  std::string* o;
+  assign_string_consumer(std::string* o) : o(o) {}
+  assign_string_consumer(std::string& o) : o(&o) {}
+  void operator()(std::string const& msg) const { o->assign(msg); }
 };
 
 struct append_string_consumer {
-  std::string *o;
-  append_string_consumer(std::string *o)
-      : o(o) {}
-  append_string_consumer(std::string &o)
-      : o(&o) {}
+  std::string* o;
+  append_string_consumer(std::string* o) : o(o) {}
+  append_string_consumer(std::string& o) : o(&o) {}
   void operator()(std::string const& msg) const {
     *o += msg;
     o->push_back('\n');

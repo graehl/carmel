@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 #include <graehl/shared/shared_ptr.hpp>
+#include <graehl/shared/function.hpp>
 
 namespace graehl {
 

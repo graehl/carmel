@@ -47,6 +47,7 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 #include <boost/any.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/detail/atomic_count.hpp>
+#include <graehl/shared/function.hpp>
 #include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/assign_traits.hpp>
@@ -903,7 +904,7 @@ struct conf_expr_base {
   template <class Val, class Validate>
   void set_validate(Validate const& validate) const {
     throw config_exception("TODO: custom validate implementation is questionable");
-    validator = boost::function<void(Val&)>(validate);
+    validator = function<void(Val&)>(validate);
   }
   template <class Val>
   bool custom_validate(Val* pval) const {
