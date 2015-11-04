@@ -5600,7 +5600,7 @@ findcmake() {
     find ${1:-.} -name CMakeLists\*.txt
 }
 findc() {
-    find ${1:-.} -name '*.hpp' -o -name '*.cpp' -o -name '*.ipp' -o -name '*.cc' -o -name '*.hh' -o -name '*.c' -o -name '*.h' | sed 's/^\.\///'
+    find ${1:-.} -name '*.hpp' -o -name '*.cpp' -o -name '*.ipp' -o -name '*.cc' -o -name '*.hh' -o -name '*.c' -o -name '*.h' | sed 's/^\.\///' | grep -v trash.hpp | grep -v '^.#'
 }
 
 tea() {

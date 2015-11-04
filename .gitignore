@@ -11,3 +11,6 @@ carmel/test/span.spell.trained2
 openfst
 util/reveal.js
 latest.log
+balance/balance
+*.lex.cc
+*.lex.hh

@@ -420,9 +420,7 @@ struct stable_vector {
   }
 };
 
-}  // ns
-
-/// these are in global ns to work around an MSVC2010 bug:
+/// these were in global ns to work around an MSVC2010 bug:
 /// http://msdn.microsoft.com/en-us/library/19dh8yat.aspx
 
 template <class T>
@@ -464,6 +462,8 @@ template <class A, class B, unsigned C, bool D>
 void clear_destroy(graehl::stable_vector<A, B, C, D>& v) {
   v.clear(true);
 }
+
+}  // ns
 
 #ifndef _WIN32
 #ifdef GRAEHL_TEST
