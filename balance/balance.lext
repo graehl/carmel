@@ -1,0 +1,16 @@
+%option c++
+
+
+IdentPart1      [A-Za-z_]
+Identifier      {IdentPart1}[A-Za-z_0-9]*
+WHITESPACE      [ \t\r\n]
+
+%%
+
+{Identifier}      {return 257;}
+{WHITESPACE}      {/* Ignore */}
+.                 {return 258;}
+
+%%
+
+int yyFlexLexer::yywrap()   { return 1;}

@@ -5916,21 +5916,36 @@ showdefines() {
 }
 showcpp() {
     (
+        # https://github.com/h8liu/mcpp
         local outdir=${outcpp:-~/tmp}
         local os=
         for f in "$@"; do
             local o=$outdir/$(basename $f).pp.cpp
+            mkdir -p `dirname $o`
             os+=" $o"
             rm -f $o
             f=$(realpath $f)
             #pushd /Users/graehl/x/Debug/Hypergraph &&
             local xmtlib=$xmtextbase/FC12/libraries
-
-            /usr/bin/g++ -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -O0 -g -Wall -Wno-unused-variable -Wno-parentheses -Wno-sign-compare -Wno-reorder -Wreturn-type -Wno-strict-aliasing -g -I/Users/graehl/x/sdl -I$xmtlibshared/zeromq-3.2.2.2-1/include -I$xmtlibshared/utf8 -I$xmtlib/boost_1_${boostminor:-55}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/sdl/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I/Users/graehl/t/ \
+            boostminor=11
+            CPP=${CPP:-mcpp}
+            if [[ `basename $CPP` != mcpp ]] ; then
+                earg='-E'
+            else
+                earg=-'+ -V201400L -I-'
+            fi
+            set -x
+            $CPP -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5  -I$xmtx/sdl -I$xmtx \
+                 -I$xmtlibshared/sparsehash-c11/include \
+                 -I$xmtlibshared/utf8 \
+                   $earg -o "$o"  "$f" ; edit $o
+            #-x c++ -std=c++11
+            if false ; then
+ -I$xmtlibshared/zeromq-3.2.2.2-1/include  -I$xmtlib/boost_1_${boostminor}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/sdl/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I.  \
                 -I $xmtlib/db-5.3.15 \
                 -I $xmtlib/yaml-cpp-0.3.0-newapi/include \
-                -I$xmtlibshared/utf8 -I$xmtlibshared/openfst-1.2.10/src -I$xmtlibshared/tinyxmlcpp-2.5.4/include \
-                -E -x c++ -o $o -c "$f" && emacs $o
+                -I$xmtlibshared/utf8 -I$xmtlibshared/openfst-1.2.10/src -I$xmtlibshared/tinyxmlcpp-2.5.4/include
+            fi
             popd
         done
         echo
