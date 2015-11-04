@@ -124,10 +124,20 @@ inline std::basic_ostream<Ch, Tr>& out_shell_quote(std::basic_ostream<Ch, Tr>& o
   return out;
 }
 
+// function object pointing to string_builder or buffer. cheap copy
+struct append_string_buffer {
+  string_buffer& b;
+  append_string_buffer(string_buffer& b) : b(b) { b.reserve(100); }
+  void operator()(char c) const {
+    b.push_back(c);
+  }
+};
+
 template <class C>
 inline std::string shell_quote(C const& data, bool quote_empty = true) {
-  string_builder b;
-  return shell_quote_chars(append_string_builder(b), to_string(data), quote_empty).str();
+  string_buffer b;  // NRVO in C++11
+  shell_quote_chars(append_string_buffer(b), to_string(data), quote_empty);
+  return strcopy(b);
 }
 
 

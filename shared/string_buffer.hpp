@@ -13,7 +13,8 @@
 // limitations under the License.
 /** \file
 
-  char container with O(1) push_back.
+  char container with O(1) push_back. str(x) free fn is destructive (must
+  .clear() to reuse) in c++11; use strcopy(x) for nondestructive
 */
 
 #ifndef STRING_BUFFER_GRAEHL_2015_10_29_HPP
@@ -37,11 +38,17 @@ typedef std::vector<char> string_buffer;
 inline std::string const& str(graehl::string_buffer const& buf) {
   return buf;
 }
+inline std::string && str(graehl::string_buffer & buf) {
+  return std::move(buf);
+}
 #else
 inline std::string str(graehl::string_buffer const& buf) {
   return std::string(buf.begin(), buf.end());
 }
 #endif
+inline std::string strcopy(graehl::string_buffer const& buf) {
+  return std::string(buf.begin(), buf.end());
+}
 }
 
 namespace std {

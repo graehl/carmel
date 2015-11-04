@@ -67,8 +67,6 @@ struct ignore {
   void operator()(V const&) const {}
 };
 
-// append_string_builder_newline is also a string_consumer
-
 namespace {
 warn_consumer const cerr_warnings;
 ignore const ignore_warnings;

@@ -239,10 +239,35 @@ struct string_builder : string_buffer {
     return *this;
   }
   string_builder& operator()(std::istream& i) { return (*this)(*i.rdbuf()); }
-  std::string& assign(std::string& str) const { return str.assign(this->begin(), this->end()); }
-  std::string& to(std::string& str) const { return str.assign(this->begin(), this->end()); }
-  std::string str() const { return std::string(this->begin(), this->end()); }
-  std::string* new_str() const { return new std::string(this->begin(), this->end()); }
+  std::string& assign(std::string& str) {
+    to(str);
+    return str;
+  }
+#if GRAEHL_CPP11
+  /// destructive: move away from current buffer (can't use any more w/o clear)
+  void to(std::string& str) { str = std::move((std::string&)*this); }
+  std::string const& str() const { return *this; }
+  std::string&& str() { return std::move(*this); }
+
+  std::string* new_str() const{ return new std::string(*this); }
+  std::string const& strcopy() const { return *this; }
+#else
+
+  void to(std::string& str) {
+    str.assign(this->begin(), this->end());
+    clear();
+  }
+  std::string str() {
+    std::string r(this->begin(), this->end());
+    clear();
+    return r;
+  }
+
+  std::string const& strcopy() const { return std::string(this->begin(), this->end()); }
+  std::string* new_str() const {
+    return new std::string(this->begin(), this->end());
+  }
+#endif
   std::string skipPrefix(std::size_t prefixLen) const {
     return prefixLen > this->size() ? std::string() : std::string(this->begin() + prefixLen, this->end());
   }
@@ -400,67 +425,6 @@ std::string joined_seq(Seq const& seq, Sep const& sep) {
   b.join(seq, sep);
   return std::string(b.begin(), b.end());
 }
-
-// function object pointing to string_builder or buffer. cheap copy
-struct append_string_builder {
-  string_builder& b;
-  append_string_builder(string_builder& b) : b(b) { b.reserve(100); }
-  append_string_builder(append_string_builder const& b) : b(b.b) {}
-  append_string_builder& operator()(char c) {
-    b(c);
-    return *this;
-  }
-  template <class CharIter>
-  append_string_builder const& operator()(CharIter const& i, CharIter const& end) const {
-    b(i, end);
-    return *this;
-  }
-  template <class T>
-  append_string_builder const& operator()(T const& t) const {
-    b(t);
-    return *this;
-  }
-  template <class S>
-  append_string_builder const& append(S const& s) const {
-    return (*this)(s);
-  }
-  template <class S>
-  append_string_builder const& append(S const& s1, S const& s2) const {
-    return (*this)(s1, s2);
-  }
-  std::string str() const { return std::string(b.begin(), b.end()); }
-  std::string str(std::size_t len) const { return b.str(len); }
-  std::string shorten(std::size_t drop_suffix_chars) { return b.shorten(drop_suffix_chars); }
-};
-
-struct append_string_builder_newline : append_string_builder {
-  std::string newline;
-  append_string_builder_newline(string_builder& b, std::string const& newline = "\n")
-      : append_string_builder(b), newline(newline) {}
-  append_string_builder_newline(append_string_builder_newline const& o)
-      : append_string_builder(o), newline(o.newline) {}
-  template <class S>
-  append_string_builder_newline const& operator()(S const& s) const {
-    append_string_builder::operator()(s);
-    append_string_builder::operator()(newline);
-    return *this;
-  }
-  template <class S>
-  append_string_builder_newline const& operator()(S const& s1, S const& s2) const {
-    return (*this)(s1, s2);
-    append_string_builder::operator()(s1, s2);
-    append_string_builder::operator()(newline);
-    return *this;
-  }
-  template <class S>
-  append_string_builder_newline const& append(S const& s) const {
-    return (*this)(s);
-  }
-  template <class S>
-  append_string_builder_newline const& append(S const& s1, S const& s2) const {
-    return (*this)(s1, s2);
-  }
-};
 
 
 }

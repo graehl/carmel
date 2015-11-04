@@ -82,7 +82,7 @@ struct bit_names {
   std::string name(Int val) const {
     string_builder b;
     append(val, b);
-    return std::string(b.begin(), b.end());
+    return b.str();
   }
 
   void usage(string_builder& b, bool values = false) const {
