@@ -180,7 +180,7 @@ struct list_format {
     if (first)
       first = false;
     else
-      CharPrint::call(o, Open);
+      CharPrint::call(o, Space);
   }
   template <class O, class V>
   void element(O& o, V const& v) {

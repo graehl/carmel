@@ -5594,7 +5594,7 @@ xmtclone() {
     git clone ssh://graehl@git02.languageweaver.com:29418/xmt "$@"
 }
 findyaml() {
-    $(ag -g '\.ya?ml$')
+    ag  -g '\.ya?ml$'
 }
 findcmake() {
     find ${1:-.} -name CMakeLists\*.txt
