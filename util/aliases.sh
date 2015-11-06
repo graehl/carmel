@@ -53,7 +53,7 @@ gsldiff() {
     sub=GSL/include
     cd ~/src/$sub
         set -x
-    for f in *; do
+    for f in *.h; do
         diff $f $xmtextc/$sub/$f || echo $f
     done
     )
@@ -62,14 +62,24 @@ overgsl() {
     sub=GSL/include
     cd ~/src/$sub
     (gsldiff
-    for f in *; do
-        cp $xmtextc/$sub/$f $f
+    for f in *.h; do
+        cp $f $xmtextc/$sub/$f
+    done
+    )
+}
+lingsl() {
+    sub=GSL/include
+    cd ~/src/$sub
+    (gsldiff
+    for f in *.h; do
+        cp $f $xmtextc/$sub/$f
+        scp $f $chost:c/xmt-externals/Shared/cpp/GSL/include
     done
     )
 }
 gcjen() {
     (cd;
-     sync2 $chost c/xmt-externals/Shared/cpp/GSL
+     lingsl
      cjen "$@"
     )
 }
@@ -95,9 +105,6 @@ ssub() {
 }
 nograehl() {
     for f in *.hpp; do grep -q  'Jonathan Graehl' $f || echo $f; done
-}
-lingsl() {
-    c-s 'cd ~/src/GSL && git pull && cp include/*.h ~/c/sdl-externals/Shared/cpp/GSL/include/ && cp include/*.h ~/c/xmt-externals/Shared/cpp/GSL/include/'
 }
 
 gitq() {
@@ -2051,7 +2058,7 @@ rpathorigin() {
     for f in "$@"; do
         if [[ -f $f ]] ; then
             echo $f
-            chrpath -r '$ORIGIN' $f
+            chrpath -r '$ORIGIN/lib:$ORIGIN' $f
         fi
         if [[ -d $f ]] ; then
             rpathorigin `ls $f/*.so*`

@@ -14,6 +14,12 @@
 /** \file
 
  std:: enable_if etc or boost::.
+
+ also boost::icl::iscontainer, which checks for presence of all of:
+   value_type
+   reference
+   iterator
+   size_type
 */
 
 #ifndef TYPE_TRAITS_GRAEHL_2015_10_28_HPP

@@ -18,11 +18,15 @@
 
 /** \file
 
-    space and cache-efficient small vectors (like std::vector). for small size,
-    elements are stored without indirection on the stack. over that size,
-    they're stored on the heap as with a regular std::vector. specify the
-    maximum 'small size' as a template constant. also specify an alternative to
-    std::size_t (e.g. uint32_t or uint16_t) for element indices and sizes.
+    space and cache-efficient small vectors (like std::vector) for POD-like (can
+    memcpy to copy) data. if you want constructors use std::vector.
+
+    memcmp comparable isn't necessary - we use ==, <.
+
+    for small size, elements are stored without indirection on the stack. over
+    that size, they're stored on the heap as with a regular std::vector. specify
+    the maximum 'small size' as a template constant. also specify an alternative
+    to std::size_t (e.g. uint32_t or uint16_t) for element indices and sizes.
 
     offers same iterator invalidations as std::vector with one exception:
     erasing will also invalidate (when size transitions from >kMaxInlineSize to
@@ -46,25 +50,13 @@
     layout (without pulling it outside the union entirely, which would lose the
     ability to have size/capacity next to each other for large format.
 
-    TODO: need to implement tests/handling for non-pod (guarantee ctor/dtor
-    calls in that case, incl copy ctor when changing between heap and inline). for now assume that T must be
-   POD.
-
     REQUIRES that T is POD (specifically - it's part of a union, so must be. all
     we really require is that memmove/memcpy is allowed rather than copy
     construct + destroy old. we don't call destructor on T.
-
-    memcmp comparable isn't necessary - we use ==, <.
-
-    you can check for the happy day when non-pod small_vector are supported
-    with: #if !GRAEHL_SMALL_VECTOR_POD_ONLY - it's just some extra bookkeeping
-    and traits usage to meticulously call copy ctor and dtor instead of memcpy
-    and nothing respectively (assuming the compiler allows your non-pod to exist
-    in a union)
-
 */
 
-// don't change to 0 unless you add ~T() calls everywhere (several places)
+// don't change to 0 unless you add ~T() and copy/move calls (many will be
+// needed)
 #define GRAEHL_SMALL_VECTOR_POD_ONLY 1
 
 #include <stdlib.h>
@@ -159,25 +151,31 @@ struct pod_array_ref {
   }
   Size size() const { return sz; }
   bool empty() const { return !sz; }
-  T &front() {
+  T& front() {
     assert(sz);
     return data[0];
   }
-  T &front() const {
+  T& front() const {
     assert(sz);
     return data[0];
   }
-  T &back() {
+  T& back() {
     assert(sz);
     return data[sz - 1];
   }
-  T &back() const{
+  T& back() const {
     assert(sz);
     return data[sz - 1];
   }
 
-  T& operator[](Size i) { assert(i < sz); return data[i]; }
-  T const& operator[](Size i) const { assert(i < sz); return data[i]; }
+  T& operator[](Size i) {
+    assert(i < sz);
+    return data[i];
+  }
+  T const& operator[](Size i) const {
+    assert(i < sz);
+    return data[i];
+  }
   T* begin() { return data; }
   T const* begin() const { return data; }
   T* end() { return data + sz; }
@@ -308,11 +306,11 @@ struct small_vector {
     if (data.stack.sz_) ar >> GRAEHL_BOOST_SERIALIZATION_NVP(make_array(begin(), data.stack.sz_));
   }
 
-  #if GRAEHL_CPP11
-   constexpr small_vector() : data{} {}
-  #else
-   small_vector() { data.stack.sz_ = 0; }
-  #endif
+#if GRAEHL_CPP11
+  constexpr small_vector() : data{} {}
+#else
+  small_vector() { data.stack.sz_ = 0; }
+#endif
   /**
      default constructed T() * s. since T is probably POD, this means its pod
      members are default constructed (i.e. set to 0). If T isn't POD but can be memmoved, then you probably
@@ -358,6 +356,8 @@ struct small_vector {
 
   small_vector(T const* i, T const* end) { init_range(i, end); }
 
+  small_vector(T const* i, size_type N) { init_range(i, N); }
+
   template <class Iter>
   small_vector(Iter const& i, Iter const& end, typename enable_type<typename Iter::value_type>::type* enable = 0)
   // couldn't SFINAE on std::iterator_traits<Iter> in gcc (for Iter=int)
@@ -374,6 +374,11 @@ struct small_vector {
     } else {
       for (size_type i = 0; i < data.stack.sz_; ++i) data.heap.begin_[i] = v;
     }
+  }
+  void init_range(T const* i, size_type s) {
+    assert(s <= kMaxSize);
+    alloc(s);
+    memcpy_from(i);
   }
   void init_range(T const* i, T const* end) {
     size_type s = (size_type)(end - i);
@@ -429,8 +434,8 @@ struct small_vector {
   enum { kTargetBiggerSz = kMaxInlineSize * 3 + 1 / 2 };
   enum { kTargetBiggerUnaligned = sizeof(T) * kTargetBiggerSz };
   enum {
-    kTargetBiggerAligned = (kTargetBiggerUnaligned + ktarget_first_alloc_mask)
-                           & ~(size_type)ktarget_first_alloc_mask
+    kTargetBiggerAligned
+    = (kTargetBiggerUnaligned + ktarget_first_alloc_mask) & ~(size_type)ktarget_first_alloc_mask
   };
   static const size_type kInitHeapSize = TargetSize::ktarget_first_sz > kMaxInlineSize
                                              ? TargetSize::ktarget_first_sz
@@ -476,7 +481,7 @@ struct small_vector {
   }
 
   T* erase(T* b, T* e) {  // remove [b, e) and return pointer to element e
-    T* tb = begin(), * te = end();
+    T *tb = begin(), *te = end();
     size_type nbefore = (size_type)(b - tb);
     if (e == te) {
       resize(nbefore);
@@ -534,15 +539,9 @@ struct small_vector {
 
   /// null values can't be assigned to or from (will crash - TODO: fix w/o undue
   /// perf penalty? better customize densehashtable.h) but can be set/is/~small_vector
-  void is_any_null() const {
-    return data.stack.sz_ >= (size_type)-2;
-  }
-  void is_null() const {
-    return data.stack.sz_ == (size_type)-1;
-  }
-  void is_null2() const {
-    return data.stack.sz_ == (size_type)-2;
-  }
+  void is_any_null() const { return data.stack.sz_ >= (size_type)-2; }
+  void is_null() const { return data.stack.sz_ == (size_type)-1; }
+  void is_null2() const { return data.stack.sz_ == (size_type)-2; }
   void set_null() {
     data.stack.sz_ = (size_type)-1;
     data.heap.begin_ = 0;
@@ -654,7 +653,7 @@ struct small_vector {
     size_type s = data.stack.sz_;
     size_type addsz = (size_type)(e - i);
     resize_up_unconstructed(s + addsz);
-    for (T* b = begin() + s; i < e; ++i, ++b) *b = *i;
+    for (T *b = begin() + s; i < e; ++i, ++b) *b = *i;
   }
 
   void append(T const* i, size_type n) {
@@ -1154,7 +1153,7 @@ struct small_vector {
      sizeof(small_vector<...>) - the idea would be not to use the smaller of two kMaxInlineSize that both
      result in the same size union
   */
-  //TODO: mv sz_ outside here? put dummy struct inside storage_union_variants for constexpr ctor?
+  // TODO: mv sz_ outside here? put dummy struct inside storage_union_variants for constexpr ctor?
   union storage_union_variants {
     size_type sz_only_;
     struct heap_storage_variant {
@@ -1172,7 +1171,6 @@ struct small_vector {
   };
   storage_union_variants data;
 };
-
 }
 
 namespace std {
@@ -1248,8 +1246,8 @@ CLANG_DIAG_IGNORE(tautological-undefined-compare)
 namespace graehl {
 namespace unit_test {
 
-std::size_t const test_archive_flags = boost::archive::no_header | boost::archive::no_codecvt
-                                       | boost::archive::no_xml_tag_checking;
+std::size_t const test_archive_flags
+    = boost::archive::no_header | boost::archive::no_codecvt | boost::archive::no_xml_tag_checking;
 
 template <class InArchive, class Vec1, class Vec2>
 void test_same_serialization_result(std::string const& str, Vec1 const& v, Vec2& v2) {

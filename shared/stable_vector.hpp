@@ -62,8 +62,10 @@ struct stable_vector {
   /// gets default constructed T(). false would be faster if you didn't mind
   /// leaving the old values in place
   enum { kRemoveDestroys = true };
+  typedef IndexT size_type;
   typedef IndexT I;
   typedef T value_type;
+  typedef T &reference;
   typedef stable_vector self_type;
 
   enum { chunkshift = Log2ChunkSize, chunksize = (1 << Log2ChunkSize), posmask = (chunksize - 1) };
