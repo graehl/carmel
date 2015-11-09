@@ -252,7 +252,6 @@ struct string_builder : string_buffer {
   std::string* new_str() const{ return new std::string(*this); }
   std::string const& strcopy() const { return *this; }
 #else
-
   void to(std::string& str) {
     str.assign(this->begin(), this->end());
     clear();

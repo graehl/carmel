@@ -46,7 +46,14 @@ osdirbuild=/local/graehl/build-hypergraphs
 chosts="c-ydong c-graehl c-mdreyer gitbuild1 git02"
 chost=c-graehl
 jhost=git02
-xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1"
+xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=0"
+usescanbuild() {
+    useclang
+    export CCC_CC=clang
+    export CCC_CXX=clang++
+    export CC="ccc-analyzer"
+    export CXX="c++-analyzer"
+}
 gsldiff() {
     (
         set -e
@@ -1756,6 +1763,8 @@ overc() {
         set -e
         b=${3-~/bugs/over$chost}
         f=${2:-`basename $1`}
+        log=$1
+        log=`perl -e 'shift; s|/Users/|/home/|g; print' "$log"`
         d=$b/$f
         mkdir -p $d
         cd $d
@@ -1768,6 +1777,9 @@ overc() {
         cd $xmtx
         . $s
     )
+}
+overj() {
+    chost=git02 overc "$@"
 }
 bstart() {
     bsearchin=$1
@@ -4059,7 +4071,7 @@ jen() {
     if [[ $HOST = pwn ]] ; then
         UPDATE=0
     fi
-    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-0} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -4731,13 +4743,6 @@ useclang() {
     export PATH=/local/clang/bin:$PATH
     export LD_LIBRARY_PATH=/local/clang/lib:$LD_LIBRARY_PATH
 }
-usescanbuild() {
-    useclang
-    export CCC_CC=clang
-    export CCC_CXX=clang++
-    export CC="ccc-analyzer"
-    export CXX="c++-analyzer"
-}
 gcc48=
 gcc47=1
 gcc49=1
@@ -4838,7 +4843,7 @@ linjen() {
      rm $tmp2
         log=~/tmp/linjen.`csuf`.$branch.$BUILD
         mv $log ${log}2 || true
-        c-s NOLOCALGCC=$NOLOCALGCC XMT_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-filter-gcc-errors}
+        c-s NOLOCALGCC=$NOLOCALGCC XMT_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-0} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-filter-gcc-errors}
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;

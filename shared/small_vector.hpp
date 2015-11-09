@@ -430,15 +430,15 @@ struct small_vector {
 #else
       ((size_type)-1) / 2;
 #endif
-  typedef good_vector_size<T> TargetSize;
+  typedef good_vector_size<T> Tarsize;
   enum { kTargetBiggerSz = kMaxInlineSize * 3 + 1 / 2 };
   enum { kTargetBiggerUnaligned = sizeof(T) * kTargetBiggerSz };
   enum {
     kTargetBiggerAligned
     = (kTargetBiggerUnaligned + ktarget_first_alloc_mask) & ~(size_type)ktarget_first_alloc_mask
   };
-  static const size_type kInitHeapSize = TargetSize::ktarget_first_sz > kMaxInlineSize
-                                             ? TargetSize::ktarget_first_sz
+  static const size_type kInitHeapSize = Tarsize::ktarget_first_sz > kMaxInlineSize
+                                             ? Tarsize::ktarget_first_sz
                                              : kTargetBiggerAligned / sizeof(T);
   T* begin() { return data.stack.sz_ > kMaxInlineSize ? data.heap.begin_ : data.stack.vals_; }
   T const* begin() const { return const_cast<small_vector*>(this)->begin(); }
