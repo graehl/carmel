@@ -35,7 +35,7 @@
 
 namespace graehl {
 
-double const kMaxIndexedHashLoad = 0.7;  // will double capacity when load reaches this
+double const kMaxIndexedHashLoad = 0.666;  // will double capacity when load reaches this
 double const kOneOverMaxIndexedHashLoad = 1. / kMaxIndexedHashLoad;
 
 template <class I>

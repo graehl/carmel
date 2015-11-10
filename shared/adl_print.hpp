@@ -127,6 +127,28 @@ struct Print {
 #endif
 };
 
+//TODO: pointer_traits, type_string
+template <class PV>
+struct Print<PV const*, void> {
+  typedef PV const*V;
+  template <class O>
+  static void call(O& o, V v) {
+    using namespace adl_default;
+    if (!v)
+      o << "[NULL]";
+    else
+      adl_print(o, *v);
+  }
+  template <class O, class S>
+  static void call(O& o, V v, S const& s) {
+    using namespace adl_default;
+    if (!v)
+      o << "[NULL]";
+    else
+      adl_print(o, *v, s);
+  }
+};
+
 template <>
 struct Print<std::string, void> {
   typedef std::string V;
