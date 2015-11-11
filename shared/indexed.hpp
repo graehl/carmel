@@ -98,7 +98,8 @@ struct indexed_traits<std::string> {
     std::size_t sz = a.size();
     return sz == b.size() && !std::memcmp(a.data(), b.data(), sz);
   }
-  std::size_t operator()(T const& a, char const* s) const { return !std::strcmp(a.c_str(), s); }
+  bool operator()(T const& a, char const* s) const { return !std::strcmp(a.c_str(), s); }
+
   template <class Key>
   std::size_t operator()(Key const& s) const {
     return farmhash(s.data(), s.size());
