@@ -19,7 +19,7 @@
 /** \file
 
     space and cache-efficient small vectors (like std::vector) for POD-like (can
-    memcpy to copy) data. if you want constructors use std::vector.
+    memcpy to copy) d_. if you want constructors use std::vector.
 
     memcmp comparable isn't necessary - we use ==, <.
 
@@ -131,6 +131,7 @@ struct enable_type {
 enum { kDefaultMaxInlineSize = 3 };
 typedef unsigned small_vector_default_size_type;
 
+// TODO: for c++11 use gsl::span
 template <class T, class Size = small_vector_default_size_type>
 struct pod_array_ref {
   typedef Size size_type;
@@ -140,56 +141,59 @@ struct pod_array_ref {
   typedef T& reference;
   typedef T const& const_reference;
   Size sz;
-  T* data;
+  T* a;
   pod_array_ref() : sz() {}
-  pod_array_ref(T* data, Size sz) : sz(sz), data(data) {}
-  pod_array_ref(T* begin, T* end) : sz(end - begin), data(begin) {}
+  pod_array_ref(T* a, Size sz) : sz(sz), a(a) {}
+  pod_array_ref(T* begin, T* end) : sz(end - begin), a(begin) {}
   template <class Vec>
   explicit pod_array_ref(Vec const& vec)
-      : sz((Size)vec.size()), data(&vec[0]) {
+      : sz((Size)vec.size()), a(&vec[0]) {
     assert(vec.size() == sz);
   }
   Size size() const { return sz; }
+  Size length() const { return sz; }
   bool empty() const { return !sz; }
   T& front() {
     assert(sz);
-    return data[0];
+    return a[0];
   }
   T& front() const {
     assert(sz);
-    return data[0];
+    return a[0];
   }
   T& back() {
     assert(sz);
-    return data[sz - 1];
+    return a[sz - 1];
   }
   T& back() const {
     assert(sz);
-    return data[sz - 1];
+    return a[sz - 1];
   }
 
   T& operator[](Size i) {
     assert(i < sz);
-    return data[i];
+    return a[i];
   }
   T const& operator[](Size i) const {
     assert(i < sz);
-    return data[i];
+    return a[i];
   }
-  T* begin() { return data; }
-  T const* begin() const { return data; }
-  T* end() { return data + sz; }
-  T const* end() const { return data + sz; }
-  operator T*() { return data; }
-  operator T const*() const { return data; }
+  T* begin() { return a; }
+  T const* begin() const { return a; }
+  T* data() { return a; }
+  T const* data() const { return a; }
+  T* end() { return a + sz; }
+  T const* end() const { return a + sz; }
+  operator T*() { return a; }
+  operator T const*() const { return a; }
   template <class Vec>
   bool operator==(Vec const& vec) const {
-    return sz == vec.size() && !std::memcmp(data, &vec[0], sz * sizeof(T));
+    return sz == vec.size() && !std::memcmp(a, &vec[0], sz * sizeof(T));
   }
   template <class Vec>
   void operator=(Vec const& vec) {
     sz = vec.size();
-    data == &vec[0];
+    a == &vec[0];
   }
 };
 
@@ -205,17 +209,17 @@ struct small_vector {
   /**
      may leak (if you don't free yourself)
   */
-  void clear_nodestroy() { data.stack.sz_ = 0; }
+  void clear_nodestroy() { d_.stack.sz_ = 0; }
 
   T* push_back_uninitialized() {
-    if (data.stack.sz_ < kMaxInlineSize) {
-      return &data.stack.vals_[data.stack.sz_++];
+    if (d_.stack.sz_ < kMaxInlineSize) {
+      return &d_.stack.vals_[d_.stack.sz_++];
     } else {
-      if (data.stack.sz_ == kMaxInlineSize)
+      if (d_.stack.sz_ == kMaxInlineSize)
         copy_vals_to_ptr();
-      else if (data.stack.sz_ == data.heap.capacity_)
-        ensure_capacity_grow(data.stack.sz_ + 1);
-      return &data.heap.begin_[data.stack.sz_++];
+      else if (d_.stack.sz_ == d_.heap.capacity_)
+        ensure_capacity_grow(d_.stack.sz_ + 1);
+      return &d_.heap.begin_[d_.stack.sz_++];
     }
   }
 
@@ -282,7 +286,7 @@ struct small_vector {
   template <class Archive>
   void save(Archive& ar, const unsigned) const {
     using namespace boost::serialization;
-    collection_size_type const count(data.stack.sz_);
+    collection_size_type const count(d_.stack.sz_);
     ar << GRAEHL_BOOST_SERIALIZATION_NVP(count);
 #if GRAEHL_SMALL_VECTOR_SERIALIZE_VERSION
     item_version_type const item_version(version<T>::value);
@@ -290,7 +294,7 @@ struct small_vector {
 // use_array_optimization only fires for
 // binary archive?
 #endif
-    if (data.stack.sz_) ar << GRAEHL_BOOST_SERIALIZATION_NVP(make_array(begin(), data.stack.sz_));
+    if (d_.stack.sz_) ar << GRAEHL_BOOST_SERIALIZATION_NVP(make_array(begin(), d_.stack.sz_));
   }
   template <class Archive>
   void load(Archive& ar, const unsigned) {
@@ -298,18 +302,18 @@ struct small_vector {
     collection_size_type count;
     ar >> GRAEHL_BOOST_SERIALIZATION_NVP(count);
     resize((size_type)count);
-    assert(count == data.stack.sz_);
+    assert(count == d_.stack.sz_);
 #if GRAEHL_SMALL_VECTOR_SERIALIZE_VERSION
     item_version_type version;
     ar >> GRAEHL_BOOST_SERIALIZATION_NVP_VERSION(version);
 #endif
-    if (data.stack.sz_) ar >> GRAEHL_BOOST_SERIALIZATION_NVP(make_array(begin(), data.stack.sz_));
+    if (d_.stack.sz_) ar >> GRAEHL_BOOST_SERIALIZATION_NVP(make_array(begin(), d_.stack.sz_));
   }
 
 #if GRAEHL_CPP11
-  constexpr small_vector() : data{} {}
+  constexpr small_vector() : d_{} {}
 #else
-  small_vector() { data.stack.sz_ = 0; }
+  small_vector() { d_.stack.sz_ = 0; }
 #endif
   /**
      default constructed T() * s. since T is probably POD, this means its pod
@@ -320,9 +324,9 @@ struct small_vector {
     assert(s <= kMaxSize);
     alloc(s);
     if (s <= kMaxInlineSize)
-      for (size_type i = 0; i < s; ++i) new (&data.stack.vals_[i]) T();
+      for (size_type i = 0; i < s; ++i) new (&d_.stack.vals_[i]) T();
     else
-      for (size_type i = 0; i < data.stack.sz_; ++i) new (&data.heap.begin_[i]) T();
+      for (size_type i = 0; i < d_.stack.sz_; ++i) new (&d_.heap.begin_[i]) T();
   }
 
   small_vector(int s, T const& v) {
@@ -370,9 +374,9 @@ struct small_vector {
     assert(s <= kMaxSize);
     alloc(s);
     if (s <= kMaxInlineSize) {
-      for (size_type i = 0; i < s; ++i) data.stack.vals_[i] = v;
+      for (size_type i = 0; i < s; ++i) d_.stack.vals_[i] = v;
     } else {
-      for (size_type i = 0; i < data.stack.sz_; ++i) data.heap.begin_[i] = v;
+      for (size_type i = 0; i < d_.stack.sz_; ++i) d_.heap.begin_[i] = v;
     }
   }
   void init_range(T const* i, size_type s) {
@@ -399,18 +403,18 @@ struct small_vector {
      copy ctor.
   */
   small_vector(small_vector const& o) {
-    if (o.data.stack.sz_ <= kMaxInlineSize) {
+    if (o.d_.stack.sz_ <= kMaxInlineSize) {
 #if GRAEHL_VALGRIND
-      data.stack.sz_ = o.data.stack.sz_;
-      for (size_type i = 0; i < data.stack.sz_; ++i) data.stack.vals_[i] = o.data.stack.vals_[i];
+      d_.stack.sz_ = o.d_.stack.sz_;
+      for (size_type i = 0; i < d_.stack.sz_; ++i) d_.stack.vals_[i] = o.d_.stack.vals_[i];
 #else
-      data.stack = o.data.stack;
+      d_.stack = o.d_.stack;
 #endif
       // TODO: valgrind for partial init array
     } else {
-      data.heap.capacity_ = data.heap.sz_ = o.data.heap.sz_;
+      d_.heap.capacity_ = d_.heap.sz_ = o.d_.heap.sz_;
       alloc_heap();
-      memcpy_heap(o.data.heap.begin_);
+      memcpy_heap(o.d_.heap.begin_);
     }
   }
 
@@ -440,14 +444,17 @@ struct small_vector {
   static const size_type kInitHeapSize = Tarsize::ktarget_first_sz > kMaxInlineSize
                                              ? Tarsize::ktarget_first_sz
                                              : kTargetBiggerAligned / sizeof(T);
-  T* begin() { return data.stack.sz_ > kMaxInlineSize ? data.heap.begin_ : data.stack.vals_; }
+  T* begin() { return d_.stack.sz_ > kMaxInlineSize ? d_.heap.begin_ : d_.stack.vals_; }
   T const* begin() const { return const_cast<small_vector*>(this)->begin(); }
-  T* end() { return begin() + data.stack.sz_; }
-  T const* end() const { return begin() + data.stack.sz_; }
+  T* data() { return begin(); }
+  T const* data() const { return begin(); }
+
+  T* end() { return begin() + d_.stack.sz_; }
+  T const* end() const { return begin() + d_.stack.sz_; }
   typedef std::pair<T const*, T const*> slice_type;
   slice_type slice() const {
-    return data.stack.sz_ > kMaxInlineSize ? slice_type(data.heap.begin_, data.heap.begin_ + data.stack.sz_)
-                                           : slice_type(data.stack.vals_, data.stack.vals_ + data.stack.sz_);
+    return d_.stack.sz_ > kMaxInlineSize ? slice_type(d_.heap.begin_, d_.heap.begin_ + d_.stack.sz_)
+                                         : slice_type(d_.stack.vals_, d_.stack.vals_ + d_.stack.sz_);
   }
 
   typedef std::reverse_iterator<iterator> reverse_iterator;
@@ -470,7 +477,7 @@ struct small_vector {
   static void movelen(T* to, T const* from, size_type len) { std::memmove(to, from, len * sizeof(T)); }
 
   void erase(size_type ibegin, size_type iend) {
-    size_type sz = data.stack.sz_;
+    size_type sz = d_.stack.sz_;
     if (iend == sz) {
       resize(ibegin);
     } else {
@@ -492,44 +499,44 @@ struct small_vector {
     }
     return begin() + nbefore;
   }
-  void memcpy_to(T* p) { std::memcpy(p, begin(), data.stack.sz_ * sizeof(T)); }
+  void memcpy_to(T* p) { std::memcpy(p, begin(), d_.stack.sz_ * sizeof(T)); }
   void memcpy_heap(T const* from) {
-    assert(data.stack.sz_ <= kMaxSize);
-    assert(data.heap.capacity_ >= data.stack.sz_);
-    std::memcpy(data.heap.begin_, from, data.stack.sz_ * sizeof(T));
+    assert(d_.stack.sz_ <= kMaxSize);
+    assert(d_.heap.capacity_ >= d_.stack.sz_);
+    std::memcpy(d_.heap.begin_, from, d_.stack.sz_ * sizeof(T));
   }
   void memcpy_from(T const* from) {
-    assert(data.stack.sz_ <= kMaxSize);
-    std::memcpy(this->begin(), from, data.stack.sz_ * sizeof(T));
+    assert(d_.stack.sz_ <= kMaxSize);
+    std::memcpy(this->begin(), from, d_.stack.sz_ * sizeof(T));
   }
   static inline void memcpy_n(T* to, T const* from, size_type n) { std::memcpy(to, from, n * sizeof(T)); }
   static inline void memmove_n(T* to, T const* from, size_type n) { std::memmove(to, from, n * sizeof(T)); }
 
   small_vector& operator=(small_vector const& o) {
     if (&o == this) return *this;
-    if (data.stack.sz_ <= kMaxInlineSize) {
-      if (o.data.stack.sz_ <= kMaxInlineSize) {
-        data.stack.sz_ = o.data.stack.sz_;
+    if (d_.stack.sz_ <= kMaxInlineSize) {
+      if (o.d_.stack.sz_ <= kMaxInlineSize) {
+        d_.stack.sz_ = o.d_.stack.sz_;
         // unsigned instead of size_type because kMaxInlineSize is unsigned
-        for (unsigned i = 0; i < kMaxInlineSize; ++i) data.stack.vals_[i] = o.data.stack.vals_[i];
+        for (unsigned i = 0; i < kMaxInlineSize; ++i) d_.stack.vals_[i] = o.d_.stack.vals_[i];
       } else {
-        data.heap.capacity_ = data.stack.sz_ = o.data.stack.sz_;
+        d_.heap.capacity_ = d_.stack.sz_ = o.d_.stack.sz_;
         alloc_heap();
-        memcpy_heap(o.data.heap.begin_);
+        memcpy_heap(o.d_.heap.begin_);
       }
     } else {
-      if (o.data.stack.sz_ <= kMaxInlineSize) {
+      if (o.d_.stack.sz_ <= kMaxInlineSize) {
         free_heap();
-        data.stack.sz_ = o.data.stack.sz_;
-        for (unsigned i = 0; i < data.stack.sz_; ++i) data.stack.vals_[i] = o.data.stack.vals_[i];
+        d_.stack.sz_ = o.d_.stack.sz_;
+        for (unsigned i = 0; i < d_.stack.sz_; ++i) d_.stack.vals_[i] = o.d_.stack.vals_[i];
       } else {
-        if (data.heap.capacity_ < o.data.stack.sz_) {
+        if (d_.heap.capacity_ < o.d_.stack.sz_) {
           free_heap();
-          data.heap.capacity_ = o.data.stack.sz_;
+          d_.heap.capacity_ = o.d_.stack.sz_;
           alloc_heap();
         }
-        data.stack.sz_ = o.data.stack.sz_;
-        memcpy_heap(o.data.heap.begin_);
+        d_.stack.sz_ = o.d_.stack.sz_;
+        memcpy_heap(o.d_.heap.begin_);
       }
     }
     return *this;
@@ -539,21 +546,21 @@ struct small_vector {
 
   /// null values can't be assigned to or from (will crash - TODO: fix w/o undue
   /// perf penalty? better customize densehashtable.h) but can be set/is/~small_vector
-  void is_any_null() const { return data.stack.sz_ >= (size_type)-2; }
-  void is_null() const { return data.stack.sz_ == (size_type)-1; }
-  void is_null2() const { return data.stack.sz_ == (size_type)-2; }
+  void is_any_null() const { return d_.stack.sz_ >= (size_type)-2; }
+  void is_null() const { return d_.stack.sz_ == (size_type)-1; }
+  void is_null2() const { return d_.stack.sz_ == (size_type)-2; }
   void set_null() {
-    data.stack.sz_ = (size_type)-1;
-    data.heap.begin_ = 0;
+    d_.stack.sz_ = (size_type)-1;
+    d_.heap.begin_ = 0;
   }
   void set_null2() {
-    data.stack.sz_ = (size_type)-2;
-    data.heap.begin_ = 0;
+    d_.stack.sz_ = (size_type)-2;
+    d_.heap.begin_ = 0;
   }
 
   void clear() {
     free();
-    data.stack.sz_ = 0;
+    d_.stack.sz_ = 0;
   }
 
   void assign(T const* array, size_type n) { memcpy_n(realloc(n), array, array + n); }
@@ -589,36 +596,35 @@ struct small_vector {
     assignTo(to, vec.begin(), vec.size());
   }
 
-  bool empty() const { return data.stack.sz_ == 0; }
-  size_type size() const { return data.stack.sz_; }
-  size_type capacity() const {
-    return data.stack.sz_ > kMaxInlineSize ? data.heap.capacity_ : data.stack.sz_;
-  }
+  bool empty() const { return d_.stack.sz_ == 0; }
+  size_type size() const { return d_.stack.sz_; }
+  size_type length() const { return d_.stack.sz_; }
+  size_type capacity() const { return d_.stack.sz_ > kMaxInlineSize ? d_.heap.capacity_ : d_.stack.sz_; }
   // our true capacity is never less than kMaxInlineSize, but since capacity talks about allocated space,
   // we may as well return 0; however, docs on std::vector::capacity imply capacity>=size.
 
   /// does not initialize w/ default ctor.
   void resize_up_unconstructed(size_type s) {  // like reserve, but because of capacity_ undef if
-    // data.stack.sz_<=kMaxInlineSize, must set data.stack.sz_
+    // d_.stack.sz_<=kMaxInlineSize, must set d_.stack.sz_
     // immediately or we lose invariant
-    assert(s >= data.stack.sz_);
+    assert(s >= d_.stack.sz_);
     if (s > kMaxInlineSize) realloc_big(s);
-    data.stack.sz_ = s;
+    d_.stack.sz_ = s;
   }
   void resize_up_big_unconstructed(size_type s) {
     assert(s > kMaxInlineSize);
     realloc_big(s);
-    data.stack.sz_ = s;
+    d_.stack.sz_ = s;
   }
   void resize_maybe_unconstructed(size_type s) {
-    if (s < data.stack.sz_)
+    if (s < d_.stack.sz_)
       compact(s);
     else
       resize_up_big_unconstructed(s);
   }
 
   void reserve(size_type s) {
-    if (data.stack.sz_ > kMaxInlineSize) realloc_big(s);
+    if (d_.stack.sz_ > kMaxInlineSize) realloc_big(s);
   }
   static inline void construct_range(T* v, size_type begin, size_type end) {
     for (size_type i = begin; i < end; ++i) new (&v[i]) T();
@@ -634,36 +640,36 @@ struct small_vector {
   */
   template <class InputIter>
   void append_input(InputIter i, InputIter end) {
-    if (data.small.sz_ <= kMaxInlineSize) {
-      for (; data.small.sz_ < kMaxInlineSize; ++data.small.sz_) {
-        data.small.vals_[data.small.sz_] = *i;
+    if (d_.small.sz_ <= kMaxInlineSize) {
+      for (; d_.small.sz_ < kMaxInlineSize; ++d_.small.sz_) {
+        d_.small.vals_[d_.small.sz_] = *i;
         ++i;
         if (i == end) return;
       }
       copy_vals_to_ptr();
-      data.large.begin_[kMaxInlineSize] = *i;
+      d_.large.begin_[kMaxInlineSize] = *i;
       ++i;
-      data.small.sz_ = kMaxInlineSize + 1;
+      d_.small.sz_ = kMaxInlineSize + 1;
     }
     for (; i != end; ++i) push_back_large(*i);
   }
 
   template <class ForwardIter>
   void append(ForwardIter i, ForwardIter e) {
-    size_type s = data.stack.sz_;
+    size_type s = d_.stack.sz_;
     size_type addsz = (size_type)(e - i);
     resize_up_unconstructed(s + addsz);
     for (T *b = begin() + s; i < e; ++i, ++b) *b = *i;
   }
 
   void append(T const* i, size_type n) {
-    size_type s = data.stack.sz_;
+    size_type s = d_.stack.sz_;
     append_unconstructed(n);
     memcpy_n(begin() + s, i, n);
   }
 
   void append(T const* i, T const* end) {
-    size_type s = data.stack.sz_;
+    size_type s = d_.stack.sz_;
     size_type n = (size_type)(end - i);
     append_unconstructed(n);
     memcpy_n(begin() + s, i, n);
@@ -674,22 +680,22 @@ struct small_vector {
     append(set.begin(), set.end());
   }
 
-  void append(small_vector const& set) { append(set.begin(), set.data.stack.sz_); }
+  void append(small_vector const& set) { append(set.begin(), set.d_.stack.sz_); }
 
   void insert(T const& v) { push_back(v); }
 
   /**
      increase size without calling default ctor.
   */
-  void append_unconstructed(size_type N) { resize_up_unconstructed(data.stack.sz_ + N); }
+  void append_unconstructed(size_type N) { resize_up_unconstructed(d_.stack.sz_ + N); }
 
   /**
      change size without calling default ctor.
   */
   void resize_unconstructed(size_type N) {
-    if (data.stack.sz_ > N)
+    if (d_.stack.sz_ > N)
       resize(N);
-    else if (data.stack.sz_ < N)
+    else if (d_.stack.sz_ < N)
       resize_up_unconstructed(N);
   }
 
@@ -707,7 +713,7 @@ struct small_vector {
      insert hole of N elements at index i.
   */
   T* insert_hole_index(size_type i, size_type N) {
-    size_type s = data.stack.sz_;
+    size_type s = d_.stack.sz_;
     size_type snew = s + N;
     resize_up_unconstructed(snew);
     // TODO: optimize for snew, s inline/not
@@ -761,32 +767,32 @@ struct small_vector {
   void insert_index(iterator where, size_type n, T const& t) { insert_index(where - begin(), n, t); }
 
   void push_back_heap(T const& v) {
-    if (data.stack.sz_ == data.heap.capacity_) ensure_capacity_grow(data.stack.sz_ + 1);
-    data.heap.begin_[data.stack.sz_++] = v;
+    if (d_.stack.sz_ == d_.heap.capacity_) ensure_capacity_grow(d_.stack.sz_ + 1);
+    d_.heap.begin_[d_.stack.sz_++] = v;
   }
 
   void push_back(T const& v) {
-    if (data.stack.sz_ < kMaxInlineSize) {
-      data.stack.vals_[data.stack.sz_] = v;
-      ++data.stack.sz_;
-    } else if (data.stack.sz_ == kMaxInlineSize) {
+    if (d_.stack.sz_ < kMaxInlineSize) {
+      d_.stack.vals_[d_.stack.sz_] = v;
+      ++d_.stack.sz_;
+    } else if (d_.stack.sz_ == kMaxInlineSize) {
       copy_vals_to_ptr();
-      data.heap.begin_[kMaxInlineSize] = v;
-      data.stack.sz_ = kMaxInlineSize + 1;
+      d_.heap.begin_[kMaxInlineSize] = v;
+      d_.stack.sz_ = kMaxInlineSize + 1;
     } else {
       push_back_heap(v);
     }
   }
 
-  T& back() { return this->operator[](data.stack.sz_ - 1); }
-  T const& back() const { return this->operator[](data.stack.sz_ - 1); }
+  T& back() { return this->operator[](d_.stack.sz_ - 1); }
+  T const& back() const { return this->operator[](d_.stack.sz_ - 1); }
   T& front() { return this->operator[](0); }
   T const& front() const { return this->operator[](0); }
 
   void pop_back() {
-    assert(data.stack.sz_ > 0);
-    --data.stack.sz_;
-    if (data.stack.sz_ == kMaxInlineSize) ptr_to_small();
+    assert(d_.stack.sz_ > 0);
+    --d_.stack.sz_;
+    if (d_.stack.sz_ == kMaxInlineSize) ptr_to_small();
   }
 
   /**
@@ -794,46 +800,46 @@ struct small_vector {
      free unused (heap) space.
   */
   void compact() {
-    if (data.stack.sz_ > kMaxInlineSize)  // was heap
-      realloc_big(data.stack.sz_);
+    if (d_.stack.sz_ > kMaxInlineSize)  // was heap
+      realloc_big(d_.stack.sz_);
   }
 
   /**
      like resize(newsz), but newsz must be <= size()
   */
   void compact(size_type newsz) {
-    assert(newsz <= data.stack.sz_);
-    if (data.stack.sz_ > kMaxInlineSize) {  // was heap
-      data.stack.sz_ = newsz;
+    assert(newsz <= d_.stack.sz_);
+    if (d_.stack.sz_ > kMaxInlineSize) {  // was heap
+      d_.stack.sz_ = newsz;
       if (newsz <= kMaxInlineSize)  // now small
         ptr_to_small();
     } else  // was small already
-      data.stack.sz_ = newsz;
+      d_.stack.sz_ = newsz;
   }
 
   void resize(size_type s, T const& v = T()) {
     assert(s <= kMaxSize);
-    assert(data.stack.sz_ <= kMaxSize);
+    assert(d_.stack.sz_ <= kMaxSize);
     if (s <= kMaxInlineSize) {
-      if (data.stack.sz_ > kMaxInlineSize) {
-        data.stack.sz_ = s;
+      if (d_.stack.sz_ > kMaxInlineSize) {
+        d_.stack.sz_ = s;
         ptr_to_small();
         return;
-      } else if (s <= data.stack.sz_) {
+      } else if (s <= d_.stack.sz_) {
       } else {  // growing but still small
-        for (size_type i = data.stack.sz_; i < s; ++i) data.stack.vals_[i] = v;
+        for (size_type i = d_.stack.sz_; i < s; ++i) d_.stack.vals_[i] = v;
       }
     } else {  // new s is heap
-      if (s > data.stack.sz_) {
+      if (s > d_.stack.sz_) {
         realloc_big(s);
-        for (size_type i = data.stack.sz_; i < s; ++i) data.heap.begin_[i] = v;
+        for (size_type i = d_.stack.sz_; i < s; ++i) d_.heap.begin_[i] = v;
       }
     }
-    data.stack.sz_ = s;
+    d_.stack.sz_ = s;
   }
 
   T& at_grow(size_type i) {
-    size_type const oldsz = data.stack.sz_;
+    size_type const oldsz = d_.stack.sz_;
     if (i >= oldsz) {
       size_type newsz = i + 1;
       resize_up_unconstructed(newsz);
@@ -843,7 +849,7 @@ struct small_vector {
   }
 
   T& at_grow(size_type i, T const& zero) {
-    size_type const oldsz = data.stack.sz_;
+    size_type const oldsz = d_.stack.sz_;
     if (i >= oldsz) {
       size_type newsz = i + 1;
       resize_up_unconstructed(newsz);
@@ -857,7 +863,7 @@ struct small_vector {
   friend inline T& atExpand(small_vector& v, size_type i, T const& zero) { return v.at_grow(i, zero); }
 
   void set_grow(size_type i, T const& val) {
-    size_type const oldsz = data.stack.sz_;
+    size_type const oldsz = d_.stack.sz_;
     if (i >= oldsz) {
       size_type newsz = i + 1;
       resize_up_unconstructed(newsz);
@@ -869,7 +875,7 @@ struct small_vector {
   }
 
   void set_grow(size_type i, T const& val, T const& zero) {
-    size_type const oldsz = data.stack.sz_;
+    size_type const oldsz = d_.stack.sz_;
     if (i >= oldsz) {
       size_type newsz = i + 1;
       resize_up_unconstructed(newsz);
@@ -881,36 +887,36 @@ struct small_vector {
   }
 
   T& operator[](size_type i) {
-    if (data.stack.sz_ <= kMaxInlineSize) return data.stack.vals_[i];
-    return data.heap.begin_[i];
+    if (d_.stack.sz_ <= kMaxInlineSize) return d_.stack.vals_[i];
+    return d_.heap.begin_[i];
   }
   T const& operator[](size_type i) const {
-    if (data.stack.sz_ <= kMaxInlineSize) return data.stack.vals_[i];
-    return data.heap.begin_[i];
+    if (d_.stack.sz_ <= kMaxInlineSize) return d_.stack.vals_[i];
+    return d_.heap.begin_[i];
   }
 
   bool operator==(small_vector const& o) const {
-    if (data.stack.sz_ != o.data.stack.sz_) return false;
-    if (data.stack.sz_ <= kMaxInlineSize) {
-      for (size_type i = 0; i < data.stack.sz_; ++i)
-        if (data.stack.vals_[i] != o.data.stack.vals_[i]) return false;
+    if (d_.stack.sz_ != o.d_.stack.sz_) return false;
+    if (d_.stack.sz_ <= kMaxInlineSize) {
+      for (size_type i = 0; i < d_.stack.sz_; ++i)
+        if (d_.stack.vals_[i] != o.d_.stack.vals_[i]) return false;
       return true;
     } else {
-      for (size_type i = 0; i < data.stack.sz_; ++i)
-        if (data.heap.begin_[i] != o.data.heap.begin_[i]) return false;
+      for (size_type i = 0; i < d_.stack.sz_; ++i)
+        if (d_.heap.begin_[i] != o.d_.heap.begin_[i]) return false;
       return true;
     }
   }
 
   bool operator==(std::vector<T> const& other) const {
-    if (data.stack.sz_ != other.size()) return false;
-    if (data.stack.sz_ <= kMaxInlineSize) {
-      for (size_type i = 0; i < data.stack.sz_; ++i)
-        if (data.stack.vals_[i] != other[i]) return false;
+    if (d_.stack.sz_ != other.size()) return false;
+    if (d_.stack.sz_ <= kMaxInlineSize) {
+      for (size_type i = 0; i < d_.stack.sz_; ++i)
+        if (d_.stack.vals_[i] != other[i]) return false;
       return true;
     } else {
-      for (size_type i = 0; i < data.stack.sz_; ++i)
-        if (data.heap.begin_[i] != other[i]) return false;
+      for (size_type i = 0; i < d_.stack.sz_; ++i)
+        if (d_.heap.begin_[i] != other[i]) return false;
       return true;
     }
   }
@@ -972,14 +978,12 @@ struct small_vector {
   typedef boost::iterator_range<const_iterator> const_iterator_range;
 
   iterator_range range() {
-    return data.stack.sz_ > kMaxInlineSize
-               ? iterator_range(data.heap.begin_, data.heap.begin_ + data.stack.sz_)
-               : iterator_range(data.stack.vals_, data.stack.vals_ + data.stack.sz_);
+    return d_.stack.sz_ > kMaxInlineSize ? iterator_range(d_.heap.begin_, d_.heap.begin_ + d_.stack.sz_)
+                                         : iterator_range(d_.stack.vals_, d_.stack.vals_ + d_.stack.sz_);
   }
   const_iterator_range range() const {
-    return data.stack.sz_ > kMaxInlineSize
-               ? const_iterator_range(data.heap.begin_, data.heap.begin_ + data.stack.sz_)
-               : const_iterator_range(data.stack.vals_, data.stack.vals_ + data.stack.sz_);
+    return d_.stack.sz_ > kMaxInlineSize ? const_iterator_range(d_.heap.begin_, d_.heap.begin_ + d_.stack.sz_)
+                                         : const_iterator_range(d_.stack.vals_, d_.stack.vals_ + d_.stack.sz_);
   }
 
   void swap(small_vector& o) { swap_pod(*this, o); }
@@ -987,9 +991,8 @@ struct small_vector {
 
   std::size_t hash_impl() const {
     using namespace boost;
-    return (data.stack.sz_ <= kMaxInlineSize)
-               ? hash_range(data.stack.vals_, data.stack.vals_ + data.stack.sz_)
-               : hash_range(data.heap.begin_, data.heap.begin_ + data.stack.sz_);
+    return (d_.stack.sz_ <= kMaxInlineSize) ? hash_range(d_.stack.vals_, d_.stack.vals_ + d_.stack.sz_)
+                                            : hash_range(d_.heap.begin_, d_.heap.begin_ + d_.stack.sz_);
   }
 
   /**
@@ -1014,16 +1017,16 @@ struct small_vector {
     return o;
   }
   void init_unconstructed(size_type s) {
-    assert(data.stack.sz_ == 0);
+    assert(d_.stack.sz_ == 0);
     alloc(s);
   }
 
  private:
   void alloc(size_type s) {  // doesn't free old; for ctor. sets sz_
-    data.stack.sz_ = s;
+    d_.stack.sz_ = s;
     assert(s <= kMaxSize);
     if (s > kMaxInlineSize) {
-      data.heap.capacity_ = s;
+      d_.heap.capacity_ = s;
       alloc_heap();
     }
   }
@@ -1031,40 +1034,40 @@ struct small_vector {
   static void free_impl(T* alloced) { std::free(alloced); }
   // pre: capacity_ is set
   void alloc_heap() {
-    data.heap.begin_ = alloc_impl(data.heap.capacity_);  // TODO: boost user_allocator static template
+    d_.heap.begin_ = alloc_impl(d_.heap.capacity_);  // TODO: boost user_allocator static template
   }
-  void free_heap() const { free_impl(data.heap.begin_); }
+  void free_heap() const { free_impl(d_.heap.begin_); }
   void free() {
-    if (data.stack.sz_ > kMaxInlineSize) free_heap();
+    if (d_.stack.sz_ > kMaxInlineSize) free_heap();
   }
   T* realloc(size_type s) {
-    if (s == data.stack.sz_) return begin();
+    if (s == d_.stack.sz_) return begin();
     free();
-    data.stack.sz_ = s;
+    d_.stack.sz_ = s;
     if (s > kMaxInlineSize) {
-      data.heap.capacity_ = s;
+      d_.heap.capacity_ = s;
       alloc_heap();
-      return data.heap.begin_;
+      return d_.heap.begin_;
     } else
-      return data.stack.vals_;
+      return d_.stack.vals_;
   }
 
   void realloc_big(size_type s) {
     assert(s > kMaxInlineSize);
-    if (data.stack.sz_ > kMaxInlineSize) {
-      if (s > data.heap.capacity_) ensure_capacity_grow(s);
+    if (d_.stack.sz_ > kMaxInlineSize) {
+      if (s > d_.heap.capacity_) ensure_capacity_grow(s);
     } else {
       T* tmp = alloc_impl(s);
-      memcpy_n(tmp, data.stack.vals_, data.stack.sz_);
-      data.heap.capacity_ = s;  // note: these must be set AFTER copying from data.stack.vals_
-      data.heap.begin_ = tmp;
+      memcpy_n(tmp, d_.stack.vals_, d_.stack.sz_);
+      d_.heap.capacity_ = s;  // note: these must be set AFTER copying from d_.stack.vals_
+      d_.heap.begin_ = tmp;
     }
   }
   void ensure_capacity(size_type min_size) {
     // only call if you're already heap
     assert(min_size > kMaxInlineSize);
-    assert(data.stack.sz_ > kMaxInlineSize);
-    if (min_size < data.heap.capacity_) return;
+    assert(d_.stack.sz_ > kMaxInlineSize);
+    if (min_size < d_.heap.capacity_) return;
     ensure_capacity_grow(min_size);
   }
   void ensure_capacity_grow(size_type min_size) {
@@ -1073,37 +1076,36 @@ struct small_vector {
 #endif
     size_type new_cap = good_vector_size<T>::next(min_size);
     T* tmp = alloc_impl(new_cap);
-    memcpy_n(tmp, data.heap.begin_, data.stack.sz_);
+    memcpy_n(tmp, d_.heap.begin_, d_.stack.sz_);
     free_heap();
-    data.heap.begin_ = tmp;  // note: these must be set AFTER copying from old vals
-    data.heap.capacity_
-        = new_cap;  // set after free_heap (though current allocator doesn't need old capacity)
+    d_.heap.begin_ = tmp;  // note: these must be set AFTER copying from old vals
+    d_.heap.capacity_ = new_cap;  // set after free_heap (though current allocator doesn't need old capacity)
   }
 
   void copy_vals_to_ptr() {
-    assert(data.stack.sz_ <= kMaxInlineSize);
+    assert(d_.stack.sz_ <= kMaxInlineSize);
 #ifndef __clang_analyzer__
-    T* const newHeapVals = alloc_impl(kInitHeapSize);  // note: must use tmp to not destroy data.stack.vals_
-    memcpy_n(newHeapVals, data.stack.vals_,
+    T* const newHeapVals = alloc_impl(kInitHeapSize);  // note: must use tmp to not destroy d_.stack.vals_
+    memcpy_n(newHeapVals, d_.stack.vals_,
 #if GRAEHL_VALGRIND
-             data.stack.sz_
+             d_.stack.sz_
 #else
              kMaxInlineSize  // may copy more than actual size_. ok. constant should be more optimizable
 #endif
              );
-    data.heap.capacity_ = kInitHeapSize;
-    data.heap.begin_ = newHeapVals;
+    d_.heap.capacity_ = kInitHeapSize;
+    d_.heap.begin_ = newHeapVals;
 #endif
     // only call if you're going to immediately increase size_ to >kMaxInlineSize
   }
   void ptr_to_small() {
-    assert(data.stack.sz_ <= kMaxInlineSize);  // you decreased size_ already. normally ptr wouldn't be used
+    assert(d_.stack.sz_ <= kMaxInlineSize);  // you decreased size_ already. normally ptr wouldn't be used
     // if size_ were this small
-    T* fromHeap = data.heap.begin_;  // should be no problem with memory access order (strict aliasing)
+    T* fromHeap = d_.heap.begin_;  // should be no problem with memory access order (strict aliasing)
     // because of safe access through union
-    for (size_type i = 0; i < data.stack.sz_; ++i)  // no need to memcpy for small size
-      data.stack.vals_[i] = fromHeap[i];  // note: it was essential to save fromHeap first because
-    // data.stack.vals_ union-competes
+    for (size_type i = 0; i < d_.stack.sz_; ++i)  // no need to memcpy for small size
+      d_.stack.vals_[i] = fromHeap[i];  // note: it was essential to save fromHeap first because
+    // d_.stack.vals_ union-competes
     free_impl(fromHeap);
   }
 
@@ -1119,23 +1121,23 @@ struct small_vector {
   //      (an arbitrary total ordering (not lex.))
   template <class Ret, int kLess, int kEqual, int kGreater>
   Ret compare_by_less(small_vector const& o) const {
-    if (data.stack.sz_ == o.data.stack.sz_) {
-      if (data.stack.sz_ <= kMaxInlineSize) {
-        for (size_type i = 0; i < data.stack.sz_; ++i) {
-          if (data.stack.vals_[i] < o.data.stack.vals_[i]) return kLess;
-          if (o.data.stack.vals_[i] < data.stack.vals_[i]) return kGreater;
+    if (d_.stack.sz_ == o.d_.stack.sz_) {
+      if (d_.stack.sz_ <= kMaxInlineSize) {
+        for (size_type i = 0; i < d_.stack.sz_; ++i) {
+          if (d_.stack.vals_[i] < o.d_.stack.vals_[i]) return kLess;
+          if (o.d_.stack.vals_[i] < d_.stack.vals_[i]) return kGreater;
         }
         return kEqual;
       } else {
-        for (size_type i = 0; i < data.stack.sz_; ++i) {
-          if (data.heap.begin_[i] < o.data.heap.begin_[i]) return kLess;
-          if (o.data.heap.begin_[i] < data.heap.begin_[i]) return kGreater;
+        for (size_type i = 0; i < d_.stack.sz_; ++i) {
+          if (d_.heap.begin_[i] < o.d_.heap.begin_[i]) return kLess;
+          if (o.d_.heap.begin_[i] < d_.heap.begin_[i]) return kGreater;
         }
         return kEqual;
       }
     }
     return std::lexicographical_compare(begin(), end(), o.begin(), o.end()) ? kLess : kGreater;
-    // return (data.stack.sz_ < o.data.stack.sz_) ? kLess : kGreater; // faster but not lexicograph.
+    // return (d_.stack.sz_ < o.d_.stack.sz_) ? kLess : kGreater; // faster but not lexicograph.
   }
 
   /* guarantee from c++ standard:
@@ -1169,7 +1171,7 @@ struct small_vector {
     // note: we have a shared initial sz_ member in each to ensure the best alignment/padding.
     // (otherwise it would be simpler to move sz_ outside the union
   };
-  storage_union_variants data;
+  storage_union_variants d_;
 };
 }
 
