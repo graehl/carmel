@@ -115,7 +115,8 @@ nograehl() {
 }
 
 gitq() {
-    (git status -u; PAGER=cat gitlog 3) | cat
+    git status -u
+    #gitlog 3
 }
 lh() {
     ls -1sh "$@"
@@ -5482,7 +5483,7 @@ gitlogp() {
     git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -p -$1
 }
 gitlog() {
-    PAGER=cat git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -n ${1:-20}
+    git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=short --branches -n ${1:-20}
 }
 gitlog1() {
     gitlog 1

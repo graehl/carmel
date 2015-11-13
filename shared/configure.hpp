@@ -15,6 +15,35 @@
 
     a template library for specifying config structs (see
     configure_program_options.hpp for an example)
+
+    TODO: slight flaw in validate() free fn calling:
+
+    if you have a composite config that merges the options into a flat space e.g:
+
+    struct A : X::B {
+    Y::D d;
+    template <class C>
+     void configure(C &c) {
+      X::B::configure(c);
+      d.configure(c);
+      ...
+     }
+    };
+
+    then validate(X::B) and validate(d) calls may not happen (not sure why)
+
+    possibly they would happen if you introduced named config tree nodes instead:
+
+    c("b", (X::B*)this);
+    c("d", d);
+
+    for now this is worked around by having an adl-locatable validate for the
+    toplevel struct A that calls the validate of its components/subclasses. but
+    a fixed configure library would not need this but could instead use the
+    traversal implied by the templated configure() visitor method.
+
+    also it's not clear if validate gets called on sequence/map elements (but it
+    should be)
 */
 
 #ifndef GRAEHL_SHARED__CONFIGURE_HPP

@@ -28,11 +28,11 @@
 
 namespace graehl {
 
-template <class T>
+template <class T, class Enable = void>
 struct is_nonstring_container : is_container<T> {};
 
 template <class charT, class Traits>
-struct is_nonstring_container<std::basic_string<charT, Traits> > {
+struct is_nonstring_container<std::basic_string<charT, Traits>, void> {
   enum { value = 0 };
 };
 

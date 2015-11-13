@@ -104,27 +104,7 @@ struct Print {
     using namespace adl_default;
     print(o, v, s);
   }
-
 // TODO: maybe. need to test in C++98, msvc. for now use adl_to_string.hpp
-#if 0
-  static std::string str(V const& v) {
-#if 0
-    std::string r;
-    call(r, v);
-    return r;
-#else
-    std::stringstream r;
-    call((std::ostream&)r, v);
-    return r.str();
-#endif
-  }
-  template <class S>
-  static std::string str(V const& v, S& s) {
-    std::string r;
-    call(r, v, s);
-    return r;
-  }
-#endif
 };
 
 //TODO: pointer_traits, type_string
@@ -162,14 +142,6 @@ struct Print<std::string, void> {
     print(o, v, s);
   }
   static std::string const& str(V const& v) { return v; }
-#if 0
-  template <class S>
-  static std::string str(V const& v, S& s) {
-    std::string r;
-    call(r, v, s);
-    return r;
-  }
-#endif
 };
 
 template <class O, class V>
@@ -215,6 +187,22 @@ struct list_format {
     ::adl::Print<V>::call(o, v, s);
   }
 };
+
+/// compare to adl::adl_to_string which should be able to build by string += instead of stringstream
+inline std::string const& str(std::string const& s) { return s; }
+template <class V>
+std::string str(V const& v) {
+  std::stringstream r;
+  ::adl::Print<V>::call((std::ostream&)r, v);
+  return r.str();
+}
+template <class V, class S>
+static std::string str(V const& v, S& s) {
+  std::stringstream r;
+  ::adl::Print<V>::call((std::ostream&)r, v, s);
+  return r.str();
+}
+
 }
 
 namespace adl_default {
@@ -243,11 +231,40 @@ void operator<<(O& o, std::pair<A, B> const& v) {
   o << '=';
   ::adl::adl_print(o, v.second);
 }
+template <class O, class A>
+void print(O& o, std::pair<A *, A *> v) {
+  ::adl::list_format<> format;
+  format.open(o);
+  for (; v.first != v.second; ++v.first) format.element(o, *v.first);
+  format.close(o);
+}
+template <class O, class A>
+void print(O& o, std::pair<A const*, A const*> v) {
+  ::adl::list_format<> format;
+  format.open(o);
+  for (; v.first != v.second; ++v.first) format.element(o, *v.first);
+  format.close(o);
+}
+
 template <class O, class A, class B, class S>
 void print(O& o, std::pair<A, B> const& v, S const& s) {
   ::adl::adl_print(o, v.first, s);
   o << '=';
   ::adl::adl_print(o, v.second, s);
+}
+template <class O, class A, class S>
+void print(O& o, std::pair<A *, A *> v, S const& s) {
+  ::adl::list_format<> format;
+  format.open(o);
+  for (; v.first != v.second; ++v.first) format.element(o, *v.first, s);
+  format.close(o);
+}
+template <class O, class A, class S>
+void print(O& o, std::pair<A const*, A const*> v, S const& s) {
+  ::adl::list_format<> format;
+  format.open(o);
+  for (; v.first != v.second; ++v.first) format.element(o, *v.first, s);
+  format.close(o);
 }
 }
 

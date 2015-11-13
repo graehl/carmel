@@ -14,6 +14,19 @@
 /** \file
 
     for configure library (see configure.hpp).
+
+    you can add a validate member like this:
+
+    struct M {
+      void validate();
+      typedef void configure_validate;
+    };
+
+    or
+
+    namespace configure {
+    validate_traits<My::M, void> { void call(My::M &); }
+    }
 */
 
 #ifndef GRAEHL_SHARED__VALIDATE_HPP
@@ -28,8 +41,26 @@
 #include <set>
 #include <boost/optional.hpp>
 #include <graehl/shared/shared_ptr.hpp>
+#include <graehl/shared/type_traits.hpp>
 
 namespace configure {
+
+using graehl::false_type;
+using graehl::true_type;
+using graehl::enable_if;
+
+template <class T, class Enable=void>
+struct validate_traits {
+  static void call(T &) {}
+};
+
+template <class T>
+struct validate_traits<T, typename T::configure_validate> {
+  static void call(T &t) {
+    t.validate();
+  }
+};
+
 
 SIMPLE_EXCEPTION_PREFIX(config_exception, "configure: ");
 
@@ -116,8 +147,10 @@ struct one_of {
 }
 
 namespace adl {
+/// for primitives etc - hopefully lower priority than in-T's-namespace validate(T) due to 2nd arg
 template <class T>
-void validate(T&, void* lowerPriorityMatch = 0) {
+void validate(T& t, void* lowerPriorityMatch = 0) {
+  configure::validate_traits<T>::call(t);
 }
 
 /// you can call this from outside our namespace to get the more specific version via ADL if it exists
@@ -130,11 +163,13 @@ void adl_validate(T& t) {
 namespace std {
 template <class T>
 void validate(std::set<T> const& v) {
-  for (typename std::vector<T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i) ::adl::adl_validate(*i);
+  for (typename std::vector<T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i)
+    ::adl::adl_validate(*i);
 }
 template <class T>
 void validate(std::vector<T> const& v) {
-  for (typename std::vector<T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i) ::adl::adl_validate(*i);
+  for (typename std::vector<T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i)
+    ::adl::adl_validate(*i);
 }
 template <class Key, class T>
 void validate(std::map<Key, T> const& v) {
@@ -152,7 +187,8 @@ template <class T>
 void validate(shared_ptr<T> const& i) {
   if (i) ::adl::adl_validate(*i);
 }
-}
 
+
+}
 
 #endif
