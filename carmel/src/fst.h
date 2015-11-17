@@ -1,7 +1,7 @@
 #ifndef GRAEHL_CARMEL__FST_H
 #define GRAEHL_CARMEL__FST_H
 
-#include <graehl/carmel/src/config.hpp>
+#include <carmel/src/config.hpp>
 #include <vector>
 #include <cstring>
 #include <cstdlib>
@@ -15,9 +15,9 @@
 #include <graehl/shared/strhash.h>
 #include <graehl/shared/graph.h>
 #include <graehl/shared/threadlocal.hpp>
-#include <graehl/carmel/src/train.h>
+#include <carmel/src/train.h>
 #include <graehl/shared/myassert.h>
-#include <graehl/carmel/src/compose.h>
+#include <carmel/src/compose.h>
 #include <iterator>
 #include <algorithm>
 #include <graehl/shared/kbest.h>

@@ -5099,7 +5099,7 @@ unhyphenate() {
 }
 cpshared() {
     for f in $xmtxs/graehl/shared/*; do
-        cp $f ~/g/shared
+        cp $f ~/g/graehl/shared
     done
 }
 commshared() {
@@ -5257,7 +5257,7 @@ g1po() {
 }
 overt() {
     pushd $xmtxs/graehl/shared
-    gsh=$HOME/g/shared
+    gsh=$HOME/g/graehl/shared
     for f in *.?pp *.h; do
         rm -f $gsh/$f
         cp $f $gsh/$f
@@ -5269,7 +5269,7 @@ overt() {
 diffg() {
     (
     cd $xmtxs/graehl/shared
-    gsh=$HOME/g/shared
+    gsh=$HOME/g/graehl/shared
     for f in *.?pp *.h; do
         diff $f $gsh/$f
     done

@@ -6,27 +6,25 @@
 
  (see `carmel/README` and `carmel/carmel-tutorial`).
 
-## Download pre-built binaries
-
-TODO
-
 ## Building from source
 
 ```
-ln -sf . graehl;cd carmel; INSTALL_PREFIX=/usr/local make -j 4 install
+cd carmel; make -j 4 install BOOST_SUFFIX=-mt INSTALL_PREFIX=/usr/local
+# BOOST_SUFFIX= depends on how your boost libraries are installed - ls /usr/lib/libboost*.so
 ```
 
-(prerequisites: C++ compiler and [Boost](http://boost.org), which you
+(prerequisites: GNU Make (3.8) C++ compiler (GCC 5, clang 3.7, or
+visual studio 2015 will do) and [Boost](http://boost.org), which you
 probably already have on your linux system; for Mac, you can get them
-from [Homebrew](http://brew.sh/). Windows: you can use Microsoft's
-tools or cygwin or mingw.
+from [Homebrew](http://brew.sh/). For windows: MSVC2015 should work;
+you can also use cygwin or mingw.
 
 ### `make` options
 
 If your system doesn't support static linking, `make NOSTATIC=1`
 
 If you're trying to modify or troubleshoot the build, take a look at
-`shared/graehl.mk` as well as `carmel/Makefile`; you shouldn't need to
+`graehl/shared/graehl.mk` as well as `carmel/Makefile`; you shouldn't need to
 manually run `make depend`.
 
 ## Subdirectories
@@ -36,7 +34,7 @@ manually run `make depend`.
 
 * `forest-em`: derivation forests EM and gibbs (dirichlet prior bayesian) training
 
-* `shared`: utility C++/Make libraries used by carmel and forest-em
+* `graehl/shared`: utility C++/Make libraries used by carmel and forest-em
 
 * `gextract`: some python bayesian syntax MT rule inference
 

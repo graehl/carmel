@@ -83,7 +83,7 @@ TRUNK=..
 endif
 
 ifndef SHARED
-SHARED=../shared
+SHARED=../graehl/shared
 endif
 ifndef BOOST_DIR
 # note: BOOST_DIR not used for anything now, we assume boost somewhere in std include

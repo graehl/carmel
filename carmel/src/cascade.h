@@ -7,8 +7,8 @@
 
 #include <graehl/shared/array.hpp>
 #include <graehl/shared/dynamic_array.hpp>
-#include <graehl/carmel/src/fst.h>
-#include <graehl/carmel/src/derivations.h>
+#include <carmel/src/fst.h>
+#include <carmel/src/derivations.h>
 #include <graehl/shared/slist.h>
 #include <boost/pool/object_pool.hpp>
 

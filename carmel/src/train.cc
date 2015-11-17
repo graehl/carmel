@@ -1,10 +1,10 @@
 #include <graehl/shared/glibc_memcpy.hpp>
 #include <boost/utility.hpp>
-#include <graehl/carmel/src/train.h>
-#include <graehl/carmel/src/fst.h>
-#include <graehl/carmel/src/derivations.h>
-#include <graehl/carmel/src/cascade.h>
-#include <graehl/carmel/src/cached_derivs.h>
+#include <carmel/src/train.h>
+#include <carmel/src/fst.h>
+#include <carmel/src/derivations.h>
+#include <carmel/src/cascade.h>
+#include <carmel/src/cached_derivs.h>
 #include <graehl/shared/periodic.hpp>
 #include <graehl/shared/segments.hpp>
 #include <graehl/shared/time_space_report.hpp>

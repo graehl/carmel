@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 #include <graehl/shared/myassert.h>
-#include <graehl/carmel/src/fst.h>
+#include <carmel/src/fst.h>
 #include <iterator>
 #include <sstream>
 #include <graehl/shared/io.hpp>

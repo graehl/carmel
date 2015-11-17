@@ -49,7 +49,7 @@ endif
 
 default: mydefault
 
-include ../shared/graehl.mk
+include ../graehl/graehl.mk
 
 mydefault: all
 

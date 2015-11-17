@@ -1,8 +1,8 @@
 #ifndef GRAEHL_SHARED__CACHED_DERIVS
 #define GRAEHL_SHARED__CACHED_DERIVS
 
-#include <graehl/carmel/src/derivations.h>
-#include <graehl/carmel/src/cascade.h>
+#include <carmel/src/derivations.h>
+#include <carmel/src/cascade.h>
 #include <graehl/shared/serialize_batch.hpp>
 #include <graehl/shared/time_space_report.hpp>
 #include <graehl/shared/periodic.hpp>

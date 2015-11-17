@@ -330,7 +330,7 @@ ForestEmParams forest_em_param;
 
 
 #ifdef GRAEHL__SINGLE_MAIN
-# include <graehl/forest-em/forest-em-params.cpp>
+# include <forest-em/forest-em-params.cpp>
 #endif
 
 

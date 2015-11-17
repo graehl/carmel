@@ -1,6 +1,6 @@
 #include <graehl/shared/config.h>
 #include <cctype>
-#include <graehl/carmel/src/fst.h>
+#include <carmel/src/fst.h>
 #include <graehl/shared/kbest.h>
 #include <graehl/shared/array.hpp>
 #include <graehl/shared/genio.h>
@@ -580,6 +580,6 @@ List<List<PathArc> >* WFST::randomPaths(unsigned k, unsigned max_len) {
 }
 }
 
-#include <graehl/carmel/src/wfstio.cc>
+#include <carmel/src/wfstio.cc>
 
-#include <graehl/carmel/src/compose.cc>
+#include <carmel/src/compose.cc>

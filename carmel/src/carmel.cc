@@ -34,8 +34,8 @@
 #include <cctype>
 #include <string>
 #include <ctime>
-#include <graehl/carmel/src/fst.h>
-#include <graehl/carmel/src/cascade.h>
+#include <carmel/src/fst.h>
+#include <carmel/src/cascade.h>
 #include <graehl/shared/myassert.h>
 #include <graehl/shared/string_to.hpp>
 #include <graehl/shared/split.hpp>
@@ -55,7 +55,7 @@ using namespace graehl;
 #define CARMEL_VERSION "6.14" OPENFST_VERSION
 
 #ifdef MARCU
-#include <graehl/carmel/src/models.h>
+#include <carmel/src/models.h>
 char* MarcuArgs[] = {"marcu-carmel", "-IEsriqk", "1"};
 #endif
 

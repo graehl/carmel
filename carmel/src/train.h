@@ -2,7 +2,7 @@
 #define CARMEL_TRAIN_H
 
 #include <graehl/shared/config.h>
-#include <graehl/carmel/src/state.h>
+#include <carmel/src/state.h>
 #include <graehl/shared/word_spacer.hpp>
 #include <graehl/shared/array.hpp>
 #include <graehl/shared/stream_util.hpp>

@@ -1,8 +1,8 @@
 #include <graehl/shared/glibc_memcpy.hpp>
-#include <graehl/carmel/src/cached_derivs.h>
-#include <graehl/carmel/src/cascade.h>
-#include <graehl/carmel/src/train.h>
-#include <graehl/carmel/src/fst.h>
+#include <carmel/src/cached_derivs.h>
+#include <carmel/src/cascade.h>
+#include <carmel/src/train.h>
+#include <carmel/src/fst.h>
 #include <graehl/shared/gibbs.hpp>
 #include <graehl/shared/segments.hpp>
 

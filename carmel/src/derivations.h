@@ -31,8 +31,8 @@
 #include <graehl/shared/hashtable_fwd.hpp>
 #include <graehl/shared/graph.h>
 #include <graehl/shared/simple_serialize.hpp>
-#include <graehl/carmel/src/fst.h>
-#include <graehl/carmel/src/train.h>
+#include <carmel/src/fst.h>
+#include <carmel/src/train.h>
 #include <graehl/shared/dynamic_array.hpp>
 #include <boost/cstdint.hpp>
 //#include <graehl/shared/stream_util.hpp>

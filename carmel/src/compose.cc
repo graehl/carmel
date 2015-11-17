@@ -1,8 +1,8 @@
 #include <graehl/shared/glibc_memcpy.hpp>
 #include <graehl/shared/config.h>
-#include <graehl/carmel/src/compose.h>
-#include <graehl/carmel/src/fst.h>
-#include <graehl/carmel/src/cascade.h>
+#include <carmel/src/compose.h>
+#include <carmel/src/fst.h>
+#include <carmel/src/cascade.h>
 #include <graehl/shared/array.hpp>
 #include <cstring>
 

@@ -38,7 +38,7 @@ CPPFLAGS_TEST+= -DTEST -DDEBUG
 ALL_CLEAN += forest-em.README.hpp *.restart.* *.swap.* *.stackdump *.d *.out *.log massif.* core
 
 default: all
-include ../shared/graehl.mk
+include ../graehl/graehl.mk
 ABI_CFLAGS =
 vpath %.cpp .:$(SHARED)
 

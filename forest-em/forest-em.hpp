@@ -24,8 +24,8 @@
 #include <graehl/shared/config.h>
 #include <graehl/shared/unimplemented.hpp>
 #include <graehl/shared/weight.h>
-#include <graehl/forest-em/forest.hpp>
-#include <graehl/forest-em/forest-em-params.hpp>
+#include <forest-em/forest.hpp>
+#include <forest-em/forest-em-params.hpp>
 
 #include <graehl/shared/em.hpp>
 #include <graehl/shared/dynamic_array.hpp>

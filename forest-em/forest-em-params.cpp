@@ -1,5 +1,5 @@
-#include <graehl/forest-em/forest-em.hpp>
-#include <graehl/forest-em/forest-em-params.hpp>
+#include <forest-em/forest-em.hpp>
+#include <forest-em/forest-em-params.hpp>
 #include <stdexcept>
 #include <graehl/shared/random.hpp>
 #include <graehl/shared/fileheader.hpp>

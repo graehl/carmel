@@ -10,7 +10,7 @@
 #include <boost/config.hpp>
 #include <graehl/shared/tree.hpp>
 #include <graehl/shared/symbol.hpp>
-#include <graehl/forest-em/forest.hpp>
+#include <forest-em/forest.hpp>
 #include <iostream>
 #include <boost/program_options.hpp>
 #include <fstream>
