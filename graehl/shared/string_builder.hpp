@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -249,7 +249,7 @@ struct string_builder : string_buffer {
   std::string const& str() const { return *this; }
   std::string&& str() { return std::move(*this); }
 
-  std::string* new_str() const{ return new std::string(*this); }
+  std::string* new_str() const { return new std::string(*this); }
   std::string const& strcopy() const { return *this; }
 #else
   void to(std::string& str) {
@@ -263,9 +263,7 @@ struct string_builder : string_buffer {
   }
 
   std::string const& strcopy() const { return std::string(this->begin(), this->end()); }
-  std::string* new_str() const {
-    return new std::string(this->begin(), this->end());
-  }
+  std::string* new_str() const { return new std::string(this->begin(), this->end()); }
 #endif
   std::string skipPrefix(std::size_t prefixLen) const {
     return prefixLen > this->size() ? std::string() : std::string(this->begin() + prefixLen, this->end());

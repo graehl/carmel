@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -83,13 +83,15 @@ struct fstream_for_mode<boost::iostreams::output_seekable> {
    typename Access = public_ >
    class filtering_stream;
  */
-template <class Filter, class Mode = boost::iostreams::input_seekable, class Stream = typename fstream_for_mode<Mode>::stream_type>
+template <class Filter, class Mode = boost::iostreams::input_seekable,
+          class Stream = typename fstream_for_mode<Mode>::stream_type>
 struct filter_file_streambuf : boost::iostreams::filtering_streambuf<Mode> {
   typedef boost::iostreams::filtering_streambuf<Mode> Base;
   Stream file_;
 
   filter_file_streambuf() {}
-  filter_file_streambuf(const char* name, std::ios_base::openmode mode = fstream_for_mode<Mode>::ios_mode_default)
+  filter_file_streambuf(const char* name,
+                        std::ios_base::openmode mode = fstream_for_mode<Mode>::ios_mode_default)
       : file_(name, mode | std::ios_base::binary) {
     opened();
   }
@@ -119,7 +121,8 @@ struct filter_file_streambuf : boost::iostreams::filtering_streambuf<Mode> {
   }
 };
 
-template <class Filter, class Mode = boost::iostreams::input_seekable, class Stream = typename fstream_for_mode<Mode>::stream_type>
+template <class Filter, class Mode = boost::iostreams::input_seekable,
+          class Stream = typename fstream_for_mode<Mode>::stream_type>
 struct filter_file_stream : boost::iostreams::filtering_stream<Mode> {
   typedef boost::iostreams::filtering_stream<Mode> Base;
   Stream file_;

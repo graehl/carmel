@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -147,12 +147,12 @@ inline bool sign_ieee(float f) {
 }
 
 inline bool sign_ieee(boost::uint64_t f) {
-  //TODO: test
+  // TODO: test
   return f >> 63;
 }
 
 inline bool sign_ieee(double f) {
-  //TODO: test
+  // TODO: test
   return sign_ieee(reinterpret_cast<boost::uint64_t const&>(f));
 }
 
@@ -180,7 +180,7 @@ inline double next_representible_double(double f) {
 }
 
 inline float next_representible_float(float f) {
-  //TODO: test
+  // TODO: test
   ++reinterpret_cast<boost::uint32_t&>(f);
   return f;
 }
@@ -190,7 +190,7 @@ inline double next_representible(double f) {
 }
 
 inline float next_representible(float f) {
-  //TODO: test
+  // TODO: test
   return next_representible_float(f);
 }
 
@@ -259,7 +259,7 @@ inline bool few_ieee_floats_apart(float a, float b,
 
 inline bool few_ieee_doubles_apart(double a, double b,
                                    boost::int64_t max_doubles_apart = GRAEHL_DEFAULT_IEEE_APART) {
-  //TODO: test
+  // TODO: test
   return sign_ieee(a) == sign_ieee(b) ? ieee_doubles_apart(a, b) <= max_doubles_apart : a == b;
 }
 
@@ -320,9 +320,8 @@ inline bool within_epsilon_or_ieee_apart(double a, double b, double epsilon = (d
 
 template <class T>
 inline bool few_ieee_apart_equate_inf_nan(T a, T b, boost::int32_t max_apart) {
-  return few_ieee_apart(a, b, max_apart) || nonfinite_same_sign(a,b);
+  return few_ieee_apart(a, b, max_apart) || nonfinite_same_sign(a, b);
 }
-
 }
 
 #ifdef GRAEHL_TEST
@@ -337,10 +336,10 @@ void testEpsilon(Float f, unsigned n, double max_ieee_apart_per_n = 0.2) {
   for (unsigned i = 0; i < n; ++i) sum += x;
   Float nx = x * n;
   unsigned max_ieee_apart = (unsigned)(max_ieee_apart_per_n * n);
-  BOOST_CHECK_MESSAGE(ieee_apart(nx, sum) <= max_ieee_apart, "ieee_apart larger than "
-                                                             << max_ieee_apart << ": x=" << x << " n=" << n
-                                                             << " x*n=" << nx << " (x+...+x)(n times)=" << sum
-                                                             << " ieee_apart=" << ieee_apart(nx, sum));
+  BOOST_CHECK_MESSAGE(ieee_apart(nx, sum) <= max_ieee_apart,
+                      "ieee_apart larger than " << max_ieee_apart << ": x=" << x << " n=" << n
+                                                << " x*n=" << nx << " (x+...+x)(n times)=" << sum
+                                                << " ieee_apart=" << ieee_apart(nx, sum));
 }
 
 BOOST_AUTO_TEST_CASE(TEST_epsilon) {
@@ -349,10 +348,12 @@ BOOST_AUTO_TEST_CASE(TEST_epsilon) {
   BOOST_CHECK_EQUAL(ieee_apart(1234.05, 1234.06), 43980465111);
   BOOST_CHECK_EQUAL(ieee_apart(1234.05f, 1234.06f), 82);
 }
-
-
-}}
+}
+}
 
 #endif
+
+
+
 
 #endif

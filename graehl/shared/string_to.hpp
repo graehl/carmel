@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -205,7 +205,7 @@ std::string const str_true = "true";
 std::string const str_false = "false";
 
 inline char uc(char lc) {
-  return lc + ('A' - 'a');
+  return lc + ('A'-'a');
 }
 
 inline bool islc(char c, char lc) {

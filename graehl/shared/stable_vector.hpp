@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ struct stable_vector {
   typedef IndexT size_type;
   typedef IndexT I;
   typedef T value_type;
-  typedef T &reference;
+  typedef T& reference;
   typedef stable_vector self_type;
 
   enum { chunkshift = Log2ChunkSize, chunksize = (1 << Log2ChunkSize), posmask = (chunksize - 1) };
@@ -78,11 +78,11 @@ struct stable_vector {
 
   T& back() {
     assert(size_);
-    return (*this)[size_ - 1];
+    return (*this)[size_-1];
   }
   T const& back() const {
     assert(size_);
-    return (*this)[size_ - 1];
+    return (*this)[size_-1];
   }
   T& operator[](I i) {
     assert(i < size_);
@@ -222,7 +222,7 @@ struct stable_vector {
   }
 
   template <class From>
-  void push_back(From && val) {
+  void push_back(From&& val) {
     if (size_ == capacity) {
       push_back_chunk();
       assert((size_ & posmask) == 0);
@@ -247,7 +247,7 @@ struct stable_vector {
 
   void pop_back(bool destroy = kRemoveDestroys) {
     assert(size_);
-    if (destroy) reinit((*this)[size_ - 1]);
+    if (destroy) reinit((*this)[size_-1]);
     --size_;
   }
 
@@ -502,11 +502,13 @@ BOOST_AUTO_TEST_CASE(stable_vector_test_case) {
   test_stable_vector<StableVector2>();
   test_stable_vector<Vector3>(false);
 }
-
-
-}}
+}
+}
 
 #endif
 #endif
+
+
+
 
 #endif

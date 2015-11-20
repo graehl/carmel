@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,12 +39,12 @@
 #define DOUBLE_NULL double(NAN)
 
 template <class C>
-inline bool is_null(C const& c, void * = 0) {
+inline bool is_null(C const& c, void* = 0) {
   return !c;
 }
 
 template <class C>
-inline void set_null(C& c, void * = 0) {
+inline void set_null(C& c, void* = 0) {
   c = C();
 }
 
@@ -64,8 +64,9 @@ inline void set_null(double& f) {
   f = DOUBLE_NULL;
 }
 
-#define GRAEHL_IS_SET_NULL_INT_MINUS1(T) inline bool is_null(T x) { return x == (T)-1; } \
-  inline void set_null(T &x) { x = (T)-1; }
+#define GRAEHL_IS_SET_NULL_INT_MINUS1(T)          \
+  inline bool is_null(T x) { return x == (T)-1; } \
+  inline void set_null(T& x) { x = (T)-1; }
 
 GRAEHL_FOR_DISTINCT_INT_TYPES(GRAEHL_IS_SET_NULL_INT_MINUS1)
 
@@ -83,7 +84,7 @@ bool adl_is_null(T const& t) {
   return is_null(t);
 }
 template <class T>
-void adl_set_null(T & t) {
+void adl_set_null(T& t) {
   return set_null(t);
 }
 }
@@ -110,5 +111,8 @@ BOOST_AUTO_TEST_CASE(TEST_is_null) {
   BOOST_CHECK_EQUAL(is_nan(f), true);
 }
 #endif
+
+
+
 
 #endif

@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,17 +44,15 @@ struct unsynchronized_thread_group : std::vector<std::thread> {
   void create_thread(Args&&... args) {
     this->emplace_back(std::forward<Args>(args)...);
   }
-  void add_thread(std::thread *p) {
-    this->push_back(std::move(*p));
-  }
+  void add_thread(std::thread* p) { this->push_back(std::move(*p)); }
   void join_all() {
-    for(auto &thread: *this)
-      if (thread.joinable())
-        thread.join();
+    for (auto& thread : *this)
+      if (thread.joinable()) thread.join();
   }
 };
 
 typedef unsynchronized_thread_group thread_group;
+
 
 }
 

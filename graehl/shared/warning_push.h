@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
 // limitations under the License.
 #include <graehl/shared/warning_compiler.h>
 #ifdef _MSC_VER
-# pragma warning( push )
+#pragma warning(push)
 #elif defined(__clang__)
-# pragma clang diagnostic push
+#pragma clang diagnostic push
 #elif HAVE_DIAGNOSTIC_PUSH
-# pragma GCC diagnostic push
+#pragma GCC diagnostic push
 
 #endif

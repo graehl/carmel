@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,12 +27,12 @@
 
 namespace graehl {
 
-static char const *base64url = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+static char const* base64url = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
 /// \return: each [0..63] has a unique non-0 byte. fairly slow.
 inline bool good_base64_code(char const* base64code) {
   assert(sizeof(char) == 1);
-  char seen[256]; //TODO: bitvector instead?
+  char seen[256];  // TODO: bitvector instead?
   std::memset(seen, 0, 256);
   for (unsigned i = 0; i < 64; ++i) {
     unsigned char c = base64code[i];
@@ -44,7 +44,7 @@ inline bool good_base64_code(char const* base64code) {
   return true;
 }
 
-/// \return ceil(8*n/6) since 2^6 = 64 - 6 bits of info per char
+/// \return ceil(8*n/6) since 2^6 = 64-6 bits of info per char
 template <class Int>
 inline Int base64_chars_for_bytes(Int n) {
   return (n * 4 + 2) / 3;
@@ -54,14 +54,15 @@ inline Int base64_chars_for_bytes(Int n) {
 template <class OutAscii, class Int>
 OutAscii base64LE(OutAscii o, Int x, char const* base64code = base64url) {
   assert(good_base64_code(base64code));
-  while(x) {
+  while (x) {
     *o = base64code[x & 63];
     x >>= 6;
     ++o;
   }
 }
 
-/// OutAscii output iterator gets fixed-length Little Endian (lsb first) encoding. not using '=' char for padding but rather 0 bits.
+/// OutAscii output iterator gets fixed-length Little Endian (lsb first) encoding. not using '=' char for
+/// padding but rather 0 bits.
 template <class OutAscii, class Int>
 OutAscii base64LE_pad(OutAscii o, Int x, char const* base64code = base64url) {
   assert(good_base64_code(base64code));
@@ -75,24 +76,25 @@ OutAscii base64LE_pad(OutAscii o, Int x, char const* base64code = base64url) {
 
 
 template <class String, class Int>
-void base64LE_append(String &s, Int x, char const* base64code = base64url) {
+void base64LE_append(String& s, Int x, char const* base64code = base64url) {
   assert(good_base64_code(base64code));
-  while(x) {
+  while (x) {
     s.push_back(base64code[x & 63]);
     x >>= 6;
   }
 }
 
 template <class String, class Int>
-void base64LE_append_pad(String &s, Int x, char const* base64code = base64url) {
+void base64LE_append_pad(String& s, Int x, char const* base64code = base64url) {
   assert(good_base64_code(base64code));
   unsigned i = s.size(), N = i + (sizeof(Int) * 4 + 2) / 3;
   s.resize(N);
-  for(; i != N; ++i) {
+  for (; i != N; ++i) {
     s[i] = base64code[x & 63];
     x >>= 6;
   }
 }
+
 
 }
 

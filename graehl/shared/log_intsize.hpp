@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,8 +26,7 @@
 namespace graehl {
 
 template <unsigned n>
-struct log_n
-{};
+struct log_n {};
 template <>
 struct log_n<1> {
   enum { value = 0 };
@@ -49,10 +48,10 @@ struct log_n<16> {
   enum { value = 4 };
 };
 template <class Int>
-struct log_intsize
-{
+struct log_intsize {
   enum { value = log_n<sizeof(Int)>::value };
 };
+
 
 }
 

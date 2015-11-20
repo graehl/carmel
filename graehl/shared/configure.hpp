@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1687,7 +1687,7 @@ struct configure_backend_base : configure_backend {
   void header_line_end(Action const&, Val* pval, conf_expr_base const& conf) const {}
   template <class Val>
   void header_line_end(help_config const& help, Val* pval, conf_expr_base const& conf) const {
-    *help.o << prefix_optional(" - ", conf.opt->get_usage_optional());
+    *help.o << prefix_optional("-", conf.opt->get_usage_optional());
   }
   std::string unrecognized() const { return "[*]"; }
   enum { SHOW_ROOT_USAGE_CODA = 0 };  // if you want usage to show also at end of root help

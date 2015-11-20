@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,17 +24,17 @@
 
 // Check windows
 #if defined(_WIN32) || defined(_WIN64)
-# if defined(_WIN64)
-#  define HAVE_64_BITS 1
-# else
-#  define HAVE_64_BITS 0
-# endif
-#elif __x86_64__ || __ppc64__
-# define HAVE_64_BITS 1
+#if defined(_WIN64)
+#define HAVE_64_BITS 1
 #else
-# define HAVE_64_BITS 0
+#define HAVE_64_BITS 0
+#endif
+#elif __x86_64__ || __ppc64__
+#define HAVE_64_BITS 1
+#else
+#define HAVE_64_BITS 0
 #endif
 
-#endif // HAVE_64_BITS
+#endif  // HAVE_64_BITS
 
 #endif

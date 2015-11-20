@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,12 +36,10 @@
 
 namespace graehl {
 
-struct no_locking
-{
+struct no_locking {
   typedef no_locking self_type;
   typedef no_locking mutex_type;
-  struct guard_type
-  {
+  struct guard_type {
     guard_type(self_type const& l) {}
     guard_type(self_type const& l, bool b) {}
   };

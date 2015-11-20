@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 // rationale: lacking proper traits for (public) default construct and assign, turn compile time error into
 run time error for generic code that *may* init or assign.
 
-//TODO: C++11 std::is_assignable<T> - see
+//TODO: C++11 std::is_assignable<T>-see
 http://compgroups.net/comp.lang.c++.moderated/determining-whether-type-is-assignabl/204746
 
 // boost::any is involved here only to prevent compilation of any_cast -> assign for types that don't support
@@ -57,7 +57,7 @@ void assign_impl(T& t, T const& from) {
 
 #if GRAEHL_CPP11
 template <class T>
-void assign_impl(T& t, T &&from) {
+void assign_impl(T& t, T&& from) {
   t = std::move(from);
 }
 #endif
@@ -103,7 +103,7 @@ void call_assign(T& t, T const& from) {
 
 #if GRAEHL_CPP11
 template <class T>
-void call_assign(T& t, T &&from) {
+void call_assign(T& t, T&& from) {
   assign_impl(t, std::move(from));
 }
 #endif
@@ -143,7 +143,7 @@ struct assignable {
   }
 #if GRAEHL_CPP11
   template <class T>
-  static inline void call_assign_impl(T& t, T &&from) {
+  static inline void call_assign_impl(T& t, T&& from) {
     call_assign(t, std::move(from));
   }
 #else
@@ -163,9 +163,7 @@ struct assign_traits : assignable {
   static inline void init(T& t) { call_init(t); }
   static inline void assign(T& t, T const& from) { call_assign(t, from); }
 #if GRAEHL_CPP11
-  void call_assign_impl(T& t, T &&from) {
-    call_assign(t, std::move(from));
-  }
+  void call_assign_impl(T& t, T&& from) { call_assign(t, std::move(from)); }
 #endif
   static inline void assign_any(T& t, boost::any const& a) { call_assign_any(t, a); }
 };

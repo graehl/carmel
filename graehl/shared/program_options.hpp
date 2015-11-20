@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 // limitations under the License.
 /** \file
 
-    wraps boost options_description as printable_opts - show the options values used as well as defaults in
+    wraps boost options_description as printable_opts-show the options values used as well as defaults in
    usage or log messages.  boost program options library lacks any concept of printing configured values; it
    only supports parsing them from strings
 
@@ -351,7 +351,7 @@ void must_complete_read(I& in, std::string const& msg = "Couldn't parse") {
   if (in >> c) program_options_fatal(msg + " - got extra char: " + std::string(c, 1));
 }
 
-//TODO: std function ok?
+// TODO: std function ok?
 template <class Ostream>
 struct any_printer : public boost::function<void(Ostream&, boost::any const&)> {
   typedef boost::function<void(Ostream&, boost::any const&)> F;
@@ -762,5 +762,8 @@ int main(int argc, char* argv[]) {
   }
 }
 #endif
+
+
+
 
 #endif

@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,8 +44,7 @@ namespace graehl {
 struct alloc_new_delete;
 
 /// RefCount must not need its destructor called (try atomic_count or unsigned)
-template <class T, class RefCount = unsigned, class AllocT = alloc_new_delete,
-          class AllocRefCount = alloc_new_delete>
+template <class T, class RefCount = unsigned, class AllocT = alloc_new_delete, class AllocRefCount = alloc_new_delete>
 struct unthreaded_ptr {
   typedef T value_type;
   typedef T pointed_type;
@@ -104,7 +103,9 @@ struct unthreaded_ptr {
       /// no destructor for RefCount
       AllocRefCount::free(others_);
       goto deletep;
-    } else { --*others_; }
+    } else {
+      --*others_;
+    }
   }
 
   void destroy_preserve_count() { assert(p_); }

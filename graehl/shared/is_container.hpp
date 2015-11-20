@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ using is_container_t = typename is_container<T>::type;
 template <class T>
 using is_nonstring_container_t = typename is_nonstring_container<T>::type;
 #endif
+
 
 }
 

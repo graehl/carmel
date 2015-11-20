@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,38 +20,33 @@
 namespace graehl {
 
 template <class Change>
-struct auto_report
-{
+struct auto_report {
   Change change;
-  operator Change & () { return change; }
-  std::ostream *o;
+  operator Change&() { return change; }
+  std::ostream* o;
   std::string desc;
   bool reported;
-  auto_report(std::ostream &o, std::string const& desc=Change::default_desc())
-    : o(&o), desc(desc), reported(false) {}
-  auto_report(std::ostream *o=NULL, std::string const& desc=Change::default_desc())
-    : o(o), desc(desc), reported(false) {}
-  void set(std::ostream &out, std::string const& descr=Change::default_desc())
-  {
-    o=&out;
-    desc=descr;
-    reported=false;
+  auto_report(std::ostream& o, std::string const& desc = Change::default_desc())
+      : o(&o), desc(desc), reported(false) {}
+  auto_report(std::ostream* o = NULL, std::string const& desc = Change::default_desc())
+      : o(o), desc(desc), reported(false) {}
+  void set(std::ostream& out, std::string const& descr = Change::default_desc()) {
+    o = &out;
+    desc = descr;
+    reported = false;
   }
-  void report(bool nl=true)
-  {
+  void report(bool nl = true) {
     if (o) {
       *o << desc << change;
       if (nl)
         *o << '\n';
       else
         *o << std::flush;
-      reported=true;
+      reported = true;
     }
   }
-  ~auto_report()
-  {
-    if (!reported)
-      report();
+  ~auto_report() {
+    if (!reported) report();
   }
 };
 

@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ typedef std::vector<char> string_buffer;
 inline std::string const& str(graehl::string_buffer const& buf) {
   return buf;
 }
-inline std::string && str(graehl::string_buffer & buf) {
+inline std::string&& str(graehl::string_buffer& buf) {
   return std::move(buf);
 }
 #else
@@ -59,6 +59,8 @@ inline graehl::string_buffer& operator+=(graehl::string_buffer& buf, std::string
   return buf;
 }
 #endif
+
+
 }
 
 #endif

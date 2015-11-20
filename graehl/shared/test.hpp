@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -129,8 +129,7 @@ struct expect_visitor {
   template <class D>
   bool operator()(D const& d) {
     C const& x = array_expected[next++];
-    if (x == d)
-      return true;
+    if (x == d) return true;
     BOOST_CHECK_EQUAL(x, d);
     ++next;
     return false;

@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -483,12 +483,13 @@ BOOST_AUTO_TEST_CASE(TEST_array_stream) {
   array_stream o2(buf, N);
   TEST_check_memory_stream(o2, buf2, N);
 }
-
-
 }
 
 }  // ns
 #endif
 // TEST
+
+
+
 
 #endif

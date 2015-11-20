@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@
 
 #ifdef _MSC_VER
 #define GRAEHL_va_free_copy(va)
-// C++11/C99 requires va_copy - msvc doesn't have one
+// C++11/C99 requires va_copy-msvc doesn't have one
 #ifndef va_copy
 #define va_copy(dst, src) ((dst) = (src))
 #endif

@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,16 +23,16 @@
 namespace graehl {
 
 template <class V, class Iter>
-void append(V &v, Iter begin, Iter end) {
+void append(V& v, Iter begin, Iter end) {
   v.insert(v.end(), begin, end);
 }
 
 template <class Iter>
-void append(std::string &v, Iter begin, Iter end) {
+void append(std::string& v, Iter begin, Iter end) {
   v.append(begin, end);
 }
 
-inline void append(std::string &s, std::string const& x) {
+inline void append(std::string& s, std::string const& x) {
   s.append(x);
 }
 

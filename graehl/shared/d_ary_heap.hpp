@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ DECLARE_DBG_LEVEL(DDARY)
 
 #define GRAEHL_D_ARY_TRACK_OUT_OF_HEAP 0
 // set to 1 to slightly speed up contains(), if you are willing to preinit loc
-// map to GRAEHL_D_ARY_HEAP_NULL_INDEX - but should work fine with 0 because we avoid
+// map to GRAEHL_D_ARY_HEAP_NULL_INDEX-but should work fine with 0 because we avoid
 // false positives by checking key at that location.
 
 #define GRAEHL_D_ARY_VERIFY_HEAP 0
@@ -166,7 +166,7 @@ static const std::size_t OPTIMAL_HEAP_ARITY
   indices start at 0, not 1:
   // unlike arity=2 case, you don't gain anything by having indices start at 1, with 0-based child indices
   // root @1, A=2, children indices m= {0,1}: parent(i)=i/2, child(i, m)=2*i+m
-  // root @0: parent(i)=(i-1)/A child(i, n)=i*A+n+1 - can't improve on this except child(i, m)=i*A+m
+  // root @0: parent(i)=(i-1)/A child(i, n)=i*A+n+1-can't improve on this except child(i, m)=i*A+m
   (integer division, a/b=floor(a/b), so (i-1)/A = ceil(i/A)-1, or greatest int less than (i/A))
 
   actually, no need to adjust child index, since child is called only once and inline
@@ -459,7 +459,7 @@ charged. When heapifying a level, one of the branches will always
 have enough uncharged nodes to pay for the "expensive" heapify at the
 top, while the other branch will still be uncharged to keep the
 pattern. So this pattern is maintained until the end of the heapify
-procedure, making the number of steps to be at most n-k = 2^k - k - 1.
+procedure, making the number of steps to be at most n-k = 2^k-k-1.
 This is definitely linear to n.
    */
   void heapify() {
@@ -801,7 +801,7 @@ This is definitely linear to n.
           GRAEHL_D_ARY_MAYBE_IMPROVE_CHILD_I;
         }
       } else {
-        for (size_type i = 1, e = heap_size - first_child_index; i < e; ++i) {
+        for (size_type i = 1, e = heap_size-first_child_index; i < e; ++i) {
           GRAEHL_D_ARY_MAYBE_IMPROVE_CHILD_I;
         }
       }

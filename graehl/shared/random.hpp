@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
 #define GRAEHL_PREFER_BOOST_RANDOM 1
 
 #if GRAEHL_CPP11 && !GRAEHL_PREFER_BOOST_RANDOM
-//TODO: implement 1 here
+// TODO: implement 1 here
 #define GRAEHL_PREFER_CPP11_RANDOM 0
 #else
 #define GRAEHL_PREFER_CPP11_RANDOM 0
@@ -57,7 +57,7 @@ GCC_DIAG_IGNORE(attributes)
 #include <boost/random/random_device.hpp>
 #endif
 
-//TODO: c++11 std::random
+// TODO: c++11 std::random
 
 #if GRAEHL_PREFER_CPP11_RANDOM
 #include <random>
@@ -132,7 +132,7 @@ struct random_seed {
 };
 
 #if GRAEHL_PREFER_CPP11_RANDOM
-//TODO: different API:
+// TODO: different API:
 /**
    random_generator random_gen;
    uniform_real_dist uniform01(0, 1);

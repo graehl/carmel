@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ struct divide_round_up {
 template <std::size_t request, std::size_t multiple_pow2>
 struct rounded_up_multiple_pow2 {
   enum { multiple_of = multiple_pow2 };
-  enum { mask = multiple_of - 1 };
+  enum { mask = multiple_of-1 };
   enum { value = (request + mask) & ~mask };
 };
 
@@ -53,11 +53,11 @@ inline Size round_up_pow2(Size req, Size divisor_pow2) {
 
 /// must be power of 2
 enum { kcache_line = 64 };
-enum { kcache_line_mask = kcache_line - 1 };
+enum { kcache_line_mask = kcache_line-1 };
 
 /// must be power of 2
 enum { ktarget_first_alloc = kcache_line };
-enum { ktarget_first_alloc_mask = ktarget_first_alloc - 1 };
+enum { ktarget_first_alloc_mask = ktarget_first_alloc-1 };
 enum { k256 = 256 };
 enum { kmax_round_to_cache_line = 512 };
 enum { k1K = 1024 };
@@ -71,7 +71,7 @@ inline Size good_alloc_size(Size req) {
     return ktarget_first_alloc;
   else if (req <= kmax_round_to_cache_line)
     return (req + kcache_line_mask) & ~kcache_line_mask;
-  else if (req <= (k4K - k256))  //
+  else if (req <= (k4K-k256))  //
     return round_up_pow2(req, (Size)k256);
   else if (req <= 4072 * k1K)  // nearly 4mb
     return round_up_pow2(req, (Size)k4K);

@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 
 namespace graehl {
 
-static void force_link(void *p) {
+static void force_link(void* p) {
   static volatile std::size_t forced_link;
   forced_link ^= (std::size_t)p;
 }
@@ -35,7 +35,8 @@ static void force_link_class() {
   force_link(&f);
 }
 
-#define GRAEHL_FORCE_LINK_CLASS(x) graehl::force_link_class< x >();
+#define GRAEHL_FORCE_LINK_CLASS(x) graehl::force_link_class<x>();
+
 
 }
 

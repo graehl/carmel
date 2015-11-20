@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
   wrapped (default init to 0) integral types that do iostream with hex format (both in and out) - 0x
   prefix is mandatory, else read as regular int
 
-  difference form strtoul: (no octal handling for 0123 - who uses that anyway?)
+  difference form strtoul: (no octal handling for 0123-who uses that anyway?)
 
 */
 
@@ -39,9 +39,7 @@ template <class I>
 struct hex_int {
   typedef typename signed_for_int<I>::unsigned_t U;
   I i;
-  U count_set_bits() const {
-    return graehl::count_set_bits(i);
-  }
+  U count_set_bits() const { return graehl::count_set_bits(i); }
   typedef void leaf_configure;
   void assign(std::string const& s, bool complete = true) {
     std::string::size_type const sz = s.size();
@@ -98,13 +96,13 @@ hex_int<I> hex(I i) {
 }
 
 template <class I>
-hex_int<std::size_t> hex(I *i) {
+hex_int<std::size_t> hex(I* i) {
   return hex_int<std::size_t>((std::size_t)i);
 }
 
 #define DEFINE_HEX_INT(i) typedef hex_int<i> hex_##i;
 #define DEFINE_HEX_INTS(i) DEFINE_HEX_INTS(i) DEFINE_HEX_INTS(u##i)
-// these are brought into global namespace by string_to - deal, or use boost::intN_t instead
+// these are brought into global namespace by string_to-deal, or use boost::intN_t instead
 DEFINE_HEX_INT(int8_t);
 DEFINE_HEX_INT(int16_t);
 DEFINE_HEX_INT(int32_t);

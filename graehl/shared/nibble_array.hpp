@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ struct nibble_array {
   }
 
  private:
-  static inline size_type nblocks(size_type sz) { return (sz + perblock_ - 1) / perblock_; }
+  static inline size_type nblocks(size_type sz) { return (sz + perblock_-1) / perblock_; }
   static inline char repeated_byte(value_type v) {
     return nibblesz_ == 2 ? (v | (v << 2) | (v << 4) | (v << 6)) : (v | (v << 4));
   }
@@ -169,5 +169,8 @@ BOOST_AUTO_TEST_CASE(nibble_array_test_case) {
   }
 }
 #endif
+
+
+
 
 #endif

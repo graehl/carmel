@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,7 +67,9 @@ using boost::icl::is_container;
 
 #if GRAEHL_CPP11
 template <class T>
-struct identity { using type = T; };
+struct identity {
+  using type = T;
+};
 template <class T>
 using not_deducible = typename identity<T>::type;
 template <bool B, typename...>

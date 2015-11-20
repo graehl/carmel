@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -153,7 +153,7 @@ inline char* getenv_str(char const* key) {
 }
 
 /// you may free return value only at program exit since it's part of process
-/// environment. \param name_equals_val is e.g. PATH=. - if no = then returns
+/// environment. \param name_equals_val is e.g. PATH=.-if no = then returns
 /// null (removing name from env)
 inline char* putenv_copy(std::string const& name_equals_val) {
   if (name_equals_val.find_first_of('=') != std::string::npos) {
@@ -204,7 +204,8 @@ inline std::string error_string(Error err) {
 #ifdef MEMMAP_IO_WINDOWS
   LPVOID lpMsgBuf;
   if (::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
-                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL) == 0)
+                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL)
+      == 0)
     throw std::runtime_error("couldn't generate Windows error message string");
   std::string ret((char*)lpMsgBuf);
   ::LocalFree(lpMsgBuf);
@@ -289,7 +290,7 @@ inline void throw_last_error(std::string const& module = "ERROR") {
 inline bool is_tmpnam_template(std::string const& filename_template) {
   unsigned len = (unsigned)filename_template.length();
   return !(len < TMPNAM_SUFFIX_LEN
-           || filename_template.substr(len - TMPNAM_SUFFIX_LEN, TMPNAM_SUFFIX_LEN) != TMPNAM_SUFFIX);
+           || filename_template.substr(len-TMPNAM_SUFFIX_LEN, TMPNAM_SUFFIX_LEN) != TMPNAM_SUFFIX);
 }
 
 //!< file is removed if keepfile==false (dangerous: another program could grab the filename first!). returns
@@ -298,7 +299,7 @@ inline std::string safe_tmpnam(std::string const& filename_template = "/tmp/tmp.
                                bool keepfile = false, bool worldReadable = false) {
   const unsigned MY_MAX_PATH = 1024;
   char tmp[MY_MAX_PATH + 1];
-  std::strncpy(tmp, filename_template.c_str(), MY_MAX_PATH - TMPNAM_SUFFIX_LEN);
+  std::strncpy(tmp, filename_template.c_str(), MY_MAX_PATH-TMPNAM_SUFFIX_LEN);
 
   if (!is_tmpnam_template(filename_template)) std::strcpy(tmp + filename_template.length(), TMPNAM_SUFFIX);
 
@@ -336,7 +337,8 @@ inline bool safe_unlink(std::string const& file, bool must_succeed = true) {
 #else
       ::unlink
 #endif
-      (file.c_str()) == -1) {
+      (file.c_str())
+      == -1) {
     if (must_succeed) throw_last_error(std::string("couldn't remove ").append(file));
     return false;
   } else {
@@ -381,7 +383,7 @@ inline void split_dir_file(std::string const& fullpath, std::string& dir, std::s
 
    \return pid on success (in which case caller must close fd[0] fd[1] and if stderrToFd2 fd[2], -1 on failure
 
-   \param stderrToFd2 - if false, just set fd[0] and fd[1] (stderr is parent's original)
+   \param stderrToFd2-if false, just set fd[0] and fd[1] (stderr is parent's original)
 
    if you want just one of stdin or stdout, use the regular unix popen
 */
@@ -443,6 +445,7 @@ inline pid_t popen2(int* fd, const char** const cmd) {
 }
 #endif
 
-}  // graehl
+
+}
 
 #endif

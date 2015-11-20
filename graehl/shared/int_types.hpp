@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -114,10 +114,10 @@
 
 /// as always for macros expanding an argument twice, use fn calls
 /// bit_rotate_left64 etc if arg x is not a simple value (e.g. side effects)
-#define GRAEHL_ROTL32(x, shift) ((x) << shift) | ((x) >> (32 - shift))
-#define GRAEHL_ROTL64(x, shift) ((x) << shift) | ((x) >> (64 - shift))
-#define GRAEHL_ROTR32(x, shift) ((x) >> shift) | ((x) << (32 - shift))
-#define GRAEHL_ROTR64(x, shift) ((x) >> shift) | ((x) << (64 - shift))
+#define GRAEHL_ROTL32(x, shift) ((x) << shift) | ((x) >> (32-shift))
+#define GRAEHL_ROTL64(x, shift) ((x) << shift) | ((x) >> (64-shift))
+#define GRAEHL_ROTR32(x, shift) ((x) >> shift) | ((x) << (32-shift))
+#define GRAEHL_ROTR64(x, shift) ((x) >> shift) | ((x) << (64-shift))
 #define GRAEHL_BIG_CONSTANT(x) (x##LLU)
 #endif
 
@@ -213,7 +213,7 @@ inline uint32_t next_power_of_2(uint32_t x) {
   if (!x) return 1;
 #ifndef HAVE_BUILTIN_CLZ
   assert(sizeof(x) == sizeof(unsigned));
-  return 1u << (32 - __builtin_clz(x - 1));
+  return 1u << (32-__builtin_clz(x-1));
 #else
   assert(x <= (1 << 30));
   --x;
@@ -233,7 +233,7 @@ inline uint64_t next_power_of_2(uint64_t x) {
   if (!x) return 1;
 #if HAVE_BUILTIN_CLZ
   assert(sizeof(x) == sizeof(unsigned long));
-  return 1u << (64 - __builtin_clzl(x - 1));
+  return 1u << (64-__builtin_clzl(x-1));
 #else
   assert(x <= (1ULL << 60));
   --x;
@@ -267,7 +267,7 @@ inline constexpr uint64_t next_power_of_2_const_r(uint64_t x, uint8_t shift) {
 }
 
 inline constexpr uint64_t next_power_of_2_const(uint64_t x) {
-  return next_power_of_2_const_r(x - 1, 1) + 1;
+  return next_power_of_2_const_r(x-1, 1) + 1;
 }
 #endif
 #endif
@@ -310,7 +310,7 @@ struct signed_for_int {
     typedef ut unsigned_t;                                                                              \
     typedef it signed_t;                                                                                \
     typedef t original_t;                                                                               \
-    enum { toa_bufsize = 3 + std::numeric_limits<t>::digits10, toa_bufsize_minus_1 = toa_bufsize - 1 }; \
+    enum { toa_bufsize = 3 + std::numeric_limits<t>::digits10, toa_bufsize_minus_1 = toa_bufsize-1 }; \
   };
 
 // toa_bufsize will hold enough chars for a c string converting to sign, digits (for both signed and unsigned

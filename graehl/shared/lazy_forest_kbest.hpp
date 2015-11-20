@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -424,15 +424,13 @@ void adl_print(A& a, B const& b, C const& c, D const& d) {
 // want to compile a vector of them that's fine
 template <class DerivationFactory, class FilterFactory = permissive_kbest_filter_factory>
 class lazy_forest : public FilterFactory::filter_type  // empty base class opt. - may have state e.g. hash of
-                    // seen strings or trees
-                    {
+// seen strings or trees
+{
 
  public:
 #if GRAEHL_CPP11
   /// move
-  lazy_forest(lazy_forest&& o) noexcept : pq(std::move(o.pq)), memo(std::move(o.memo)) {
-    assert(&o != this);
-  }
+  lazy_forest(lazy_forest&& o) noexcept : pq(std::move(o.pq)), memo(std::move(o.memo)) { assert(&o != this); }
 
   /// move
   lazy_forest& operator=(lazy_forest&& o) noexcept {
@@ -666,7 +664,8 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
                     "memo entry " << n << " for lazy_forest@0x" << (void*)this
                                   << " is pending - there must be a negative cost (or maybe 0-cost) cycle - "
                                      "returning NONE instead (this means that we don't generate any nbest "
-                                     "above " << n << " for this node.");  //=" << memo[n-1]
+                                     "above "
+                                  << n << " for this node.");  //=" << memo[n-1]
         if (env.throw_on_cycle) throw lazy_derivation_cycle();
         memo[n] = NONE();
       }
@@ -884,5 +883,8 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
 }  // ns
 
 CLANG_DIAG_ON(unused-variable)
+
+
+
 
 #endif

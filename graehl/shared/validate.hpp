@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,16 +49,14 @@ using graehl::false_type;
 using graehl::true_type;
 using graehl::enable_if;
 
-template <class T, class Enable=void>
+template <class T, class Enable = void>
 struct validate_traits {
-  static void call(T &) {}
+  static void call(T&) {}
 };
 
 template <class T>
 struct validate_traits<T, typename T::configure_validate> {
-  static void call(T &t) {
-    t.validate();
-  }
+  static void call(T& t) { t.validate(); }
 };
 
 

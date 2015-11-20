@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,17 +21,17 @@
 #define NORETURN_JG2012613_HPP
 #pragma once
 
-#if defined(__GNUC__) && __GNUC__>=3
-# define NORETURN __attribute__ ((noreturn))
+#if defined(__GNUC__) && __GNUC__ >= 3
+#define NORETURN __attribute__((noreturn))
 #elif defined(__clang__)
-# define ANALYZER_NORETURN _attribute__((analyzer_noreturn))
-# define NORETURN
+#define ANALYZER_NORETURN _attribute__((analyzer_noreturn))
+#define NORETURN
 #else
-# define NORETURN
+#define NORETURN
 #endif
 
 #ifndef ANALYZER_NORETURN
-# define ANALYZER_NORETURN
+#define ANALYZER_NORETURN
 #endif
 
 #endif

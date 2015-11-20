@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -104,13 +104,13 @@ struct Print {
     using namespace adl_default;
     print(o, v, s);
   }
-// TODO: maybe. need to test in C++98, msvc. for now use adl_to_string.hpp
+  // TODO: maybe. need to test in C++98, msvc. for now use adl_to_string.hpp
 };
 
-//TODO: pointer_traits, type_string
+// TODO: pointer_traits, type_string
 template <class PV>
 struct Print<PV const*, void> {
-  typedef PV const*V;
+  typedef PV const* V;
   template <class O>
   static void call(O& o, V v) {
     using namespace adl_default;
@@ -189,7 +189,9 @@ struct list_format {
 };
 
 /// compare to adl::adl_to_string which should be able to build by string += instead of stringstream
-inline std::string const& str(std::string const& s) { return s; }
+inline std::string const& str(std::string const& s) {
+  return s;
+}
 template <class V>
 std::string str(V const& v) {
   std::stringstream r;
@@ -202,7 +204,6 @@ static std::string str(V const& v, S& s) {
   ::adl::Print<V>::call((std::ostream&)r, v, s);
   return r.str();
 }
-
 }
 
 namespace adl_default {
@@ -232,7 +233,7 @@ void operator<<(O& o, std::pair<A, B> const& v) {
   ::adl::adl_print(o, v.second);
 }
 template <class O, class A>
-void print(O& o, std::pair<A *, A *> v) {
+void print(O& o, std::pair<A*, A*> v) {
   ::adl::list_format<> format;
   format.open(o);
   for (; v.first != v.second; ++v.first) format.element(o, *v.first);
@@ -253,7 +254,7 @@ void print(O& o, std::pair<A, B> const& v, S const& s) {
   ::adl::adl_print(o, v.second, s);
 }
 template <class O, class A, class S>
-void print(O& o, std::pair<A *, A *> v, S const& s) {
+void print(O& o, std::pair<A*, A*> v, S const& s) {
   ::adl::list_format<> format;
   format.open(o);
   for (; v.first != v.second; ++v.first) format.element(o, *v.first, s);
@@ -287,7 +288,7 @@ struct Printer {
 /// it's important to return ostream and not the more specific stream.
 template <class V, class S>
 inline std::ostream& operator<<(std::ostream& out, Printer<V, S> const& x) {
-  // must be found by ADL - note: typedefs won't help.
+  // must be found by ADL-note: typedefs won't help.
   // that is, if you have a typedef and a shared_ptr, you have to put your print in either ns LW or boost
   ::adl::Print<V>::call(out, x.v, x.s);
   return out;
@@ -314,7 +315,7 @@ struct AdlPrinter {
 /// it's important to return ostream and not the more specific stream.
 template <class V>
 inline std::ostream& operator<<(std::ostream& out, AdlPrinter<V> const& x) {
-  // must be found by ADL - note: typedefs won't help.
+  // must be found by ADL-note: typedefs won't help.
   // that is, if you have a typedef and a shared_ptr, you have to put your print in either ns LW or boost
   ::adl::Print<V>::call(out, x.v);
   return out;
@@ -338,7 +339,7 @@ struct PrinterMove {
 /// it's important to return ostream and not the more specific stream.
 template <class V, class S>
 inline std::ostream& operator<<(std::ostream& out, PrinterMove<V, S> const& x) {
-  // must be found by ADL - note: typedefs won't help.
+  // must be found by ADL-note: typedefs won't help.
   // that is, if you have a typedef and a shared_ptr, you have to put your print in either ns LW or boost
   ::adl::Print<V>::call(out, x.v, x.s);
   return out;
@@ -361,7 +362,7 @@ struct AdlPrinterMove {
 /// it's important to return ostream and not the more specific stream.
 template <class V>
 inline std::ostream& operator<<(std::ostream& out, AdlPrinterMove<V> const& x) {
-  // must be found by ADL - note: typedefs won't help.
+  // must be found by ADL-note: typedefs won't help.
   // that is, if you have a typedef and a shared_ptr, you have to put your print in either ns LW or boost
   ::adl::Print<V>::call(out, x.v);
   return out;

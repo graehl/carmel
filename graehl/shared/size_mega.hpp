@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ inline size_type parse_size(inputstream& i) {
   if (i.get(c)) return (size_type)scale_mega(c, number);
   if (number - (size_type)number > 100) {
     char buf[100];
-    int len = std::sprintf(buf, "Overflow - size too big to fit: %g", number);
+    int len = std::sprintf(buf, "Overflow-size too big to fit: %g", number);
     throw std::runtime_error(std::string(buf, len));
   }
   return (size_type)number;
@@ -163,8 +163,7 @@ inline void string_to_impl(std::string const& str, size_mega<Dec, Sz>& x) {
 }
 
 template <bool Dec, class Sz>
-inline void validate(size_mega<Dec, Sz>&) {
-}
+inline void validate(size_mega<Dec, Sz>&) {}
 
 
 typedef size_mega<false, double> size_bytes;
@@ -184,8 +183,9 @@ inline void validate(boost::any& v, std::vector<std::string> const& values, size
 
   v = boost::any(graehl::size_from_str<value_type>(get_single_arg(v, values)));
 }
+}
 
 
-}}
+}
 
 #endif

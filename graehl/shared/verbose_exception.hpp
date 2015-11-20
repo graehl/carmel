@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -155,5 +155,8 @@ struct verbose_exception : public std::exception {
   struct etype : graehl::verbose_exception { \
     VERBOSE_EXCEPTION_WRAP(etype)            \
   };
+
+
+
 
 #endif

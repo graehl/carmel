@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,10 +58,11 @@ using std::pointer_traits;
 #include <boost/intrusive/pointer_traits.hpp>
 namespace graehl {
 using boost::intrusive::pointer_traits;
-
-
 }
 
 #endif
+
+
+
 
 #endif

@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -146,8 +146,8 @@ char* itoa(char* buf, Int i, bool positive_sign = false) {
   if (i < 0) n = -n;
   /* above n=-n is because:
 
-     -(int)-2147483648 = (int) -2147483648 - WRONG
-     -((unsigned)-2147483648) = 2147483648 - RIGHT
+     -(int)-2147483648 = (int) -2147483648-WRONG
+     -((unsigned)-2147483648) = 2147483648-RIGHT
 
      and for all other -n representable
      -(int)-n = (int) n - OK

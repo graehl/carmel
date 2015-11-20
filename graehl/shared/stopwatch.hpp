@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -137,7 +137,7 @@ class stopwatch {
     if (!running) return 0;
     rusage now_usage;
     measure_usage(now_usage);
-    return now_usage.ru_majflt - then_usage.ru_majflt;
+    return now_usage.ru_majflt-then_usage.ru_majflt;
 #else
     return 0;  // TODO: implement Win32 version
 #endif
@@ -162,7 +162,7 @@ class stopwatch {
       case PAGEFAULTS:
         return recent_major_pagefaults();
       default:
-        throw std::runtime_error("bug - didn't handle timer type in stopwatch::recent_time");
+        throw std::runtime_error("bug-didn't handle timer type in stopwatch::recent_time");
     }
   }
 
@@ -190,7 +190,7 @@ class stopwatch {
 
     GetSystemTimeAsFileTime(&now.ft);
     tv->tv_usec = (long)((now.ns100 / 10LL) % 1000000LL);
-    tv->tv_sec = (long)((now.ns100 - 116444736000000000LL) / 10000000LL);
+    tv->tv_sec = (long)((now.ns100-116444736000000000LL) / 10000000LL);
     return 0;
   }
 #endif
@@ -205,6 +205,7 @@ class stopwatch {
   double totals[TYPE_MAX];
 };
 
-}  // graehl
+
+}
 
 #endif

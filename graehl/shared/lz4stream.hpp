@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,10 +25,7 @@
 
 namespace graehl {
 
-struct lz4_filter
-{
-
-};
+struct lz4_filter {};
 
 // see also file_descriptor_sink, mapped_file_sink
 using boost::iostream::file_sink;
@@ -37,40 +34,34 @@ using boost::iostream::filtering_istream;
 using boost::iostream::filtering_ostream;
 
 template <class Impl>
-struct ilz4stream : filtering_istream
-{
-public:
-  void open(std::string const& name, int open_mode=std::ios::in)
-  {
+struct ilz4stream : filtering_istream {
+ public:
+  void open(std::string const& name, int open_mode = std::ios::in) {
     assert(!opened);
-    opened=true;
-    push(file_sink(name, open_mode|std::ios::binary));
+    opened = true;
+    push(file_sink(name, open_mode | std::ios::binary));
   }
 
-  void close()
-  {
+  void close() {
     if (!opened) return;
-    opened=false;
+    opened = false;
     pop();
     pop();
   }
 };
 
 template <class Impl>
-struct olz4stream : filtering_istream
-{
-public:
-  void open(std::string const& name, int open_mode=std::ios::in)
-  {
+struct olz4stream : filtering_istream {
+ public:
+  void open(std::string const& name, int open_mode = std::ios::in) {
     assert(!opened);
-    opened=true;
-    push(file_sink(name, open_mode|std::ios::binary));
+    opened = true;
+    push(file_sink(name, open_mode | std::ios::binary));
   }
 
-  void close()
-  {
+  void close() {
     if (!opened) return;
-    opened=false;
+    opened = false;
     pop();
     pop();
   }

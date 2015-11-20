@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,10 +40,9 @@
 namespace configure {
 
 template <class Val>
-struct init_expr
-{
+struct init_expr {
   template <class Child>
-  init_expr<Child> operator()(std::string const& name, Child *child) const {
+  init_expr<Child> operator()(std::string const& name, Child* child) const {
     return init_expr<Child>(child);
   }
   template <class V2>
@@ -52,25 +51,20 @@ struct init_expr
     return *this;
   }
   template <class V2>
-  init_expr const& init(bool enable, V2 const& v2) const
-  {
+  init_expr const& init(bool enable, V2 const& v2) const {
     return init(v2);
   }
   // similar concept to implicit except that you have the --key implicit true, and --no-key implicit false
-  init_expr const& flag(bool init_to = false) const {
-    return init(init_to);
-  }
+  init_expr const& flag(bool init_to = false) const { return init(init_to); }
   template <class V2>
   init_expr const& inits(V2 const& v2) {
     *val = v2;
     return *this;
   }
 
-  init_expr(Val *val)
-      : val(val)
-  {}
+  init_expr(Val* val) : val(val) {}
 
-  Val *val;
+  Val* val;
 
   /// the rest of the protocol are all no-ops
 
@@ -79,7 +73,9 @@ struct init_expr
   init_expr const& is(std::string const& is) const { return *this; }
   init_expr const& is_also(std::string const& is) const { return *this; }
   template <class V2>
-  init_expr const& eg(V2 const& eg) const { return *this; }
+  init_expr const& eg(V2 const& eg) const {
+    return *this;
+  }
   init_expr const& operator()(char charname) const { return *this; }
   init_expr const& operator()(std::string const& usage) const { return *this; }
   init_expr const& operator()(std::vector<char> const& usage) const { return *this; }
@@ -89,21 +85,29 @@ struct init_expr
   init_expr const& verbose(int verbosity = 1) const { return *this; }
   init_expr const& positional(bool enable = true, int max = 1) const { return *this; }
   template <class unrecognized_opts>
-  init_expr const& allow_unrecognized(bool enable = true, bool warn = false, unrecognized_opts *unrecognized_storage = 0) const
-  { return *this; }
+  init_expr const& allow_unrecognized(bool enable = true, bool warn = false,
+                                      unrecognized_opts* unrecognized_storage = 0) const {
+    return *this;
+  }
   init_expr const& require(bool enable = true, bool just_warn = false) const { return *this; }
   init_expr const& desire(bool enable = true) const { return *this; }
   template <class V2>
-  init_expr const& implicit(bool enable, V2 const& v2) const { return *this; }
+  init_expr const& implicit(bool enable, V2 const& v2) const {
+    return *this;
+  }
   template <class V2>
-  init_expr const& implicit(V2 const& v2) const { return *this; }
+  init_expr const& implicit(V2 const& v2) const {
+    return *this;
+  }
   init_expr const& defaulted(bool enable = true) const { return *this; }
   template <class V2>
-  init_expr const& validate(V2 const& validator) const { return *this; }
+  init_expr const& validate(V2 const& validator) const {
+    return *this;
+  }
 };
 
 template <class Val>
-void configure_init(Val *val) {
+void configure_init(Val* val) {
   init_expr<Val> config(val);
   val->configure(config);
 }

@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -112,13 +112,13 @@ inline CharAcceptor const& shell_quote_chars_iter(CharAcceptor const& chars, Cha
 
 template <class CharAcceptor, class Str>
 inline CharAcceptor const& shell_quote_chars(CharAcceptor const& chars, Str const& str,
-                                            bool quote_empty = true) {
+                                             bool quote_empty = true) {
   return shell_quote_chars_iter(chars, str.begin(), str.end(), quote_empty);
 }
 
 template <class C, class Ch, class Tr>
 inline std::basic_ostream<Ch, Tr>& out_shell_quote(std::basic_ostream<Ch, Tr>& out, C const& data,
-                                                  bool quote_empty = true) {
+                                                   bool quote_empty = true) {
   out_stream<Ch, Tr> chars(out);
   shell_quote_chars(chars, to_string(data), quote_empty);
   return out;
@@ -128,9 +128,7 @@ inline std::basic_ostream<Ch, Tr>& out_shell_quote(std::basic_ostream<Ch, Tr>& o
 struct append_string_buffer {
   string_buffer& b;
   append_string_buffer(string_buffer& b) : b(b) { b.reserve(100); }
-  void operator()(char c) const {
-    b.push_back(c);
-  }
+  void operator()(char c) const { b.push_back(c); }
 };
 
 template <class C>

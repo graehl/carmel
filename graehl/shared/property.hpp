@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ struct SecondPmap {
   value_type const& operator[](key_type const& key) const { return key.second; }
 };
 
-template <class K>  // for random access iterator or integral key K - e.g. you have vertex_descriptor =
+template <class K>  // for random access iterator or integral key K-e.g. you have vertex_descriptor =
 // pointer to array of verts and want an external property map (ArrayPMapImp)
 struct OffsetFeatures {
   K begin;
@@ -156,8 +156,7 @@ V const& get(ConstPropertyMap<V> const& pmap, Key const&) {
 }
 
 template <class V, class Key>
-void put(ConstPropertyMap<V> const& pmap, Key const&, V const&) {
-}
+void put(ConstPropertyMap<V> const& pmap, Key const&, V const&) {}
 
 /// constant property map. ignores puts and returns same constant on get
 template <class V>
@@ -171,8 +170,7 @@ V get(NullPropertyMap<V> const& pmap, Key const&) {
 }
 
 template <class V, class Key, class Val2>
-void put(NullPropertyMap<V> const& pmap, Key const&, Val2 const&) {
-}
+void put(NullPropertyMap<V> const& pmap, Key const&, Val2 const&) {}
 
 template <class offset_map = boost::identity_property_map>
 struct ArrayPMapFactory : public std::pair<unsigned, offset_map> {
@@ -214,6 +212,8 @@ struct property_traits<GRAEHL_SHARED_PTR_NS::reference_wrapper<Imp> > {
   typedef typename Imp::key_type key_type;
   typedef typename Imp::value_type value_type;
 };
+
+
 }
 
 #endif

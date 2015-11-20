@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -334,7 +334,7 @@ struct indexed : HashEqualsTraits {
   void init_empty_hash(I capacityPowerOf2) {
     if (capacityPowerOf2 < 4) capacityPowerOf2 = 4;
     assert(is_power_of_2(capacityPowerOf2));
-    I const newmask = capacityPowerOf2 - 1;
+    I const newmask = capacityPowerOf2-1;
     if (!index_ || mask_ < newmask) {
       freehash();
       mask_ = newmask;
@@ -346,7 +346,7 @@ struct indexed : HashEqualsTraits {
 
   void setGrowAt(I capacityPowerOf2) {
     growAt_ = (I)(kMaxIndexedHashLoad * capacityPowerOf2);
-    if (growAt_ >= mask_) growAt_ = mask_ - 1;
+    if (growAt_ >= mask_) growAt_ = mask_-1;
   }
 
   void clear_hash() {

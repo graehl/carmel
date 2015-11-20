@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -469,7 +469,7 @@ unsigned print_indent(Ostream& out, std::string const& s, unsigned at_column, un
   while (i < end) {
     i = s.find_first_not_of(' ', i);  // skip space(s)
     if (i == string::npos) break;
-    strpos remain = max_column - at_column;
+    strpos remain = max_column-at_column;
     strpos from = i, upto = i + remain;
     if (upto >= end) {
       out << string(sbeg + from, sbeg + end);
@@ -566,6 +566,7 @@ BOOST_AUTO_TEST_CASE(TEST_STRING_MATCH) {
 
 #endif
 
-}  // graehl
+
+}
 
 #endif

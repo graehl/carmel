@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,14 +34,13 @@
 namespace graehl {
 
 inline void throw_errno_for_negative(int ret, std::string const& reason) {
-  if (ret < 0)
-    throw std::runtime_error((reason+": ")+strerror(errno));
+  if (ret < 0) throw std::runtime_error((reason + ": ") + strerror(errno));
 }
 
 /// \return max limit for rlim_type or 0 if no limit
 inline std::size_t unlimit(int rlim_type, std::string const& rlim_name) {
 #if defined(_WIN32) || defined(_WIN64)
-  //TODO?
+  // TODO?
   return 0;
 #else
   struct rlimit rlp;
@@ -71,6 +70,7 @@ inline std::size_t unlimit_memlock() {
   return unlimit(RLIMIT_MEMLOCK, "(RLIMIT_MEMLOCK)");
 #endif
 }
+
 
 }
 

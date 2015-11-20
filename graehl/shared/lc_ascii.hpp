@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 namespace graehl {
 
 inline char lc_ascii(char c) {
-  if (c >= 'A' && c <= 'Z') c -= ('A' - 'a');
+  if (c >= 'A' && c <= 'Z') c -= ('A'-'a');
   return c;
 }
 

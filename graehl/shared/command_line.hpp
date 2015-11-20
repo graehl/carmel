@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ struct argc_argv : private std::stringbuf {
     argvptrs.clear();
     argvptrs.push_back(progname);
     str(cmdline + " ");  // we'll need space for terminating final arg.
-    char* i = gptr(), * end = egptr();
+    char *i = gptr(), *end = egptr();
 
     char* o = i;
     char terminator;
@@ -153,6 +153,7 @@ BOOST_AUTO_TEST_CASE(TEST_command_line) {
 }
 #endif
 
-}  // graehl
+
+}
 
 #endif

@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -78,9 +78,7 @@ struct TypeString<graehl::unordered_map<K, T> > {
 
 template <class K, class T>
 struct TypeString<std::pair<K, T> > {
-  static std::string get() {
-    return "pair of (" + TypeString<K>::get() + ", " + TypeString<T>::get() + ")";
-  }
+  static std::string get() { return "pair of (" + TypeString<K>::get() + ", " + TypeString<T>::get() + ")"; }
 };
 
 #define GRAEHL_TYPE_STRING_TEMPLATE_1(TT, prefix)                                   \
@@ -192,10 +190,11 @@ BOOST_AUTO_TEST_CASE(TEST_type_string) {
   pair<II, SI> p;
   BOOST_CHECK_EQUAL(type_string(p), "pair of (map from integer to integer, map to integer)");
 }
-
-
 }
 
 #endif
+
+
+
 
 #endif

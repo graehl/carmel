@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 
 #ifndef LZ4__INLINE
 #if defined(GRAEHL__SINGLE_MAIN)
-# define LZ4__INLINE 1
+#define LZ4__INLINE 1
 #else
-# define LZ4__INLINE 0
+#define LZ4__INLINE 0
 #endif
 #endif
 

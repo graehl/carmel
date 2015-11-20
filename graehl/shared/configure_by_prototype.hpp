@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
    for hierarchical configure backends, for `key: val` the key determines which
    prototype is configured with val
 
-   //TODO: needs some work to allow switching backends - likely a type-erased backend / conf_expr<Backend, ..., Val>
+   //TODO: needs some work to allow switching backends - likely a type-erased backend / conf_expr<Backend,
+   ..., Val>
 */
 
 #ifndef GRAEHL__SHARED__CONFIGURE_BY_PROTOTYPE_HPP
@@ -30,8 +31,7 @@
 
 namespace configure {
 
-struct configure_by_standard {
-};
+struct configure_by_standard {};
 
 
 template <class Backend>
@@ -41,17 +41,16 @@ struct configure_by {
 
   virtual ~configure_by() {}
 
-  virtual configure_by *clone() const = 0;
+  virtual configure_by* clone() const = 0;
   ptr clone_ptr() const { return ptr(clone()); }
 
-#define CONFIGURE__FOR_ACTIONS(x) \
-  x(init) x(validate) x(help) x(show_example) x(show_effective) x(store)
+#define CONFIGURE__FOR_ACTIONS(x) x(init) x(validate) x(help) x(show_example) x(show_effective) x(store)
 
-#define CONFIGURE__CONFIGURE_FOR_CONF_EXPR_TYPE(init) \
-  typedef conf_expr<Backend, init##_config, configure_by> init; \
+#define CONFIGURE__CONFIGURE_FOR_CONF_EXPR_TYPE(init)                             \
+  typedef conf_expr<Backend, init##_config, configure_by> init;                   \
   typedef conf_expr<config_help_backend, init##_config, configure_by> init##_std; \
-  virtual void configure(init &config) = 0; \
-  virtual void configure(init##_std &config) = 0;
+  virtual void configure(init& config) = 0;                                       \
+  virtual void configure(init##_std& config) = 0;
 
   CONFIGURE__FOR_ACTIONS(CONFIGURE__CONFIGURE_FOR_CONF_EXPR_TYPE)
 };
@@ -65,24 +64,20 @@ struct configure_by_prototype : configure_by<Backend> {
 
   configure_by_prototype() {}
 
-  configure_by_prototype(Prototype *proto)
-      : proto(proto, null_deleter()) {}
-  explicit configure_by_prototype(prototype_ptr const& proto)
-      : proto(proto) {}
+  configure_by_prototype(Prototype* proto) : proto(proto, null_deleter()) {}
+  explicit configure_by_prototype(prototype_ptr const& proto) : proto(proto) {}
 
-  configure_by_prototype *clone_self() const {
+  configure_by_prototype* clone_self() const {
     return new configure_by_prototype(new Prototype(*proto), backend);
   }
 
   typedef configure_by<Backend> ConfigureBy;
 
-  ConfigureBy *clone() const override {
-    return clone_self();
-  }
+  ConfigureBy* clone() const override { return clone_self(); }
 
-#define CONFIGURE__CONFIGURE_DYNMIC_FOR_CONF_EXPR_TYPE(init)  \
-  void configure(init &config) override { proto->configure(config); } \
-  void configure(init##_std &config) override { proto->configure(config); }
+#define CONFIGURE__CONFIGURE_DYNMIC_FOR_CONF_EXPR_TYPE(init)          \
+  void configure(init& config) override { proto->configure(config); } \
+  void configure(init##_std& config) override { proto->configure(config); }
 
 
   CONFIGURE__FOR_ACTIONS(CONFIGURE__CONFIGURE_DYNMIC_FOR_CONF_EXPR_TYPE)
@@ -96,7 +91,7 @@ enum { kSingleAllowedInstance = 1, kUnlimitedInstances = -1 };
 
 /// Backend is required because there's no
 /// configure_backend_any yet
-template <class Backend, class Base=configure_by<Backend> >
+template <class Backend, class Base = configure_by<Backend> >
 struct configure_dynamic {
   typedef configure_by<Backend> ConfigureBy;
   typedef shared_ptr<Configurable> ConfigureByPtr;
@@ -113,19 +108,17 @@ struct configure_dynamic {
     prototypes.insert(TypePrototype(type, new_configurable_ptr(proto)));
   }
   Prototypes instances;
-  friend inline void validate(configure_dynamic & x) {
-    x.validate();
-  }
+  friend inline void validate(configure_dynamic& x) { x.validate(); }
   void validate() {
     if (instances.size() > kMaxAllowedInstances)
-      throw config_exception("configure_dynamic must have at most "+
-                             to_string(kMaxAllowedInstances)+" type: val defined");
+      throw config_exception("configure_dynamic must have at most " + to_string(kMaxAllowedInstances)
+                             + " type: val defined");
   }
-  shared_ptr<Base> value; // the first instance goes here
+  shared_ptr<Base> value;  // the first instance goes here
   std::string type;
   int limit;
   configure_dynamic(int limit = kUnlimitedInstances) : limit(limit) {
-    for (Prototypes::const_iterator i = prototypes.begin(), e = prototypes.end(); i!=e; ++i) {
+    for (Prototypes::const_iterator i = prototypes.begin(), e = prototypes.end(); i != e; ++i) {
       std::string const& type = i->first;
       TypePrototype typeProto(i->first, i->second->clone_ptr());
       instances.insert(typeProto);
@@ -137,37 +130,32 @@ struct configure_dynamic {
   operator bool() const { return !empty(); }
 
   void template <class Config>
-  void configure(Config &config) {
+  void configure(Config& config) {
     config.is("configure_dynamic");
     config.limit(limit);
-    for (Prototypes::const_iterator i = instancse.begin(), e = instances.end(); i!=e; ++i)
-      config(i->first, i->second.get()); // will pick up usage from user configure_by type
+    for (Prototypes::const_iterator i = instancse.begin(), e = instances.end(); i != e; ++i)
+      config(i->first, i->second.get());  // will pick up usage from user configure_by type
   }
 
-  bool contains(std::string const& type) const {
-    return instances.find(type) != instances.end();
-  }
+  bool contains(std::string const& type) const { return instances.find(type) != instances.end(); }
 
-  typedef <Concrete>
-  Concrete &getRef(std::string const& type) const {
+  typedef<Concrete> Concrete& getRef(std::string const& type) const {
     assert(contains(type));
     return *instances.find(type)->second;
   }
 
-  typedef <Concrete>
-  shared_ptr<Concrete> get(std::string const& type) const {
+  typedef<Concrete> shared_ptr<Concrete> get(std::string const& type) const {
     shared_ptr<Concrete> r;
     get(type, r);
     return r;
   }
 
-  typedef <Concrete>
-  shared_ptr<Concrete>& get(std::string const& type, shared_ptr<Concrete> &r) const {
+  typedef<Concrete> shared_ptr<Concrete>& get(std::string const& type, shared_ptr<Concrete>& r) const {
     typedef Prototypes::const_iterator i = instances.find(type);
     if (i == end())
       r.reset();
     else
-      r = dynamic_pointer_cast<Concrete>(i->second); // could be static_pointer_cast
+      r = dynamic_pointer_cast<Concrete>(i->second);  // could be static_pointer_cast
     return r;
   }
 };

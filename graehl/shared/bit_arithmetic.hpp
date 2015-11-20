@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -128,7 +128,7 @@ inline typename enable_if<is_integral<I>::value, typename remove_cv<I>::type>::t
   typedef typename remove_cv<I>::type IT;
   assert(k < std::numeric_limits<IT>::digits);
   assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
-  return ((x << k) | (x >> (std::numeric_limits<IT>::digits - k)));
+  return ((x << k) | (x >> (std::numeric_limits<IT>::digits-k)));
 }
 
 template <class I, class J>
@@ -136,7 +136,7 @@ inline typename enable_if<is_integral<I>::value, typename remove_cv<I>::type>::t
   typedef typename remove_cv<I>::type IT;
   assert(k < std::numeric_limits<IT>::digits);
   assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
-  return ((x << (std::numeric_limits<IT>::digits - k)) | (x >> k));
+  return ((x << (std::numeric_limits<IT>::digits-k)) | (x >> k));
 }
 
 /// interpret the two bytes at d as a uint16 in little endian order
@@ -150,6 +150,7 @@ inline uint16_t unpack_uint16_little(void const* d) {
 #endif
 }
 
-}  // graehl
+
+}
 
 #endif

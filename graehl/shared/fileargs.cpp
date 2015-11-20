@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ void file_arg<Stream>::set_gzfile(std::string const& s, bool /*large_buf*/)
   try {
     call_set_new_gz<Stream>::gz(*this, s);
   } catch (std::exception& e) {
-    fail_msg.append(" - exception: ").append(e.what());
+    fail_msg.append("-exception: ").append(e.what());
     throw_fail(s, fail_msg);
   }
 }
@@ -94,7 +94,7 @@ void file_arg<Stream>::set_gzfile(std::string const& s, bool /*large_buf*/)
   try {
     call_set_new_gz<Stream>::bz2(*this, s);
   } catch (std::exception& e) {
-    fail_msg.append(" - exception: ").append(e.what());
+    fail_msg.append("-exception: ").append(e.what());
     throw_fail(s, fail_msg);
   }
 }

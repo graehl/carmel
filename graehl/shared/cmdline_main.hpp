@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -707,7 +707,6 @@ struct main {
 
 template <>
 struct assign_traits<main, void> : no_assign {};
-
 }
 
 #if GRAEHL_CMDLINE_SAMPLE_MAIN
@@ -718,5 +717,8 @@ int main(int argc, char** argv) {
   return sample_m.run_main(argc, argv);
 }
 #endif
+
+
+
 
 #endif

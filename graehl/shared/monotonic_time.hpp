@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,8 +56,9 @@ inline double seconds_with_ns(struct timespec ts) {
 }
 
 inline double monotonic_time() {
-  return(seconds_with_ns(monotonic_timespec()));
+  return (seconds_with_ns(monotonic_timespec()));
 }
+
 
 }
 

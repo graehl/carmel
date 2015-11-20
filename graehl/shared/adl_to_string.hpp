@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@
 #include <string>
 #include <graehl/shared/string_to.hpp>
 
-namespace graehl {
-}
+namespace graehl {}
 
 namespace adl {
 
@@ -55,6 +54,7 @@ struct ToString<std::string, void> {
     return v;
   }
 };
+
 
 }
 

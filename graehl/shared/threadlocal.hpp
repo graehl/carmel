@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@
 #else
 
 #ifdef _MSC_VER
-// MSVC - see http://msdn.microsoft.com/en-us/library/9w1sdazb.aspx
+// MSVC-see http://msdn.microsoft.com/en-us/library/9w1sdazb.aspx
 /// WARNING: doesn't work with DLLs ... use boost thread specific pointer instead
 /// (http://www.boost.org/libs/thread/doc/tss.html)
 #define THREADLOCAL __declspec(thread)
@@ -56,7 +56,7 @@
 */
 #define THREADLOCAL
 #else
-// GCC - see http://gcc.gnu.org/onlinedocs/gcc-4.6.2/gcc/Thread_002dLocal.html
+// GCC-see http://gcc.gnu.org/onlinedocs/gcc-4.6.2/gcc/Thread_002dLocal.html
 #define THREADLOCAL __thread
 #define GRAEHL_HAVE_THREADLOCAL 1
 #endif

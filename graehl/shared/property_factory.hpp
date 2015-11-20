@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ namespace graehl {
 
 // and others if you like!
 
-// size_traits - for default property_factory, which assumes ids [0..size)
+// size_traits-for default property_factory, which assumes ids [0..size)
 
 template <class G, class ptag>
 struct size_traits {

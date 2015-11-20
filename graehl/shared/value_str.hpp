@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ namespace graehl {
 struct value_str {
   boost::any value;
   std::string str;  // because we want to print without having the type around, and this is simpler than a
-                    // boost::function
+  // boost::function
 
   value_str() {}
   value_str(value_str const& o) : value(o.value), str(o.str) {}

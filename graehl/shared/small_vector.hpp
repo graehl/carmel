@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -706,7 +706,7 @@ struct small_vector {
     if (where == end())
       append_unconstructed(N);
     else
-      insert_hole_index(where - begin(), N);
+      insert_hole_index(where-begin(), N);
   }
 
   /**
@@ -764,7 +764,7 @@ struct small_vector {
     while (--n) *o++ = t;
   }
 
-  void insert_index(iterator where, size_type n, T const& t) { insert_index(where - begin(), n, t); }
+  void insert_index(iterator where, size_type n, T const& t) { insert_index(where-begin(), n, t); }
 
   void push_back_heap(T const& v) {
     if (d_.stack.sz_ == d_.heap.capacity_) ensure_capacity_grow(d_.stack.sz_ + 1);
@@ -784,8 +784,8 @@ struct small_vector {
     }
   }
 
-  T& back() { return this->operator[](d_.stack.sz_ - 1); }
-  T const& back() const { return this->operator[](d_.stack.sz_ - 1); }
+  T& back() { return this->operator[](d_.stack.sz_-1); }
+  T const& back() const { return this->operator[](d_.stack.sz_-1); }
   T& front() { return this->operator[](0); }
   T const& front() const { return this->operator[](0); }
 
@@ -1498,12 +1498,12 @@ void test_small_vector_2() {
   EXPECT_TRUE(vg >= v4);
   EXPECT_TRUE(vg > v4);
   EXPECT_TRUE(v4 < vg);
-  vg[2] = v4[2] - 1;
+  vg[2] = v4[2]-1;
   vg[1] = v4[1] + 1;
   EXPECT_TRUE(vg >= v4);
   EXPECT_TRUE(vg > v4);
   EXPECT_TRUE(v4 < vg);
-  vg[0] = v4[1] - 1;
+  vg[0] = v4[1]-1;
   EXPECT_TRUE(v4 >= vg);
   EXPECT_TRUE(v4 > vg);
   EXPECT_TRUE(vg < v4);
@@ -1526,11 +1526,13 @@ BOOST_AUTO_TEST_CASE(small_vector_compatible_serialization) {
   test_small_vector_same_serializations<small_vector<int, 3, std::size_t> >();
   test_small_vector_same_serializations<small_vector<int, 5, unsigned short> >();
 }
-
-
-}}
+}
+}
 
 #endif
 // GRAEHL_TEST
+
+
+
 
 #endif

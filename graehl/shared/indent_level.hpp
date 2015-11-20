@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -123,6 +123,7 @@ graehl::indent_level graehl::static_indent<Tag>::indentlvl;
     IF_LIMIT_INDENT(T, maxdepth) { printerfn(msg); }    \
   } while (0)
 
-}  // graehl
+
+}
 
 #endif

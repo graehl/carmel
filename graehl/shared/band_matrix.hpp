@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -133,25 +133,24 @@ struct band_matrix {
     rows_ = 0;
     stride_ = 0;
   }
-  friend inline std::ostream& operator<<(std::ostream &out, band_matrix const& self) {
+  friend inline std::ostream& operator<<(std::ostream& out, band_matrix const& self) {
     self.print(out);
     return out;
   }
-  void print(std::ostream &out, char const* space = " ", char const* nl = "\n", bool rownumber = true) const {
-    T *d = begin();
-    if (rownumber)
-      out << rows_ << " x " << band_ << " (diagonal+)"<<nl;
-    for(size_type i = 0; i < rows_; ++i) {
-      if (rownumber)
-        out << i << ":\t";
+  void print(std::ostream& out, char const* space = " ", char const* nl = "\n", bool rownumber = true) const {
+    T* d = begin();
+    if (rownumber) out << rows_ << " x " << band_ << " (diagonal+)" << nl;
+    for (size_type i = 0; i < rows_; ++i) {
+      if (rownumber) out << i << ":\t";
       char const* sp = "";
-      for(size_type j = 0; j < band_; ++j) {
+      for (size_type j = 0; j < band_; ++j) {
         out << sp << *d++;
         sp = space;
       }
       out << nl;
     }
   }
+
  private:
   void free() { std::free(data_); }
 };
@@ -167,7 +166,7 @@ inline void test_band_matrix() {
   for (T rows = 1; rows <= 3; ++rows) {
     for (T band = 1; band <= 4; ++band) {
       M m(rows, band, k);
-      BOOST_CHECK_EQUAL(m(rows - 1, rows - 1), k);
+      BOOST_CHECK_EQUAL(m(rows-1, rows - 1), k);
       for (T i = 0; i < rows; ++i)
         for (T j = 0; j < band; ++j) {
           BOOST_CHECK_EQUAL(m[i][i + j], k);
@@ -176,7 +175,7 @@ inline void test_band_matrix() {
           BOOST_CHECK_EQUAL(m[i][i + j], i + j);
           BOOST_CHECK_EQUAL(m(i, i + j), i + j);
         }
-      BOOST_CHECK_EQUAL(m(rows - 1, rows - 1), rows - 1);
+      BOOST_CHECK_EQUAL(m(rows-1, rows - 1), rows - 1);
       for (T i = 0; i < rows; ++i)
         for (T j = 0; j < band; ++j) BOOST_CHECK_EQUAL(m[i][i + j], i + j);
     }
@@ -190,5 +189,8 @@ BOOST_AUTO_TEST_CASE(band_matrix_test_case) {
 }
 
 #endif
+
+
+
 
 #endif

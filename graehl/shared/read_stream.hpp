@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,9 +28,7 @@ namespace graehl {
 
 struct SeekException : std::exception {
   char const* what_;
-  SeekException(char const* msg = "Seek error")
-      : what_(msg)
-  {}
+  SeekException(char const* msg = "Seek error") : what_(msg) {}
   const char* what() const throw() { return what_; }
   ~SeekException() throw() {}
 };
@@ -40,8 +38,7 @@ inline bool seek_ok(std::streambuf::pos_type pos) {
 }
 
 inline void require_seek_ok(std::streambuf::pos_type pos) {
-  if (!seek_ok(pos))
-    throw SeekException();
+  if (!seek_ok(pos)) throw SeekException();
 }
 
 /**
@@ -52,7 +49,7 @@ inline void require_seek_ok(std::streambuf::pos_type pos) {
 
    requires put pointer is at end for determining size (e.g. just-written iostream)
 */
-inline std::size_t read_streambuf_malloc(std::streambuf &buf, void*& buffer) {
+inline std::size_t read_streambuf_malloc(std::streambuf& buf, void*& buffer) {
   typedef std::streambuf::pos_type Pos;
   typedef std::streambuf::off_type Off;
   Pos sz = buf.pubseekoff(0, std::ios::end, std::ios_base::out);
@@ -75,11 +72,11 @@ inline std::size_t read_streambuf_malloc(std::streambuf &buf, void*& buffer) {
    works for a just-written stringstream (i.e. requires put pointer is already
    at end)
 */
-inline std::size_t read_stringstream_malloc(std::stringstream &ss, void*& buffer) {
-  //return read_streambuf_malloc(*ss.rdbuf(), buffer);
+inline std::size_t read_stringstream_malloc(std::stringstream& ss, void*& buffer) {
+  // return read_streambuf_malloc(*ss.rdbuf(), buffer);
   std::size_t const sz = (std::size_t)ss.tellp();
   if (sz) {
-    std::istream &s = ss;
+    std::istream& s = ss;
     s.read((char*)(buffer = std::malloc(sz)), sz);
     std::size_t const nread = s.gcount();
     if (nread == sz)

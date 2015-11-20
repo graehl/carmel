@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ template <class C>
 struct null_device {
   typedef boost::iostreams::sink_tag category;
   typedef C char_type;
-  //TODO: test
+  // TODO: test
   std::streamsize write(const C*, std::streamsize sz) { return sz; }
 };
 
@@ -92,6 +92,8 @@ class basic_null_ostream: public std::basic_ostream<C, T>
 
 //typedef basic_null_ostream<char> null_ostream;
 */
-}  // graehl
+
+
+}
 
 #endif

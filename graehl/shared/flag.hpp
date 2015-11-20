@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,8 +48,8 @@ struct flag {
     return *this;
   }
   typedef void leaf_configure;
-  typedef void assign_bool;  // TODO: debug in context of configure_program_options flag() and value_str - bad
-                             // any_cast (from bool, presumably)
+  typedef void assign_bool;  // TODO: debug in context of configure_program_options flag() and value_str-bad
+  // any_cast (from bool, presumably)
   friend std::string to_string_impl(flag const& x) { return to_string(x.v); }
   friend void string_to_impl(std::string const& str, flag& x) { string_to(str, x.v); }
   friend std::string type_string(flag const&) { return "boolean"; }  // TODO: ADL
@@ -109,7 +109,7 @@ struct default_true {
   }
   typedef void leaf_configure;
   typedef void assign_bool;  // TODO: debug in context of configure_program_options default_true() and
-                             // value_str - bad any_cast (from bool, presumably)
+  // value_str-bad any_cast (from bool, presumably)
   friend std::string to_string_impl(default_true const& x) { return to_string(x.v); }
   friend void string_to_impl(std::string const& str, default_true& x) { string_to(str, x.v); }
   friend std::string type_string(default_true const&) { return "boolean"; }  // TODO: ADL

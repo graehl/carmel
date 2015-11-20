@@ -1,5 +1,5 @@
 /*
-   LZ4 - Fast LZ compression algorithm
+   LZ4-Fast LZ compression algorithm
    Header File
    Copyright (C) 2011, Yann Collet.
    BSD License
@@ -34,7 +34,7 @@ Last Changed Rev: 61
 Last Changed Date: 2012-04-03 12:34:15 -0700 (Tue, 03 Apr 2012)
 */
 #pragma once
-
+// clang-format off
 #if defined (__cplusplus)
 extern "C" {
 #endif

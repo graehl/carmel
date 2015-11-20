@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ namespace graehl {
 using boost::detail::atomic_count;
 
 /**
-   U is a user allocator e.g. boost::default_user_allocator_new_delete - but
+   U is a user allocator e.g. boost::default_user_allocator_new_delete-but
    make sure to get objects' memory using U::malloc() if you change the default
 
    for use in boost::intrusive_ptr, it's required that InitCount be UniqueCount
@@ -181,7 +181,7 @@ struct shared_ptr_maybe_intrusive<T, typename enable_if<is_refcounted<T>::value>
 
 template <class T>
 inline T* intrusive_clone(
-    T const& x)  // result has refcount of 0 - must delete yourself or use to build an intrusive_ptr
+    T const& x)  // result has refcount of 0-must delete yourself or use to build an intrusive_ptr
 {
   return construct_copy<typename intrusive_traits<T>::user_allocator, T>(x);
 }

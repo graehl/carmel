@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #pragma once
 
 #ifndef USE_BOOST_GZSTREAM
-# define USE_BOOST_GZSTREAM 1
+#define USE_BOOST_GZSTREAM 1
 #endif
 
 #if USE_BOOST_GZSTREAM || USE_BOOST_BZ2STREAM
@@ -38,10 +38,9 @@ typedef filter_file_stream<boost::iostreams::gzip_decompressor, boost::iostreams
 typedef filter_file_stream<boost::iostreams::gzip_compressor, boost::iostreams::output, std::ofstream> ogzstream;
 #endif
 #if USE_BOOST_BZ2STREAM
-typedef filter_file_stream<boost::iostreams::bz2_decompressor, boost::iostreams::input, std::ifstream > ibz2stream;
+typedef filter_file_stream<boost::iostreams::bz2_decompressor, boost::iostreams::input, std::ifstream> ibz2stream;
 typedef filter_file_stream<boost::iostreams::bz2_compressor, boost::iostreams::output, std::ofstream> obz2stream;
 #endif
-
 }
 
 #else
@@ -52,6 +51,9 @@ typedef filter_file_stream<boost::iostreams::bz2_compressor, boost::iostreams::o
 // FIXME: generate named library/object instead?
 #include "gzstream.cpp"
 #endif
+
+
+
 
 #endif
 #endif

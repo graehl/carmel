@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ std::basic_ostream<C, T>& print_width(std::basic_ostream<C, T>& o, double d, int
     const int dot0 = 2;
     int need = dot0 + minprec + a;
     if (need >= width) return o << std::scientific << std::setprecision(sig_for_exp(width, a) - 1) << d;
-    return o << std::setprecision(width - dot0 - a) << d;
+    return o << std::setprecision(width - dot0-a) << d;
   } else {
     int a = (int)wholes;
     int need = 1 + a;
@@ -231,5 +231,8 @@ int main() {
   return 0;
 }
 #endif
+
+
+
 
 #endif

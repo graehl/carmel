@@ -1,4 +1,4 @@
-// Copyright 2014 Jonathan Graehl - http://graehl.org/
+// Copyright 2014 Jonathan Graehl-http://graehl.org/
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,14 +50,13 @@ struct bit_names {
   NameValues nv_;
   bool overlapping_;
 
-  void overlapping() {
-    overlapping_ = true;
-  }
+  void overlapping() { overlapping_ = true; }
 
   void operator()(std::string const& str, Int val) {
     nv_.push_back(NameValue(str, val));
     if (!overlapping_ && (known_ & val))
-      throw std::runtime_error("bit_names overlapping bits "+to_string_impl(known_&val)+" without first calling overlapping())");
+      throw std::runtime_error("bit_names overlapping bits " + to_string_impl(known_ & val)
+                               + " without first calling overlapping())");
     known_ |= val;
     next_ = val * 2;
   }
@@ -123,6 +122,7 @@ struct bit_names {
   }
 
   Int known_;
+
  private:
   Int next_;
 };
@@ -179,8 +179,7 @@ struct named_bits : hex_int<Int> {
     bit_names<Int> const& names = Names::names();
     typedef std::vector<std::string> Strings;
     Strings bits = graehl::split_any(s, bit_names_delim);
-    for(Strings::const_iterator i = bits.begin(), e = bits.end(); i != e; ++i)
-      n |= names[*i];
+    for (Strings::const_iterator i = bits.begin(), e = bits.end(); i != e; ++i) n |= names[*i];
   }
 
   friend std::string to_string_impl(named_bits const& n) {
@@ -205,6 +204,7 @@ struct named_bits : hex_int<Int> {
 
 template <class NameList, class Int>
 named_bits<NameList, Int> named_bits<NameList, Int>::allbits(parse_bit_names<NameList, Int>::names().known_);
+
 
 }
 
