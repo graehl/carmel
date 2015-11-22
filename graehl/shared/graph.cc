@@ -15,7 +15,7 @@
 // static const FLOAT_TYPE HUGE_FLOAT = (HUGE_VAL*HUGE_VAL);
 #include "graph.h"
 #include "myassert.h"
-#include <array.hpp>
+#include <graehl/shared/array.hpp>
 
 namespace graehl {
 

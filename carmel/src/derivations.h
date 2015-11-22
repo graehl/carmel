@@ -35,11 +35,8 @@
 #include <carmel/src/train.h>
 #include <graehl/shared/dynamic_array.hpp>
 #include <boost/cstdint.hpp>
-//#include <graehl/shared/stream_util.hpp>
-//#include <graehl/shared/size_mega.hpp>
-
-#include <array.hpp>
-#include <io.hpp>
+#include <graehl/shared/array.hpp>
+#include <graehl/shared/io.hpp>
 
 namespace graehl {
 
