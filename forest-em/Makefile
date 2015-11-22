@@ -25,7 +25,7 @@ LIB=
 
 CXXFLAGS_COMMON= -ffast-math -Wno-deprecated-declarations
 #-ggdb
-CPPFLAGS += -DNO_BACKTRACE -DUSE_NONDET_RANDOM -DUSE_BOOST_GZSTREAM -D_GLIBCXX_USE_CXX11_ABI=0
+CPPFLAGS += -DNO_BACKTRACE -DUSE_NONDET_RANDOM -DUSE_BOOST_GZSTREAM
 # CXXFLAGS += -O
 #-DSINGLE_PRECISION
 ## would have to link with boost random nondet source
