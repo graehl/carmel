@@ -186,7 +186,7 @@ inline std::string get_current_dir() {
 }
 
 template <class O>
-void print_current_dir(O& o, const char* header = "### CURRENT DIR: ") {
+void print_current_dir(O& o, char const* header = "### CURRENT DIR: ") {
   if (header) o << header;
   o << get_current_dir();
   if (header) o << '\n';
@@ -240,7 +240,7 @@ struct tmp_fstream {
   std::string filename;
   std::fstream file;
   bool exists;
-  explicit tmp_fstream(const char* c) {
+  explicit tmp_fstream(char const* c) {
     choose_name();
     open();
     file << c;
@@ -387,7 +387,7 @@ inline void split_dir_file(std::string const& fullpath, std::string& dir, std::s
 
    if you want just one of stdin or stdout, use the regular unix popen
 */
-inline pid_t popen3(int* fd, const char** const cmd, bool stderrToFd2 = true) {
+inline pid_t popen3(int* fd, char const** const cmd, bool stderrToFd2 = true) {
   int p[3][2];  // 3 pipes; 0 is read and 1 is write end
   pid_t pid;
 
@@ -423,7 +423,7 @@ inline pid_t popen3(int* fd, const char** const cmd, bool stderrToFd2 = true) {
 
     perror("Couldn't execvp command");
     fprintf(stderr, " \"%s\"\n", *cmd);
-    _exit(EXIT_FAILURE);
+    _exit(1);
   }
 fail:
   int save_errno = errno;
@@ -440,7 +440,7 @@ fail:
 
    \param cmd is 0 terminated execvp
 */
-inline pid_t popen2(int* fd, const char** const cmd) {
+inline pid_t popen2(int* fd, char const** const cmd) {
   return popen3(fd, cmd, false);
 }
 #endif

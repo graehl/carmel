@@ -139,7 +139,7 @@ struct band_matrix {
   }
   void print(std::ostream& out, char const* space = " ", char const* nl = "\n", bool rownumber = true) const {
     T* d = begin();
-    if (rownumber) out << rows_ << " x " << band_ << " (diagonal+)" << nl;
+    if (rownumber) out << rows_ << " x " << band_ << " (column index = span size; row: span start)" << nl;
     for (size_type i = 0; i < rows_; ++i) {
       if (rownumber) out << i << ":\t";
       char const* sp = "";
@@ -189,8 +189,6 @@ BOOST_AUTO_TEST_CASE(band_matrix_test_case) {
 }
 
 #endif
-
-
 
 
 #endif

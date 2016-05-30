@@ -394,10 +394,10 @@ struct lazy_kbest_stats {
     o << "[Lazy kbest visited " << n_visited << " derivations; ";
     if (trivial_filter) {
       assert(!n_filtered);
-      o << n_passed << " derivations found]";
+      o << n_passed << " [sub-]derivations found]";
       return;
     }
-    o << "uniqueness-filtered " << n_filtered << " of " << n_total() << " derivations, leaving " << n_passed
+    o << "uniqueness-filtered " << n_filtered << " of " << n_total() << " [sub-]derivations, leaving " << n_passed
       << ", or " << graehl::percent<5>((double)n_passed, (double)n_total()) << "]";
   }
   typedef lazy_kbest_stats self_type;
@@ -883,8 +883,6 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
 }  // ns
 
 CLANG_DIAG_ON(unused-variable)
-
-
 
 
 #endif

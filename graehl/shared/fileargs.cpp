@@ -25,8 +25,8 @@
 namespace graehl {
 
 namespace {
-const std::string fail_in = "Couldn't open compressed input file";
-const std::string fail_out = "Couldn't create compressed output file";
+static std::string const fail_in = "Couldn't open compressed input file";
+static std::string const fail_out = "Couldn't create compressed output file";
 }
 
 template <class Stream>

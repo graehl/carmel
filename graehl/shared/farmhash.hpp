@@ -108,7 +108,7 @@ GRAEHL_FORCE_INLINE uint64_t farmhash_len_16(uint64_t u, uint64_t v, uint64_t mu
 }
 
 /// short strings are hashed here.
-GRAEHL_FORCE_INLINE uint64_t farmhash_len_0to16(const char* s, std::size_t len) {
+GRAEHL_FORCE_INLINE uint64_t farmhash_len_0to16(char const* s, std::size_t len) {
   if (len >= 8) {
     uint64_t mul = k_bigprime2 + len * 2;  // odd
     uint64_t a = fetch_uint64(s) + k_bigprime2;
@@ -131,7 +131,7 @@ GRAEHL_FORCE_INLINE uint64_t farmhash_len_0to16(const char* s, std::size_t len) 
     return k_bigprime2;
 }
 
-GRAEHL_FORCE_INLINE uint64_t farmhash_len_16to32(const char* s, std::size_t len) {
+GRAEHL_FORCE_INLINE uint64_t farmhash_len_16to32(char const* s, std::size_t len) {
   uint64_t mul = k_bigprime2 + len * 2;  // odd
   uint64_t a = fetch_uint64(s) * k_bigprime1;
   uint64_t b = fetch_uint64(s + 8);
@@ -141,7 +141,7 @@ GRAEHL_FORCE_INLINE uint64_t farmhash_len_16to32(const char* s, std::size_t len)
                          a + bit_rotate_right_64(b + k_bigprime2, 18) + c, mul);
 }
 
-GRAEHL_FORCE_INLINE uint64_t farmhash_len_32to64(const char* s, std::size_t len) {
+GRAEHL_FORCE_INLINE uint64_t farmhash_len_32to64(char const* s, std::size_t len) {
   uint64_t mul = k_bigprime2 + len * 2;  // odd
   uint64_t a = fetch_uint64(s) * k_bigprime2;
   uint64_t b = fetch_uint64(s + 8);
@@ -158,7 +158,7 @@ GRAEHL_FORCE_INLINE uint64_t farmhash_len_32to64(const char* s, std::size_t len)
 }
 
 #if !GRAEHL_FARMHASH_INLINE
-uint64_t farmhash_long(const char* s, std::size_t len);
+uint64_t farmhash_long(char const* s, std::size_t len);
 #endif
 
 #if GRAEHL_FARMHASH_DEFINE_IMPL || GRAEHL_FARMHASH_INLINE
@@ -187,7 +187,7 @@ GRAEHL_FORCE_INLINE Uint128p weak_farmhash_len_32_with_seeds(uint64_t w, uint64_
 
 /// \return a 16-byte hash for s[0] ... s[31], 16 bytes of seeds ab.  Quick and dirty (a and b should be
 /// 'random'-ish)
-GRAEHL_FORCE_INLINE Uint128p weak_farmhash_len_32_with_seeds(const char* s, uint64_t a, uint64_t b) {
+GRAEHL_FORCE_INLINE Uint128p weak_farmhash_len_32_with_seeds(char const* s, uint64_t a, uint64_t b) {
   return weak_farmhash_len_32_with_seeds(fetch_uint64(s), fetch_uint64(s + 8), fetch_uint64(s + 16),
                                          fetch_uint64(s + 24), a, b);
 }
@@ -196,7 +196,7 @@ GRAEHL_FORCE_INLINE Uint128p weak_farmhash_len_32_with_seeds(const char* s, uint
 static inline
 #endif
     uint64_t
-    farmhash_long(const char* s, std::size_t len) {
+    farmhash_long(char const* s, std::size_t len) {
   const uint64_t seed = 81;
   uint64_t x = seed, y = seed * k_bigprime1 + 113, z = fast_mixbits(y * k_bigprime2 + 113) * k_bigprime2;
 #if GRAEHL_CPP11
@@ -207,8 +207,8 @@ static inline
 #endif
   x = x * k_bigprime2 + fetch_uint64(s);
 
-  const char* end = s + ((len - 1) / 64) * 64;
-  const char* last64 = end + ((len - 1) & 63) - 63;
+  char const* end = s + ((len - 1) / 64) * 64;
+  char const* last64 = end + ((len - 1) & 63) - 63;
 
   do {
     x = bit_rotate_right_64(x + y + v.first + fetch_uint64(s + 8), 37) * k_bigprime1;
@@ -243,7 +243,7 @@ static inline
 /// this shouldn't kill icache for common case (short string), even though we've
 /// inlined insanely - the short case exits immediately
 GRAEHL_FORCE_INLINE
-uint64_t farmhash(const char* s, std::size_t len) {
+uint64_t farmhash(char const* s, std::size_t len) {
   if (GRAEHL_FARMHASH_LIKELY_SMALL_EXPECT(len <= 32)) {
     return len <= 16 ? farmhash_len_0to16(s, len) : farmhash_len_16to32(s, len);
   } else if (len <= 64)

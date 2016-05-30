@@ -163,7 +163,7 @@ using boost::uint64_t;
 #endif
 
 
-GRAEHL_FORCE_INLINE uint32_t fetch_uint32(const char* p) {
+GRAEHL_FORCE_INLINE uint32_t fetch_uint32(char const* p) {
 #if GRAEHL_FETCH_UNALIGNED_MEMCPY
   uint32_t x;
   std::memcpy(&x, p, sizeof(x));
@@ -173,7 +173,7 @@ GRAEHL_FORCE_INLINE uint32_t fetch_uint32(const char* p) {
 #endif
 }
 
-GRAEHL_FORCE_INLINE uint64_t fetch_uint64(const char* p) {
+GRAEHL_FORCE_INLINE uint64_t fetch_uint64(char const* p) {
 #if GRAEHL_FETCH_UNALIGNED_MEMCPY
   uint64_t x;
   std::memcpy(&x, p, sizeof(x));

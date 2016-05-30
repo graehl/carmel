@@ -132,7 +132,7 @@ struct one_of {
   std::vector<Val> allowed;
   one_of(std::vector<Val> const& allowed) : allowed(allowed) {}
   one_of(one_of const& o) : allowed(o.allowed) {}
-  one_of& operator()(Val const& v) { allowed.push_back(v); }
+  one_of& operator()(Val const& v) { allowed.push_back(v); return *this;}
   template <class Key>
   void operator()(Key const& key) const {
     if (std::find(allowed.begin(), allowed.end(), key) == allowed.end())

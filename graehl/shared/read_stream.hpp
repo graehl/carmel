@@ -29,7 +29,7 @@ namespace graehl {
 struct SeekException : std::exception {
   char const* what_;
   SeekException(char const* msg = "Seek error") : what_(msg) {}
-  const char* what() const throw() { return what_; }
+  char const* what() const throw() { return what_; }
   ~SeekException() throw() {}
 };
 

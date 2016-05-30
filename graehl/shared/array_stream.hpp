@@ -396,7 +396,7 @@ void TEST_check_array_stream(C& i1) {
   std::string const TESTARRAYSTR1("eruojdcv53341");
   std::string const TESTARRAYSTR2("0asd");
   std::string const TESTARRAYSTR(" " + TESTARRAYSTR1 + "\n " + TESTARRAYSTR2 + "\t");
-  const char* tarrs = TESTARRAYSTR.c_str();
+  char const* tarrs = TESTARRAYSTR.c_str();
   i1.set_array(tarrs, TESTARRAYSTR.size());
   string tstr = tarrs;
   unsigned slen = (unsigned)tstr.length();

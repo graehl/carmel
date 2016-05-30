@@ -44,8 +44,8 @@ extern "C" {
 // Simple Functions
 //****************************
 
-int LZ4_compress   (const char* source, char* dest, int isize);
-int LZ4_uncompress (const char* source, char* dest, int osize);
+int LZ4_compress   (char const* source, char* dest, int isize);
+int LZ4_uncompress (char const* source, char* dest, int osize);
 
 /*
 LZ4_compress() :
@@ -82,7 +82,7 @@ LZ4_compressBound() :
 */
 
 
-int LZ4_uncompress_unknownOutputSize (const char* source, char* dest, int isize, int maxOutputSize);
+int LZ4_uncompress_unknownOutputSize (char const* source, char* dest, int isize, int maxOutputSize);
 
 /*
 LZ4_uncompress_unknownOutputSize() :
@@ -95,8 +95,8 @@ LZ4_uncompress_unknownOutputSize() :
 */
 
 
-int LZ4_compressCtx(void** ctx, const char* source,  char* dest, int isize);
-int LZ4_compress64kCtx(void** ctx, const char* source,  char* dest, int isize);
+int LZ4_compressCtx(void** ctx, char const* source,  char* dest, int isize);
+int LZ4_compress64kCtx(void** ctx, char const* source,  char* dest, int isize);
 
 /*
 LZ4_compressCtx() :

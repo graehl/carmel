@@ -119,10 +119,10 @@ codecvt argument, too
 namespace graehl {
 
 namespace {
-std::string const stdin_filename("-");
-std::string const stdout_filename("-");
-std::string const stderr_filename("-2");
-std::string const null_filename("-0");
+static std::string const stdin_filename("-");
+static std::string const stdout_filename("-");
+static std::string const stderr_filename("-2");
+static std::string const null_filename("-0");
 const char gz_ext[] = ".gz";
 const char lz4_ext[] = ".lz4";
 const char bz2_ext[] = ".bz2";
@@ -387,7 +387,7 @@ struct file_arg {
   void set(Stream& s, std::string const& filename = "", bool destroy = no_delete_after,
            std::string const& fail_msg = "invalid stream") {
     clear();
-    if (!s) throw_fail(filename, fail_msg);
+    if (s.bad()) throw_fail(filename, fail_msg);
     if (destroy)
       pointer.reset(&s);
     else

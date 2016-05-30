@@ -92,7 +92,7 @@ struct Escape3 : string_builder {
 struct Escape3Exception : std::exception {
   Escape3Exception() {}
   ~Escape3Exception() throw() {}
-  const char* what() const throw() {
+  char const* what() const throw() {
     return "Unescape3 expected two hex digits or backslash following backslash";
   }
 };

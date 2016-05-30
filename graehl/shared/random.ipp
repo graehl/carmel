@@ -28,13 +28,13 @@ inline double random_pos_fraction()  // returns uniform random number on (0..1]
 #ifdef USE_STD_RAND
   return ((double)std::rand() + 1.) * (1. / ((double)RAND_MAX + 1.));
 #else
-  return 1.-random01();
+  return 1. - random01();
 #endif
 }
 
 template <class V1, class V2>
 inline V1 random_half_open(V1 const& v1, V2 const& v2) {
-  return v1 + random01() * (v2-v1);
+  return v1 + random01() * (v2 - v1);
 }
 
 /// \return on [0, limit) from unigned rand()
@@ -45,7 +45,7 @@ unsigned random_less_than(unsigned limit, Rand rand) {
 #if (UINT_MAX > 0xffffffffUL)
       0x100000000UL % limit;
 #else
-      min = limit > 0x80000000 ? 1 + ~limit : ((0xffffffff-(limit * 2)) + 1) % limit;
+      min = limit > 0x80000000 ? 1 + ~limit : ((0xffffffff - (limit * 2)) + 1) % limit;
 #endif
   for (;;) {
     unsigned r = rand();
@@ -79,14 +79,14 @@ inline Int random_up_to(Int limit) {
 // works for only if a-z A-Z and 0-9 are contiguous
 inline char random_alpha() {
   unsigned r = random_less_than((unsigned)(GRAEHL_RANDOM__NLETTERS * 2));
-  return (r < GRAEHL_RANDOM__NLETTERS) ? 'a' + r : ('A'-GRAEHL_RANDOM__NLETTERS) + r;
+  return (r < GRAEHL_RANDOM__NLETTERS) ? 'a' + r : ('A' - GRAEHL_RANDOM__NLETTERS) + r;
 }
 
 inline char random_alphanum() {
   unsigned r = random_less_than((unsigned)(GRAEHL_RANDOM__NLETTERS * 2 + 10));
   return r < GRAEHL_RANDOM__NLETTERS * 2
-             ? ((r < GRAEHL_RANDOM__NLETTERS) ? 'a' + r : ('A'-GRAEHL_RANDOM__NLETTERS) + r)
-             : ('0'-GRAEHL_RANDOM__NLETTERS * 2) + r;
+             ? ((r < GRAEHL_RANDOM__NLETTERS) ? 'a' + r : ('A' - GRAEHL_RANDOM__NLETTERS) + r)
+             : ('0' - GRAEHL_RANDOM__NLETTERS * 2) + r;
 }
 #undef GRAEHL_RANDOM__NLETTERS
 

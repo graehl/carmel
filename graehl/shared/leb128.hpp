@@ -32,7 +32,7 @@
 namespace graehl {
 
 struct leb128error : std::exception {
-  const char* what() const throw() { return "binary encoding didn't fit in buffer"; }
+  char const* what() const throw() { return "binary encoding didn't fit in buffer"; }
   ~leb128error() throw() {}
 };
 

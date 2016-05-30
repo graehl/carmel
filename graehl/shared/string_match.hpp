@@ -35,11 +35,15 @@
 #include <cctype>
 #endif
 
-namespace {  // anon
-std::string const ascii_whitespace = "\n\r\t ";
+namespace {
+static std::string const ascii_whitespace = "\n\r\t ";
 }
 
 namespace graehl {
+
+inline void throw_empty_search_substring() {
+  throw std::runtime_error("empty search substring would match infinitely many times");
+}
 
 template <typename charT>
 struct ascii_case_insensitive_equal {
@@ -130,33 +134,53 @@ inline void erase_end(Str& s, unsigned n) {
 }
 
 template <class Str>
-typename Str::size_type replace(Str& in, Str const& oldsub, Str const& newsub, typename Str::size_type pos = 0) {
-  pos = in.find(oldsub, pos);
+typename Str::size_type replace(Str& in, Str const& query, Str const& replacement, typename Str::size_type pos = 0) {
+  pos = in.find(query, pos);
   if (pos == Str::npos) return pos;
-  in.replace(pos, oldsub.length(), newsub);
-  return pos + newsub.length();
+  in.replace(pos, query.length(), replacement);
+  return pos + replacement.size();
 }
 
 // returns true if one was replaced
 template <class Str>
-bool replace_one(Str& in, Str const& oldsub, Str const& newsub, typename Str::size_type pos = 0) {
-  return replace(in, oldsub, newsub, pos) != Str::npos;
+bool replace_one(Str& in, Str const& query, Str const& replacement, typename Str::size_type pos = 0) {
+  return replace(in, query, replacement, pos) != Str::npos;
 }
 
-// returns number of types we replaced
 template <class Str>
-unsigned replace_all(Str& in, Str const& oldsub, Str const& newsub, typename Str::size_type pos = 0) {
+unsigned replace_all(Str& in, Str const& query, typename Str::value_type const* replacement, typename Str::size_type lenReplacement, typename Str::size_type pos = 0) {
   unsigned n = 0;
-  while ((pos = replace(in, oldsub, newsub, pos)) != Str::npos) ++n;
+  typename Str::size_type querysz = query.size();
+  if (!querysz) throw_empty_search_substring();
+  while ((pos = in.find(query, pos)) != Str::npos) {
+    in.replace(pos, querysz, replacement, lenReplacement);
+    pos += lenReplacement;
+    ++n;
+  }
   return n;
 }
 
-
-template <class Str, class Sub>
-bool contains_substring(Str const& str, Sub const& sub, typename Str::size_type pos = 0) {
-  return str.find(sub, pos) != Str::npos;
+template <class Str>
+unsigned replace_all(Str& in, Str const& query, std::string const& replacement, typename Str::size_type pos = 0) {
+  return replace_all(in, query, replacement.data(), replacement.size(), pos);
 }
 
+template <class Str>
+unsigned erase_all(Str& in, Str const& query, typename Str::size_type pos = 0) {
+  unsigned n = 0;
+  typename Str::size_type querysz = query.size();
+  if (!querysz) return 0;
+  while ((pos = in.find(query, pos)) != Str::npos) {
+    in.erase(pos, querysz);
+    ++n;
+  }
+  return n;
+}
+
+template <class Str, class Query>
+bool contains_substring(Str const& str, Query const& query, typename Str::size_type pos = 0) {
+  return str.find(query, pos) != Str::npos;
+}
 
 // returns true and writes pos, n for substring between left-right brackets.  or false if brackets not found.
 template <class Str>
@@ -497,9 +521,9 @@ unsigned print_indent(Ostream& out, std::string const& s, unsigned at_column, un
 
 
 #ifdef GRAEHL_TEST
-const char* TEST_starts_with[] = {"s", "st", "str", "str1"};
+char const* TEST_starts_with[] = {"s", "st", "str", "str1"};
 
-const char* TEST_ends_with[] = {"1", "r1", "tr1", "str1"};
+char const* TEST_ends_with[] = {"1", "r1", "tr1", "str1"};
 // NOTE: could use substring but that's more bug-prone ;D
 
 BOOST_AUTO_TEST_CASE(TEST_STRING_MATCH) {

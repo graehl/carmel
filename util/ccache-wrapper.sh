@@ -1,33 +1,12 @@
 name=`basename $0`
+d=`dirname $0`
+if [[ $d != . ]] ; then
+  export PATH=`dirname $0`:$PATH
+fi
 ccbasename=${name#ccache-}
-ccpre=/local/gcc
-cc=$ccpre/bin/$ccbasename
-if ! [[ -x $cc ]] ; then
-    ccpre=/usr/local
-    cc=$ccpre/bin/$ccbasename
-fi
-addld() {
-    LD_LIBRARY_PATH="$1:$LD_LIBRARY_PATH"
-    LD_LIBRARY_PATH=${LD_LIBRARY_PATH%:}
-    export LD_LIBRARY_PATH
-    LD_RUN_PATH="$1:$LD_RUN_PATH"
-    LD_RUN_PATH=${LD_RUN_PATH%:}
-    export LD_RUN_PATH
-}
-if [[ -x $cc ]] ; then
-    addld $ccpre/lib
-    addld $ccpre/lib64
-    export PATH=$ccpre:$PATH
-else
-    cc=$ccbasename
-fi
 CCACHE_DIR=${CCACHE_DIR:-/local/graehl/ccache}
 mkdir -p $CCACHE_DIR || CCACHE_DIR=
 if [[ -d $CCACHE_DIR ]] ; then
     export CCACHE_DIR=$CCACHE_DIR
 fi
-if [[ $gccfilter ]] && [[ -x `which gccfilter 2>/dev/null` ]] ; then
-  exec gccfilter ${gccfilterargs:- -r -w -n -i} ccache $cc "$@"
-else
-  exec ccache $cc "$@"
-fi
+exec ccache $ccbasename "$@"

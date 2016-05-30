@@ -276,7 +276,6 @@ struct configure_program_options : configure_backend_base<configure_program_opti
   template <class Val>
   void leaf_action(show_example_config a, Val* pval, conf_expr_base const& conf) const {
     base::leaf_action(a, pval, conf);
-    //*usage.o << conf.opt->get_leaf_value(*pval, " --"+conf.path_name()+"=","\n");
   }
 
 
@@ -463,8 +462,6 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 #endif
-
-
 
 
 #endif

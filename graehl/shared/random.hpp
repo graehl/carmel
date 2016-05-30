@@ -149,7 +149,12 @@ typedef boost::variate_generator<random_generator, uniform_01_dist> random_01_ge
 #endif
 
 
+#if !defined(GRAEHL__NO_G_RANDOM01)
+
 #if !GRAEHL_GLOBAL_RANDOM_USE_STD
+/**
+   global (thread-unsafe).
+*/
 #if (!defined(GRAEHL__NO_RANDOM_MAIN) && defined(GRAEHL__SINGLE_MAIN)) || defined(GRAEHL__RANDOM_MAIN)
 namespace {
 // random_generator g_random_gen(default_random_seed());
@@ -180,10 +185,8 @@ inline double random01()  // returns uniform random number on [0..1)
 #endif
 }
 
-/**
-   global (thread-unsafe).
-*/
 #include <graehl/shared/random.ipp>
+#endif
 
 struct set_random_pos_fraction {
   template <class C>

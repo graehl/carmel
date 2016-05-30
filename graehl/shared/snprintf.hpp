@@ -87,7 +87,7 @@
    return is number of chars that would have been written (so buflen should be >
    than that by at least 1 for '\0'
 */
-inline int C99vsnprintf(char* buf, std::size_t buflen, const char* format, va_list va) {
+inline int C99vsnprintf(char* buf, std::size_t buflen, char const* format, va_list va) {
   if (buflen) {
     va_list tmpva;
     va_copy(tmpva, va);
@@ -104,7 +104,7 @@ inline int C99vsnprintf(char* buf, std::size_t buflen, const char* format, va_li
    return is number of chars that would have been written (so buflen should be >
    than that by at least 1 for '\0'
 */
-inline int C99snprintf(char* buf, std::size_t buflen, const char* format, ...) {
+inline int C99snprintf(char* buf, std::size_t buflen, char const* format, ...) {
   va_list va;
   va_start(va, format);
   int count = C99vsnprintf(buf, buflen, format, va);

@@ -99,7 +99,7 @@ public:
     // ASSERT: both input & output capabilities will not be used together
   }
   virtual bool is_open() { return opened; }
-  lz4streambuf* open( const char* name, int open_mode);
+  lz4streambuf* open( char const* name, int open_mode);
   lz4streambuf* close();
   virtual ~lz4streambuf() { close(); } /* in a derived class, if your base class has a virtual destructor, your own destructor is automatically virtual. You might need an explicit destructor for other reasons, but there's no need to redeclare a destructor simply to make sure it is virtual. No matter whether you declare it with the virtual keyword, declare it without the virtual keyword, or don't declare it at all, it's still virtual. */
 
@@ -113,9 +113,9 @@ protected:
   lz4streambuf buf;
 public:
   lz4streambase() { init(&buf); }
-  lz4streambase( const char* name, int open_mode);
+  lz4streambase( char const* name, int open_mode);
   ~lz4streambase();
-  void open( const char* name, int open_mode);
+  void open( char const* name, int open_mode);
   void close();
   lz4streambuf* rdbuf() { return &buf; }
 };
@@ -129,10 +129,10 @@ public:
 class ilz4stream : public lz4streambase, public std::istream {
 public:
   ilz4stream() : std::istream(&buf) {}
-  ilz4stream( const char* name, int open_mode = std::ios::in)
+  ilz4stream( char const* name, int open_mode = std::ios::in)
     : lz4streambase( name, std::ios::in | open_mode), std::istream( &buf) {}
   lz4streambuf* rdbuf() { return lz4streambase::rdbuf(); }
-  void open( const char* name, int open_mode = std::ios::in) {
+  void open( char const* name, int open_mode = std::ios::in) {
     lz4streambase::open( name, open_mode);
   }
 };
@@ -140,10 +140,10 @@ public:
 class olz4stream : public lz4streambase, public std::ostream {
 public:
   olz4stream() : std::ostream( &buf) {}
-  olz4stream( const char* name, int mode =  std::ios::out)
+  olz4stream( char const* name, int mode =  std::ios::out)
     : lz4streambase( name, std::ios::out | mode), std::ostream( &buf) {}
   lz4streambuf* rdbuf() { return lz4streambase::rdbuf(); }
-  void open( const char* name, int open_mode = std::ios::out) {
+  void open( char const* name, int open_mode = std::ios::out) {
     lz4streambase::open( name, open_mode);
   }
 };

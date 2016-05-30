@@ -24,6 +24,7 @@
 #include <boost/iostreams/traits.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
+#include <stdexcept>
 #include <fstream>
 
 namespace graehl {
@@ -57,6 +58,11 @@ struct fstream_for_mode<boost::iostreams::output_seekable> {
   enum { ios_mode_default = std::ios::out };
 };
 
+typedef std::runtime_error filter_file_stream_exception;
+
+inline void throw_filter_file_stream_open(char const* name) {
+  throw filter_file_stream_exception(std::string("Can't open file: ") + name);
+}
 
 /**
    'Filter' is e.g. boost::iostreams::zlib_decompressor or
@@ -90,21 +96,21 @@ struct filter_file_streambuf : boost::iostreams::filtering_streambuf<Mode> {
   Stream file_;
 
   filter_file_streambuf() {}
-  filter_file_streambuf(const char* name,
+  filter_file_streambuf(char const* name,
                         std::ios_base::openmode mode = fstream_for_mode<Mode>::ios_mode_default)
       : file_(name, mode | std::ios_base::binary) {
-    opened();
+    opened(name);
   }
 
   ~filter_file_streambuf() {
-    Base::reset();  // flush before close output file
+    Base::reset();  // flush filter buffer before closing output file
   }
 
   bool is_open() { return file_.is_open(); }
 
-  void open(const char* name, std::ios_base::openmode mode = fstream_for_mode<Mode>::ios_mode_default) {
+  void open(char const* name, std::ios_base::openmode mode = fstream_for_mode<Mode>::ios_mode_default) {
     file_.open(name, mode | std::ios_base::binary);
-    opened();
+    opened(name);
   }
   void open(std::string const& name, std::ios_base::openmode mode = fstream_for_mode<Mode>::ios_mode_default) {
     open(name.c_str(), mode);
@@ -115,7 +121,8 @@ struct filter_file_streambuf : boost::iostreams::filtering_streambuf<Mode> {
     file_.close();
   }
 
-  void opened() {
+  void opened(char const* name) {
+    if (!file_) throw_filter_file_stream_open(name);
     Base::push(Filter());
     Base::push(file_);
   }
@@ -128,20 +135,20 @@ struct filter_file_stream : boost::iostreams::filtering_stream<Mode> {
   Stream file_;
 
   filter_file_stream() {}
-  filter_file_stream(const char* name, std::ios_base::openmode mode = fstream_for_mode<Mode>::ios_mode_default)
+  filter_file_stream(char const* name, std::ios_base::openmode mode = fstream_for_mode<Mode>::ios_mode_default)
       : file_(name, mode | std::ios_base::binary) {
-    opened();
+    opened(name);
   }
 
   ~filter_file_stream() {
-    Base::reset();  // flush before close output file
+    Base::reset();  // flush filter buffer before closing output file
   }
 
   bool is_open() { return file_.is_open(); }
 
-  void open(const char* name, std::ios_base::openmode mode = fstream_for_mode<Mode>::ios_mode_default) {
+  void open(char const* name, std::ios_base::openmode mode = fstream_for_mode<Mode>::ios_mode_default) {
     file_.open(name, mode | std::ios_base::binary);
-    opened();
+    opened(name);
   }
   void open(std::string const& name, std::ios_base::openmode mode = fstream_for_mode<Mode>::ios_mode_default) {
     open(name.c_str(), mode);
@@ -152,7 +159,8 @@ struct filter_file_stream : boost::iostreams::filtering_stream<Mode> {
     file_.close();
   }
 
-  void opened() {
+  void opened(char const* name) {
+    if (!file_) throw_filter_file_stream_open(name);
     Base::push(Filter());
     Base::push(file_);
   }

@@ -53,9 +53,11 @@ struct locking {
 #if GRAEHL_CPP11
   typedef std::mutex mutex_type;
   typedef std::lock_guard<mutex_type> guard_type;
+  typedef std::unique_lock<mutex_type> unique_lock_type;
 #else
   typedef boost::mutex mutex_type;
   typedef boost::lock_guard<mutex_type> guard_type;
+  typedef guard_type unique_lock_type;
 #endif
 };
 

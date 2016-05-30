@@ -243,15 +243,26 @@ struct string_builder : string_buffer {
     to(str);
     return str;
   }
+#include <graehl/shared/warning_push.h>
+#ifndef _MSC_VER
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+  //TODO: remove pragma
 #if GRAEHL_CPP11
+  explicit string_builder(char const* str) : string_buffer(str) {}
   /// destructive: move away from current buffer (can't use any more w/o clear)
   void to(std::string& str) { str = std::move((std::string&)*this); }
   std::string const& str() const { return *this; }
   std::string&& str() { return std::move(*this); }
-
   std::string* new_str() const { return new std::string(*this); }
   std::string const& strcopy() const { return *this; }
+  string_builder& append(std::string const& str, std::string::size_type from,
+                         std::string::size_type len = std::string::npos) {
+    string_buffer::append(str, from, len);
+    return *this;
+  }
 #else
+  explicit string_builder(char const* str) : string_buffer(str, str + std::strlen(str)) {}
   void to(std::string& str) {
     str.assign(this->begin(), this->end());
     clear();
@@ -261,10 +272,21 @@ struct string_builder : string_buffer {
     clear();
     return r;
   }
-
   std::string const& strcopy() const { return std::string(this->begin(), this->end()); }
   std::string* new_str() const { return new std::string(this->begin(), this->end()); }
+  string_builder& append(std::string const& str, std::string::size_type from,
+                         std::string::size_type len = std::string::npos) {
+    char const* data = str.data();
+    return operator()(data + from, data + from + len);
+  }
 #endif
+  string_builder& append_range(std::string const& str, std::string::size_type from, std::string::size_type to) {
+    char const* data = str.data();
+    assert(to >= from);
+    return operator()(data + from, data + to);
+  }
+#include <graehl/shared/warning_pop.h>
+
   std::string skipPrefix(std::size_t prefixLen) const {
     return prefixLen > this->size() ? std::string() : std::string(this->begin() + prefixLen, this->end());
   }

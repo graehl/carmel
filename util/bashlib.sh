@@ -1,5 +1,32 @@
 #sets: BLOBS(blob base dir), d(real script directory), realprog (real script name)
 #export LC_ALL=C
+
+blackCOLOR='\033[0;30m'
+whiteCOLOR='\033[0;37m'
+redCOLOR='\033[0;31m'
+greenCOLOR='\033[0;32m'
+yellowCOLOR='\033[0;33m'
+blueCOLOR='\033[0;34m'
+magentaCOLOR='\033[0;35m'
+cyanCOLOR='\033[0;36m'
+
+# Resets the style
+resetCOLOR=`tput sgr0`
+
+# Color-echo. Improved. [Thanks @joaocunha]
+# arg $1 = message
+# arg $2 = Color
+echoc() {
+    local colorname=${1}COLOR
+    eval local color="\$$colorname"
+    shift
+    if true || [[ $INSIDE_EMACS ]] ; then
+        echo "$@"
+    else
+        echo "${color}""$@""${resetCOLOR}"
+    fi
+}
+
 wordsnl() {
     perl -e 'print "$_\n" for (@ARGV)' "$@"
 }

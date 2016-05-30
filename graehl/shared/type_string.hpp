@@ -154,7 +154,7 @@ bool no_type_string() {
 }
 
 namespace {
-std::string const unnamed_type = "unnamed type";
+static std::string const unnamed_type = "unnamed type";
 }
 
 template <class T>
@@ -193,8 +193,6 @@ BOOST_AUTO_TEST_CASE(TEST_type_string) {
 }
 
 #endif
-
-
 
 
 #endif

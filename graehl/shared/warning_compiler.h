@@ -99,6 +99,22 @@
 #define HAVE_GCC_5 0
 #endif
 
+#if !__clang__ && (__GNUC__ >= 6)
+#define HAVE_GCC_6 1
+#else
+#define HAVE_GCC_6 0
+#endif
+
+#if HAVE_GCC_6
+#define GCC6_DIAG_IGNORE(x) GCC_DIAG_IGNORE(x)
+#define GCC6_DIAG_OFF(x) GCC_DIAG_IGNORE(x)
+#define GCC6_DIAG_ON(x) GCC_DIAG_WARN(x)
+#else
+#define GCC6_DIAG_IGNORE(x)
+#define GCC6_DIAG_OFF(x)
+#define GCC6_DIAG_ON(x)
+#endif
+
 #define DIAGNOSTIC_PUSH() PRAGMA_EITHER(diagnostic push)
 
 #define DIAGNOSTIC_PRAGMA_WARNING_EITHER(x) PRAGMA_EITHER(diagnostic ignored EXPAND_PRAGMA_JOINSTR(-W, x))

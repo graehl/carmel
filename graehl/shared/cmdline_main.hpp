@@ -432,10 +432,10 @@ struct main {
         c(GRAEHL_IN_FILE, &in_file)('i')(opt.input_help()).eg("infile.gz").positional(opt.positional_in);
 
     if (opt.add_out_file) {
+      c("output", &out_file).alias();
       c("out", &out_file)('o')
           .positional(opt.positional_out)("Output here (instead of STDOUT)")
           .eg("outfile.gz");
-      c("output", &out_file).alias();
     }
 
     if (opt.add_config_file)
@@ -717,8 +717,6 @@ int main(int argc, char** argv) {
   return sample_m.run_main(argc, argv);
 }
 #endif
-
-
 
 
 #endif

@@ -53,7 +53,5 @@ typedef filter_file_stream<boost::iostreams::bz2_compressor, boost::iostreams::o
 #endif
 
 
-
-
 #endif
 #endif

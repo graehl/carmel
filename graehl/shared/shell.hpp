@@ -22,8 +22,8 @@
 namespace graehl {
 
 inline void copy_file(std::string const& source, std::string const& dest, bool skip_same_size_and_time = false) {
-  const char* rsync = "rsync -qt";
-  const char* cp = "/bin/cp -p";
+  char const* rsync = "rsync -qt";
+  char const* cp = "/bin/cp -p";
   std::stringstream s;
   s << (skip_same_size_and_time ? rsync : cp) << ' ';
   out_shell_quote(s, source);
@@ -39,7 +39,7 @@ inline void mkdir_parents(std::string const& dirname) {
 }
 
 inline int system_shell_safe(std::string const& cmd) {
-  const char* shell = "/bin/sh -c ";
+  char const* shell = "/bin/sh -c ";
   std::stringstream s;
   s << shell;
   out_shell_quote(s, cmd);

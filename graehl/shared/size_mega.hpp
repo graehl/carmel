@@ -42,8 +42,8 @@ inline outputstream& print_size(outputstream& o, size_type size, bool decimal_th
   size_compute_type thousand = decimal_thousand ? 1000 : 1024;
   if (size < thousand) return o << size;
   size_compute_type base = thousand;
-  const char* suffixes = decimal_thousand ? "kmgt" : "KMGT";
-  const char* suff = suffixes;
+  char const* suffixes = decimal_thousand ? "kmgt" : "KMGT";
+  char const* suff = suffixes;
   for (;;) {
     size_compute_type nextbase = base * thousand;
     if (size < nextbase || suff[1] == 0) {

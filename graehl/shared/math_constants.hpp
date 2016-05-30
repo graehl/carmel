@@ -23,6 +23,8 @@
 #ifndef _MATH_DEFINES_DEFINED
 #define _MATH_DEFINES_DEFINED
 
+#define STATIC_CONST_GLOBAL(x) __declspec( selectany ) extern const x
+
 /**
         M_E        e
         M_LOG2E    log2(e)

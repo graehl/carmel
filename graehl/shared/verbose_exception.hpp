@@ -34,14 +34,14 @@ namespace graehl {
     ExceptionClass(std::string const& m = "error") : message(msgPre + m) {} \
     ExceptionClass(ExceptionClass const& o) : message(o.message) {}         \
     ~ExceptionClass() throw() {}                                            \
-    const char* what() const throw() { return message.c_str(); }            \
+    char const* what() const throw() { return message.c_str(); }            \
   }
 
 #define SIMPLE_EXCEPTION_CLASS(ExceptionClass) SIMPLE_EXCEPTION_PREFIX(ExceptionClass, #ExceptionClass ": ")
 
 struct verbose_exception : public std::exception {
-  const char* file;
-  const char* function;
+  char const* file;
+  char const* function;
   unsigned line;
   std::string message;
 
@@ -51,14 +51,14 @@ struct verbose_exception : public std::exception {
   verbose_exception(verbose_exception const& o)
       : file(o.file), function(o.function), line(o.line), message(o.message) {}
 
-  verbose_exception(const char* fun, const char* fil, unsigned lin) : file(fil), function(fun), line(lin) {
+  verbose_exception(char const* fun, char const* fil, unsigned lin) : file(fil), function(fun), line(lin) {
     std::stringstream mbuf;
     mbuf << function << "() [" << file << ":" << line << "].";
     message = mbuf.str();
   }
 
   template <class M1>
-  verbose_exception(const char* fun, const char* fil, unsigned lin, M1 const& m1)
+  verbose_exception(char const* fun, char const* fil, unsigned lin, M1 const& m1)
       : file(fil), function(fun), line(lin) {
     std::stringstream mbuf;
     mbuf << function << "() [" << file << ":" << line << "]: " << m1 << ".";
@@ -66,7 +66,7 @@ struct verbose_exception : public std::exception {
   }
 
   template <class M1, class M2>
-  verbose_exception(const char* fun, const char* fil, unsigned lin, M1 const& m1, M2 const& m2)
+  verbose_exception(char const* fun, char const* fil, unsigned lin, M1 const& m1, M2 const& m2)
       : file(fil), function(fun), line(lin) {
     std::stringstream mbuf;
     mbuf << function << "() [" << file << ":" << line << "]: " << m1 << ' ' << m2 << ".";
@@ -74,7 +74,7 @@ struct verbose_exception : public std::exception {
   }
 
   template <class M1, class M2, class M3>
-  verbose_exception(const char* fun, const char* fil, unsigned lin, M1 const& m1, M2 const& m2, M3 const& m3)
+  verbose_exception(char const* fun, char const* fil, unsigned lin, M1 const& m1, M2 const& m2, M3 const& m3)
       : file(fil), function(fun), line(lin) {
     std::stringstream mbuf;
     mbuf << function << "() [" << file << ":" << line << "]: " << m1 << ' ' << m2 << ' ' << m3 << ".";
@@ -82,7 +82,7 @@ struct verbose_exception : public std::exception {
   }
 
   template <class M1, class M2, class M3, class M4>
-  verbose_exception(const char* fun, const char* fil, unsigned lin, M1 const& m1, M2 const& m2, M3 const& m3,
+  verbose_exception(char const* fun, char const* fil, unsigned lin, M1 const& m1, M2 const& m2, M3 const& m3,
                     M4 const& m4)
       : file(fil), function(fun), line(lin) {
     std::stringstream mbuf;
@@ -92,7 +92,7 @@ struct verbose_exception : public std::exception {
   }
 
   template <class M1, class M2, class M3, class M4, class M5>
-  verbose_exception(const char* fun, const char* fil, unsigned lin, M1 const& m1, M2 const& m2, M3 const& m3,
+  verbose_exception(char const* fun, char const* fil, unsigned lin, M1 const& m1, M2 const& m2, M3 const& m3,
                     M4 const& m4, M5 const& m5)
       : file(fil), function(fun), line(lin) {
     std::stringstream mbuf;
@@ -103,7 +103,7 @@ struct verbose_exception : public std::exception {
 
   ~verbose_exception() throw() {}
 
-  const char* what() const throw() { return message.c_str(); }
+  char const* what() const throw() { return message.c_str(); }
 };
 }
 
@@ -136,19 +136,19 @@ struct verbose_exception : public std::exception {
 
 #define VERBOSE_EXCEPTION_WRAP(etype)                                                                           \
   etype(std::string const& msg = "error") : graehl::verbose_exception("(" #etype ") " + msg) {}                 \
-  etype(const char* fun, const char* fil, unsigned lin)                                                         \
+  etype(char const* fun, char const* fil, unsigned lin)                                                         \
       : graehl::verbose_exception(fun, fil, lin, "(" #etype ") ") {}                                            \
   template <class M1>                                                                                           \
-  etype(const char* fun, const char* fil, unsigned lin, M1 const& m1)                                           \
+  etype(char const* fun, char const* fil, unsigned lin, M1 const& m1)                                           \
       : graehl::verbose_exception(fun, fil, lin, "(" #etype ") ", m1) {}                                        \
   template <class M1, class M2>                                                                                 \
-  etype(const char* fun, const char* fil, unsigned lin, M1 const& m1, M2 const& m2)                             \
+  etype(char const* fun, char const* fil, unsigned lin, M1 const& m1, M2 const& m2)                             \
       : graehl::verbose_exception(fun, fil, lin, "(" #etype ") ", m1, m2) {}                                    \
   template <class M1, class M2, class M3>                                                                       \
-  etype(const char* fun, const char* fil, unsigned lin, M1 const& m1, M2 const& m2, M3 const& m3)               \
+  etype(char const* fun, char const* fil, unsigned lin, M1 const& m1, M2 const& m2, M3 const& m3)               \
       : graehl::verbose_exception(fun, fil, lin, "(" #etype ") ", m1, m2, m3) {}                                \
   template <class M1, class M2, class M3, class M4>                                                             \
-  etype(const char* fun, const char* fil, unsigned lin, M1 const& m1, M2 const& m2, M3 const& m3, M4 const& m4) \
+  etype(char const* fun, char const* fil, unsigned lin, M1 const& m1, M2 const& m2, M3 const& m3, M4 const& m4) \
       : graehl::verbose_exception(fun, fil, lin, "(" #etype ") ", m1, m2, m3, m4) {}
 
 #define VERBOSE_EXCEPTION_DECLARE(etype)     \

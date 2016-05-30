@@ -53,7 +53,7 @@ VERBOSE_EXCEPTION_DECLARE(string_to_exception)
 
 // NOTE: stdlib atoi consumes dead whitespace; these don't
 template <class U>
-inline U atou_fast(const char* p) {  // faster than stdlib atoi. doesn't return how much of string was used.
+inline U atou_fast(char const* p) {  // faster than stdlib atoi. doesn't return how much of string was used.
   U x = 0;
   while (*p >= '0' && *p <= '9') {
     x *= 10;
@@ -64,7 +64,7 @@ inline U atou_fast(const char* p) {  // faster than stdlib atoi. doesn't return 
 }
 
 template <class I>
-inline I atoi_fast(const char* p) {  // faster than stdlib atoi. doesn't return how much of string was used.
+inline I atoi_fast(char const* p) {  // faster than stdlib atoi. doesn't return how much of string was used.
   I x = 0;
   bool neg = false;
   if (*p == '-') {

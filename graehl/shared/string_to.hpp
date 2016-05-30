@@ -201,8 +201,8 @@ inline void string_to_impl(char const* s, std::size_t& x) {
 }
 
 namespace {
-std::string const str_true = "true";
-std::string const str_false = "false";
+static std::string const str_true = "true";
+static std::string const str_false = "false";
 
 inline char uc(char lc) {
   return lc + ('A'-'a');
@@ -538,7 +538,7 @@ struct is_pair<std::pair<A, B> > {
 };
 
 namespace {
-std::string const string_to_sep_pair = "->";
+static std::string const string_to_sep_pair = "->";
 }
 
 template <class V>

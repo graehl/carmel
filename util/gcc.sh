@@ -1,7 +1,7 @@
 # cd /local/graehl/src/gcc-build;sudo mv /local/gcc{,-4.9}; sudo make install
 #cd /local;sudo mv gcc{,-4.9}; sudo tar xzf /home/graehl/gcc.tar.gz
 #ftp://gcc.gnu.org/pub/gcc/snapshots/5.2.0-RC-20150707
-gccver=5.2.0
+gccver=6.1.0
 srcdir=/local/graehl/src
 mkdir -p $srcdir
 gccwithv=gcc-$gccver
@@ -30,44 +30,48 @@ gccprereq() {
 }
 gccbuild() {
     (
-    cd $gccsrc
-    set -e
-    mkdir $gccbuild
-        cd $gccbuild
-        ../gcc-$gccver/configure \
-            --prefix=$gccprefix \
-            --libdir=$gccprefix/lib \
-            --enable-static \
-            --enable-shared \
-            --enable-threads=posix \
-            --enable-__cxa_atexit \
-            --disable-multilib \
-            --with-system-zlib \
-            --disable-checking \
-            --with-default-libstdcxx-abi=c++98 \
-            --enable-languages=c,c++,fortran
-        #            --enable-clocale=gnu \
-
+        cd $gccsrc
+        set -e
+        if [[ -d $gccbuild ]] ; then
+            cd $gccbuild
+        else
+            mkdir $gccbuild
+            cd $gccbuild
+            ../gcc-$gccver/configure \
+                --prefix=$gccprefix \
+                --libdir=$gccprefix/lib \
+                --enable-static \
+                --enable-shared \
+                --enable-threads=posix \
+                --enable-__cxa_atexit \
+                --disable-multilib \
+                --with-system-zlib \
+                --disable-checking \
+                --with-default-libstdcxx-abi=gcc4-compatible \
+                --enable-languages=c,c++,fortran
+            #            --enable-clocale=gnu
+        fi
         make "$@"
     )
 }
 gccinstall() {
+    cd $gccprefix/..
+    [[ -d gcc ]] && sudo mv gcc gcc-pre-$gccver
     cd $gccbuild
     sudo make install
 }
 gccgetbuild() {
     (set -e
      gccget
-     gccbuild "$@"
+     gccbuild -j4 "$@"
      cd $gccbuild
-     make install
     )
 }
 gccall() {
     (set -e
-    gccget
-    gccbuild "$@"
-    gccinstall
+     gccget
+     gccbuild -j4 "$@"
+     gccinstall
     )
 }
 uselocalgcc() {
@@ -83,8 +87,8 @@ vgall() {
     )
 }
 gdbinstall() {
-mkdir -pv /usr/share/gdb/auto-load/usr/lib              &&
-mv -v /usr/lib/*gdb.py /usr/share/gdb/auto-load/usr/lib &&
-chown -v -R root:root \
-      /usr/lib/gcc/*linux-gnu/$gccver/include{,-fixed}
+    mkdir -pv /usr/share/gdb/auto-load/usr/lib &&
+        mv -v /usr/lib/*gdb.py /usr/share/gdb/auto-load/usr/lib &&
+        chown -v -R root:root \
+              /usr/lib/gcc/*linux-gnu/$gccver/include{,-fixed}
 }

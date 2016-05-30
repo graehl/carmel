@@ -1262,7 +1262,7 @@ void configure_store_init_from_base(Backend const& backend, RootVal* pval, conf_
 }
 
 namespace {
-std::string const tab("  ");
+static std::string const tab("  ");
 
 /** return number of characters indented. */
 template <class O>
@@ -1471,6 +1471,7 @@ struct configure_backend_base : configure_backend {
   }
   template <class Val>
   void do_leaf_action(help_config const& a, Val* pval, conf_expr_base const& conf) const {
+    if (too_verbose(conf)) return;
     sub().leaf_action(a, pval, conf);
   }
 
@@ -1501,6 +1502,7 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void print_action_open(help_config const& a, Val* pval, conf_expr_base const& conf) const {
+    if (too_verbose(conf)) return;
     sub().default_print_action_open(a, pval, conf);
   }
   template <class Val>
@@ -1513,6 +1515,7 @@ struct configure_backend_base : configure_backend {
   }
   template <class Val>
   void do_print_action_open(help_config const& a, Val* pval, conf_expr_base const& conf) const {
+    if (too_verbose(conf)) return;
     sub().print_action_open(a, pval, conf);
   }
   template <class Val>
@@ -1526,6 +1529,7 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void do_print_action_close(help_config const& a, Val* pval, conf_expr_base const& conf) const {
+    if (too_verbose(conf)) return;
     sub().print_action_close(a, pval, conf);
   }
   template <class Val>
@@ -1539,6 +1543,7 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void do_print_map_sequence_action_close(help_config const& a, Val* pval, conf_expr_base const& conf) const {
+    if (too_verbose(conf)) return;
     sub().print_map_sequence_action_close(a, pval, conf);
   }
   template <class Val>
@@ -1554,6 +1559,7 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void print_map_sequence_action_close(help_config const& a, Val* pval, conf_expr_base const& conf) const {
+    if (too_verbose(conf)) return;
     maybe_string const& usage = conf.opt->usage;
     if (usage) {
       sub().print_usage(*a.o, *usage, 0, indent_line_len(conf));
@@ -1590,7 +1596,6 @@ struct configure_backend_base : configure_backend {
 
   template <class Action>
   bool init_action(Action) const {
-
     return true;  // return false iff you handled the action completely, without needing the below 4 tree
     // walking callbacks:
   }
@@ -1604,6 +1609,10 @@ struct configure_backend_base : configure_backend {
   bool init_tree(Action, Val* pval, conf_expr_base const& conf) const {
     return true;
   }
+  template <class Val>  // called after init() (still before pval->configure())
+  bool init_tree(help_config, Val* pval, conf_expr_base const& conf) const {
+    return !too_verbose(conf);
+  }
   template <class Action, class Val>
   void leaf_action(Action, Val* pval, conf_expr_base const& conf) const {}
   template <class Action, class Val>  // called after leaves and sub-configs
@@ -1614,13 +1623,13 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void help_action_open(std::ostream& out, Val* pval, conf_expr_base const& conf) const {
+    if (too_verbose(conf)) return;
     sub().default_help_action_open(out, pval, conf);
   }
 
 
   template <class Action, class Val>  // called after leaves and sub-configs
   void default_print_action_open(Action const& action, Val* pval, conf_expr_base const& conf) const {
-
     if (is_help(action)) {
       sub().help_action_open(*action.o, pval, get_default_conf(pval, conf));
       return;
@@ -1635,6 +1644,7 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>  // called after leaves and sub-configs
   void help_header_conf(std::ostream& o, Val const& val, conf_expr_base const& conf) const {
+    if (too_verbose(conf)) return;
     sub().header_conf(o, conf);
   }
 
@@ -1775,6 +1785,7 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void leaf_action(help_config const& help, Val* pval, conf_expr_base const& conf) const {
+    if (too_verbose(conf)) return;
     help_leaf_action(*help.o, conf);
   }
 
