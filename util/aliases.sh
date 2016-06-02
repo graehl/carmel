@@ -35,6 +35,12 @@ export WORKSPACE=$xmtx
 xmtext=$xmtextbase/$lwarch
 xmtextsrc=$HOME/c/xmt-externals-source
 xmtlib=$xmtext/libraries
+libasan=$xmtlib/gcc-6.1.0/lib64/libasan.so
+libasanlocal=/local/gcc/lib64/libasan.so
+if [[ -r $libasanlocal ]] ; then
+    libasan=$libasanlocal
+fi
+#export SDL_LD_PRELOAD=$libasan
 xmtlibshared=$xmtextbase/Shared/cpp
 grepu() {
     ag --nonumbers "$@" | sort | uniq -c
@@ -3106,7 +3112,8 @@ setjavahome() {
                 jh=$(/usr/libexec/java_home)
                 ;;
             *)
-                export JAVA_HOME=/home/hadoop/jdk1.6.0_24
+                export JAVA_HOME=$xmtext/libraries/jdk1.8.0_66
+                #/home/hadoop/jdk1.6.0_24
                 ;;
         esac
     fi
@@ -4226,7 +4233,25 @@ cwith() {
         chost=c-graehl c-with "$@"
     )
 }
-
+linjen() {
+    cd $xmtx
+    local branch=${branch:-`git_branch`}
+    pushc $branch $xmtx
+    ctitle jen "$@"
+    (set -e;
+     tmp2=`tmpnam`
+     tmp=`echo ~/tmp`
+     mkdir -p $tmp
+     c-s forceco $branch 2>$tmp2
+     tail $tmp2
+     rm $tmp2
+     log=$tmp/linjen.`csuf`.$branch.$BUILD
+     mv $log ${log}2 || true
+     #gccprefix=/local/gcc
+     GCCVERSION=${GCCVERSION:-5.2.0}
+     gccprefix=$xmtextbase/FC12/libraries/gcc-$GCCVERSION
+     c-s NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
+}
 jen() {
     cd $xmtx
     local build=${1:-${BUILD:-Release}}
@@ -4268,7 +4293,14 @@ jen() {
     if [[ $HOST = pwn ]] ; then
         UPDATE=0
     fi
-    cmake=${cmake:-} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    local ccargs=
+    local cc
+    local cxx
+    if [[ -d $gccprefix ]] ; then
+        cc=$gccprefix/bin/gcc
+        cxx=$gccprefix/bin/g++
+    fi
+    cmake=${cmake:-} CC=$cc CXX=$cxx gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -5048,22 +5080,6 @@ linregr() {
 }
 ctitle() {
     title "$chost:" "$@"
-}
-linjen() {
-    cd $xmtx
-    local branch=${branch:-`git_branch`}
-    pushc $branch $xmtx
-    ctitle jen "$@"
-    (set -e;
-     tmp2=`tmpnam`
-     tmp=`echo ~/tmp`
-     mkdir -p $tmp
-     c-s forceco $branch 2>$tmp2
-     tail $tmp2
-     rm $tmp2
-     log=$tmp/linjen.`csuf`.$branch.$BUILD
-     mv $log ${log}2 || true
-     c-s NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
 }
 rmautosave() {
     find . -name '\#*' -exec rm {} \;
@@ -5849,7 +5865,7 @@ linxreg() {
 }
 gcc5() {
     if [[ $HOST = $graehlmac ]] ; then
-        GCC_SUFFIX=-5
+        GCC_SUFFIX=-6
         export CC=ccache-gcc$GCC_SUFFIX
         export CXX=ccache-g++$GCC_SUFFIX
         prepend_path $GCC_PREFIX
@@ -9320,7 +9336,7 @@ uselocalgccmac() {
     else
         ccachepre=ccache-
         ccachepre=
-        ccsuffix=-5
+        ccsuffix=-6
         export CC=${ccachepre}gcc$ccsuffix
         export CXX=${ccachepre}g++$ccsuffix
     fi

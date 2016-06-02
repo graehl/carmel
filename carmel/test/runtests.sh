@@ -1,6 +1,6 @@
 #!/bin/bash
 cd `dirname $0`
-B=${1:-../bin/$HOST/carmel}
+B=${1:-../bin/macosx/carmel}
 which $B
 mkdir -p logs
 log=logs/tests.`basename $B`.`date +%C%y%m%d_%H:%M`
