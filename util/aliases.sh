@@ -37,6 +37,11 @@ xmtextsrc=$HOME/c/xmt-externals-source
 xmtlib=$xmtext/libraries
 libasan=$xmtlib/gcc-6.1.0/lib64/libasan.so
 libasanlocal=/local/gcc/lib64/libasan.so
+SDL_EXTERNALS_JAVA=$xmtext/libraries/jdk1.8.0_66
+export SDL_EXTERNALS_JAVA
+if [[ -d $SDL_EXTERNALS_JAVA ]] ; then
+    export JAVA_HOME=$SDL_EXTERNALS_JAVA
+fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
@@ -68,6 +73,22 @@ jhost=j
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1"
 cmakeinstall() {
     make DESTDIR=${1} install
+}
+githeadref() {
+    git show-ref -s HEAD
+}
+gitrmhistory() {
+    (set -e
+     set -x
+    [[ -d .git ]]
+    #githeadref > .git/shallow
+    find .git/refs -type f | xargs cat | grep -v 'ref:' | sort -u > .git/shallow
+    git describe --always
+    git reflog expire --expire=now --all
+    git reflog expire --expire=0
+    git prune
+    git prune-packed
+    )
 }
 cedit() {
     local f=~/tmp/`basename $1`
@@ -1601,6 +1622,9 @@ gitblame() {
 find_srcs() {
     findc
     find . -name '*.java' -o -name '*.py' -o -name '*.md' -o -name '*.pl' -o -name '*.sh' -o -name '*.bat'
+}
+findregyaml() {
+    ag -g '/regtest[^/]*\.ya?ml$'
 }
 findyaml() {
     ag -g '\.ya?ml$'
@@ -3253,8 +3277,8 @@ translit() {
     xmt --config $xmtx/RegressionTests/SimpleTransliterator/XMTConfig.yml -p translit-$lang --log-config $xmtx/scripts/no.log.xml
 }
 loch() {
-    if [ "x$JAVA_HOME" == "x" ]; then
-        export JAVA_HOME=/home/hadoop/jdk1.6.0_24
+    if ! [[ $JAVA_HOME ]]; then
+        export JAVA_HOME=$SDL_EXTERNALS_JAVA
         export PATH=$JAVA_HOME/bin:$PATH
     fi
     # hadoop variables needed to run utilities at the command line,e.g.,pig/hadoop
@@ -3266,8 +3290,8 @@ loch() {
     export PIG_CLASSPATH=$HADOOP_CONF_DIR:/home/hadoop/hadoop/hadoop-2.0.0-cdh4.2.1/lib/pig/lib/jython-2.5.0.jar
 }
 bog() {
-    if [ "x$JAVA_HOME" == "x" ]; then
-        export JAVA_HOME=/home/hadoop/jdk1.6.0_24
+    if ! [[ $JAVA_HOME ]]; then
+        export JAVA_HOME=$SDL_EXTERNALS_JAVA
         export PATH=$JAVA_HOME/bin:$PATH
     fi
     # hadoop variables needed to run utilities at the command line,e.g.,pig/hadoop
@@ -4247,10 +4271,10 @@ linjen() {
      rm $tmp2
      log=$tmp/linjen.`csuf`.$branch.$BUILD
      mv $log ${log}2 || true
-     #gccprefix=/local/gcc
-     GCCVERSION=${GCCVERSION:-5.2.0}
+     GCCVERSION=${GCCVERSION:-6.1.0}
      gccprefix=$xmtextbase/FC12/libraries/gcc-$GCCVERSION
-     c-s NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
+     #gccprefix=/local/gcc
+     c-s SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
 }
 jen() {
     cd $xmtx
@@ -4300,7 +4324,7 @@ jen() {
         cc=$gccprefix/bin/gcc
         cxx=$gccprefix/bin/g++
     fi
-    cmake=${cmake:-} CC=$cc CXX=$cxx gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} CC=$cc CXX=$cxx gccprefix=$gccprefix SDL_ETS_BUILD=$SDL_ETS_BUILD GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi

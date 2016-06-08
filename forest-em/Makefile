@@ -39,7 +39,6 @@ ALL_CLEAN += forest-em.README.hpp *.restart.* *.swap.* *.stackdump *.d *.out *.l
 
 default: all
 include ../graehl/graehl.mk
-ABI_CFLAGS =
 vpath %.cpp .:$(SHARED)
 
 forest-em.README.hpp: forest-em.README $(BIN)/text-to-cc
