@@ -27,7 +27,7 @@ namespace graehl {
 // TODO: pre-alloc header for exact alignment
 template <class T, unsigned OffsetPlus1 = 1>
 struct aligned_allocator : public std::allocator<T> {
-  enum { offset = OffsetPlus1-1 };
+  enum { offset = OffsetPlus1 - 1 };
   typedef std::size_t size_type;
   typedef std::size_t offset_type;
   typedef T* pointer;
@@ -39,7 +39,7 @@ struct aligned_allocator : public std::allocator<T> {
   pointer allocate(size_type n, const void* hint = 0) {
     return std::allocator<T>::allocate(n + offset, hint) + offset;
   }
-  void deallocate(pointer p, size_type n) { std::allocator<T>::deallocate(p-offset, n); }
+  void deallocate(pointer p, size_type n) { std::allocator<T>::deallocate(p - offset, n); }
 };
 
 

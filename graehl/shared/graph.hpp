@@ -24,9 +24,9 @@
 
 
 #include <boost/graph/graph_traits.hpp>
-#include <boost/range/iterator_range.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
+#include <boost/range/iterator_range.hpp>
 
 namespace graehl {
 

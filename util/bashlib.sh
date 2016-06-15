@@ -12,7 +12,6 @@ cyanCOLOR='\033[0;36m'
 
 # Resets the style
 resetCOLOR=`tput sgr0`
-
 # Color-echo. Improved. [Thanks @joaocunha]
 # arg $1 = message
 # arg $2 = Color

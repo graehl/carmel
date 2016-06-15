@@ -14,10 +14,10 @@
 #define FIND_STRING_GRAEHL_2015_06_24_HPP
 #pragma once
 
-#include <utility>
+#include <boost/functional/hash.hpp>
 #include <algorithm>
 #include <cstddef>
-#include <boost/functional/hash.hpp>
+#include <utility>
 
 namespace std {
 /// we do not change standard semantics of any supported comparison e.g. pair vs

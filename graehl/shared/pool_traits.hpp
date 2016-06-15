@@ -21,11 +21,10 @@
 #define GRAEHL_SHARED__POOL_TRAITS
 #pragma once
 #include <graehl/shared/cpp11.hpp>
-
+#include <graehl/shared/cpp11.hpp>
+#include <graehl/shared/intrusive_refcount.hpp>
 #include <graehl/shared/shared_ptr.hpp>
 #include <utility>
-#include <graehl/shared/intrusive_refcount.hpp>
-#include <graehl/shared/cpp11.hpp>
 
 namespace graehl {
 
@@ -102,14 +101,14 @@ struct untracked_pool {
 };
 
 template <class T, class U>
-struct pool_destroyer<untracked_pool<T, U> > {
+struct pool_destroyer<untracked_pool<T, U>> {
   typedef untracked_pool<T, U> pool_type;
   typedef typename T::pointer_type pointer_type;
   void operator()(typename T::pointer_type p) const { pool_type::destroy(p); }
 };
 
 template <class T, class U>
-struct pool_traits<untracked_pool<T, U> > : public pool_traits_default<T> {
+struct pool_traits<untracked_pool<T, U>> : public pool_traits_default<T> {
   enum { has_is_from = false };
 };
 
@@ -154,7 +153,7 @@ struct intrusive_pool {
 // default traits are good
 
 template <class T>
-struct pool_destroyer<untracked_pool<T> > {
+struct pool_destroyer<untracked_pool<T>> {
   typedef untracked_pool<T> pool_type;
   typedef typename T::pointer_type pointer_type;
   void operator()(typename T::pointer_type p) const {}

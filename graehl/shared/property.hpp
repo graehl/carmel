@@ -20,13 +20,13 @@
 #pragma once
 
 
-#include <boost/version.hpp>
-#include <graehl/shared/property_factory.hpp>
 #include <boost/property_map/property_map.hpp>
+#include <boost/version.hpp>
+#include <graehl/shared/function.hpp>
+#include <graehl/shared/property_factory.hpp>
+#include <graehl/shared/shared_ptr.hpp>
 #include <utility>
 #include <vector>
-#include <graehl/shared/shared_ptr.hpp>
-#include <graehl/shared/function.hpp>
 
 namespace graehl {
 
@@ -93,8 +93,8 @@ unsigned get(OffsetFeatures<K> k, K p) {
  */
 template <class V, class O = boost::identity_property_map>
 struct ArrayPMapImp
-    //: public  boost::put_get_helper<V &,ArrayPMapImp<V, O> >
-    {
+//: public  boost::put_get_helper<V &,ArrayPMapImp<V, O> >
+{
   typedef ArrayPMapImp<V, O> Self;
   typedef reference_wrapper<Self> PropertyMap;
   typedef O offset_map;
@@ -207,7 +207,7 @@ IndexedCopier<P1, P2> make_indexed_copier(P1 a, P2 b) {
 
 namespace boost {
 template <class Imp>
-struct property_traits<GRAEHL_SHARED_PTR_NS::reference_wrapper<Imp> > {
+struct property_traits<GRAEHL_SHARED_PTR_NS::reference_wrapper<Imp>> {
   typedef typename Imp::category category;
   typedef typename Imp::key_type key_type;
   typedef typename Imp::value_type value_type;

@@ -37,8 +37,8 @@
 #else
 #if !GRAEHL_CPP11 || defined(ANDROID)
 // defined(__FAST_MATH__) || // gcc 4.x -ffast-math breaks std::isnan - revisit for 5.1?
-#include <stdint.h>
 #include <math.h>
+#include <stdint.h>
 #define GRAEHL_ISNAN(x) ::isnan(x)  // in stlport, only c99 version of isnan is available
 #undef isnan
 #if !defined(__linux__) && !(defined(__APPLE__) && __GNUC__ >= 6)

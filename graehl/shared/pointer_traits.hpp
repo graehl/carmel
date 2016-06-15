@@ -63,6 +63,4 @@ using boost::intrusive::pointer_traits;
 #endif
 
 
-
-
 #endif

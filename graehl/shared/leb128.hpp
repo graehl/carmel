@@ -24,10 +24,10 @@
 #define GRAEHL_SHARED__LEB128_HPP
 #pragma once
 
-#include <stdexcept>
-#include <cstddef>
 #include <cassert>
+#include <cstddef>
 #include <cstring>
+#include <stdexcept>
 
 namespace graehl {
 

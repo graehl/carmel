@@ -20,8 +20,8 @@
 #define VALUE_STR_JG2012613_HPP
 #pragma once
 
-#include <graehl/shared/string_to.hpp>
 #include <graehl/shared/assign_traits.hpp>
+#include <graehl/shared/string_to.hpp>
 
 namespace graehl {
 
@@ -37,8 +37,7 @@ struct value_str {
     *this = t;
   }
   template <class T>
-  value_str(T const& t, std::string as_string)
-      : value(t), str(as_string) {}
+  value_str(T const& t, std::string as_string) : value(t), str(as_string) {}
 
   template <class T>
   void assign_to(T& t) const  // must be same type as stored in value

@@ -199,8 +199,7 @@ struct configure_program_options : configure_backend_base<configure_program_opti
       : base(warn_to, verbose_max), popt(popt_.p) {
     popt->warn = warn_to;
   }
-  explicit configure_program_options(program_options_exec_new const& popt_,
-                                     int verbose_max = default_verbose_max)
+  explicit configure_program_options(program_options_exec_new const& popt_, int verbose_max = default_verbose_max)
       : base(popt_.p->warn, verbose_max), popt(popt_.p) {}
 
 

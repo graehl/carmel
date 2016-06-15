@@ -71,6 +71,4 @@ struct leaf_configurable;
   }
 
 
-
-
 #endif

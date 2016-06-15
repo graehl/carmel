@@ -20,10 +20,10 @@
 #define GRAEHL_SHARED__ESCAPE3
 #pragma once
 
+#include <graehl/shared/atoi_fast.hpp>
+#include <graehl/shared/string_builder.hpp>
 #include <cassert>
 #include <string>
-#include <graehl/shared/string_to.hpp>
-#include <graehl/shared/atoi_fast.hpp>
 
 namespace graehl {
 

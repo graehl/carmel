@@ -21,8 +21,8 @@
 #define GRAEHL__SHARED__BIT_ARITHMETIC_HPP
 #pragma once
 
-#include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/int_types.hpp>
+#include <graehl/shared/type_traits.hpp>
 #include <cassert>
 #include <limits>
 #include <limits.h>
@@ -128,7 +128,7 @@ inline typename enable_if<is_integral<I>::value, typename remove_cv<I>::type>::t
   typedef typename remove_cv<I>::type IT;
   assert(k < std::numeric_limits<IT>::digits);
   assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
-  return ((x << k) | (x >> (std::numeric_limits<IT>::digits-k)));
+  return ((x << k) | (x >> (std::numeric_limits<IT>::digits - k)));
 }
 
 template <class I, class J>
@@ -136,7 +136,7 @@ inline typename enable_if<is_integral<I>::value, typename remove_cv<I>::type>::t
   typedef typename remove_cv<I>::type IT;
   assert(k < std::numeric_limits<IT>::digits);
   assert(std::numeric_limits<IT>::digits == CHAR_BIT * sizeof(IT));
-  return ((x << (std::numeric_limits<IT>::digits-k)) | (x >> k));
+  return ((x << (std::numeric_limits<IT>::digits - k)) | (x >> k));
 }
 
 /// interpret the two bytes at d as a uint16 in little endian order

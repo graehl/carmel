@@ -15,13 +15,13 @@
 #define GRAEHL__SHARED__LZ4STREAM_H
 #pragma once
 
-#include <iostream>
-#include <fstream>
-#include <graehl/shared/lz4.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/device/file.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/stream_buffer.hpp>
+#include <graehl/shared/lz4.hpp>
+#include <fstream>
+#include <iostream>
 
 namespace graehl {
 

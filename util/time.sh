@@ -68,14 +68,14 @@ preview() {
     done
 }
 
+UNAME=`uname`
 have_linuxtime() {
-    [[ -x /usr/bin/time ]]
+    local linuxtime=/usr/bin/time
+    [[ -x $linuxtime ]]
 }
 full_linuxtime() {
     have_linuxtime && [[ $UNAME != Darwin ]]
 }
-
-UNAME=`uname`
 linuxtime() {
     if have_linuxtime ; then
         if full_linuxtime ; then
@@ -282,4 +282,58 @@ reptime() {
     prog1=${1:?usage: reptime [repeat-width] [repeat-height] [input-file] [program] [args] ...}
     shift
     repn $width $input | replinen $height | atime $prog1 "$@"
+}
+
+save12timeram() {
+    local save1="$1"
+    shift || true
+    echo "time $*" 1>&2
+    if full_linuxtime ; then
+        local timeout=`mktemp /tmp/timeram.out.XXXXXX`
+        /usr/bin/time  -f '%Es - %Mkb peak %Iinputs %Ooutputs' -o $timeout -- "$@" >$save1 2>&1
+        cat $timeout
+    else
+        TIMEFORMAT='%3lR'
+        (time "$@" >$save1 2>&1) 2>&1
+    fi
+}
+save1time() {
+    local save1="$1"
+    shift || true
+    local savetime="$1"
+    shift || true
+    if full_linuxtime ; then
+        /usr/bin/time  -f '%Es - %Mkb peak %Iinputs %Ooutputs' -o $savetime -- "$@" >$save1
+    else
+        TIMEFORMAT='%3lR'
+        time "$@" >$save1 2>$savetime
+    fi
+
+}
+untilfail() {
+    echo "$*"
+    local i=1
+    [[ $smallestdir ]] && mkdir -p $smallestdir && echo "smaller outputs in $smallestdir"
+    mkdir $untildir || true
+    rm -f $untildir/FAIL*
+    local lasti=0
+    (set -e
+    while save1time $untildir/$i.out $untildir/$i.time "$@" 2>$untildir/$i.err  ; do
+        echo $i `cat $untildir/$i.time` > $untildir/FINISH
+        perl -e '$i=$ARGV[0]; $g=10;$gn=100;print ($i % $g == 0 ? $i : ".");print "\n" if $i % $gn == 0' $i
+        j=$((i+1))
+        if [[ $lasti != 0 ]] && ! [[ $keepall ]] ; then
+            rm -f $untildir/$lasti.*
+        fi
+        lasti=$i
+        i=$j
+        echo $i > $untildir/START
+    done
+    ln -sf $i.out $untildir/FAIL.out
+    ln -sf $i.err $untildir/FAIL.err
+    ln -sf $i.time $untildir/FAIL.time
+    )
+    preview $untildir/FINISH $untildir/FAIL*
+    ls -l $untildir/FINISH $untildir/FAIL*
+    echo "$*"
 }

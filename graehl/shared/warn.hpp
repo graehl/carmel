@@ -21,9 +21,9 @@
 #define GRAEHL_SHARED__WARN_HPP
 #pragma once
 
-#include <iostream>
 #include <graehl/shared/function.hpp>
 #include <graehl/shared/noreturn.hpp>
+#include <iostream>
 #include <stdexcept>
 
 namespace graehl {

@@ -22,13 +22,12 @@
 
 #include <graehl/shared/function_macro.hpp>
 #include <graehl/shared/null_terminated.hpp>
-#include <graehl/shared/string_to.hpp>
 #include <graehl/shared/push_backer.hpp>
-
-#include <string>
+#include <graehl/shared/string_to.hpp>
 #include <iterator>
-#include <stdexcept>
 #include <locale>
+#include <stdexcept>
+#include <string>
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
@@ -134,7 +133,8 @@ inline void erase_end(Str& s, unsigned n) {
 }
 
 template <class Str>
-typename Str::size_type replace(Str& in, Str const& query, Str const& replacement, typename Str::size_type pos = 0) {
+typename Str::size_type replace(Str& in, Str const& query, Str const& replacement,
+                                typename Str::size_type pos = 0) {
   pos = in.find(query, pos);
   if (pos == Str::npos) return pos;
   in.replace(pos, query.length(), replacement);
@@ -148,7 +148,8 @@ bool replace_one(Str& in, Str const& query, Str const& replacement, typename Str
 }
 
 template <class Str>
-unsigned replace_all(Str& in, Str const& query, typename Str::value_type const* replacement, typename Str::size_type lenReplacement, typename Str::size_type pos = 0) {
+unsigned replace_all(Str& in, Str const& query, typename Str::value_type const* replacement,
+                     typename Str::size_type lenReplacement, typename Str::size_type pos = 0) {
   unsigned n = 0;
   typename Str::size_type querysz = query.size();
   if (!querysz) throw_empty_search_substring();
@@ -327,8 +328,7 @@ bool expect_consuming(std::basic_istream<Ch, Tr> &i, CharIt begin, CharIt end)
 */
 
 template <class Ch, class Tr, class CharIt>
-inline bool expect_consuming(std::basic_istream<Ch, Tr>& i, CharIt begin, CharIt end,
-                             bool skip_first_ws = true) {
+inline bool expect_consuming(std::basic_istream<Ch, Tr>& i, CharIt begin, CharIt end, bool skip_first_ws = true) {
   if (begin == end) return true;
   Ch c;
   if (skip_first_ws)
@@ -493,7 +493,7 @@ unsigned print_indent(Ostream& out, std::string const& s, unsigned at_column, un
   while (i < end) {
     i = s.find_first_not_of(' ', i);  // skip space(s)
     if (i == string::npos) break;
-    strpos remain = max_column-at_column;
+    strpos remain = max_column - at_column;
     strpos from = i, upto = i + remain;
     if (upto >= end) {
       out << string(sbeg + from, sbeg + end);

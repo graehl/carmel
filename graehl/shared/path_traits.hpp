@@ -28,6 +28,9 @@
 #include <boost/iterator/counting_iterator.hpp>
 #include <graehl/shared/epsilon.hpp>
 #include <graehl/shared/nan.hpp>
+#ifdef _MSC_VER
+#undef min
+#endif
 
 namespace graehl {
 

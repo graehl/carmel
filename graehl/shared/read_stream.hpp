@@ -20,9 +20,9 @@
 #define READ_STREAM_JG_2014_09_05_HPP
 #pragma once
 
-#include <sstream>
-#include <cstdlib>
 #include <cassert>
+#include <cstdlib>
+#include <sstream>
 
 namespace graehl {
 

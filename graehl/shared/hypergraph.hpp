@@ -56,8 +56,8 @@
 #endif
 
 #include <boost/graph/graph_traits.hpp>
-#include <graehl/shared/path_traits.hpp>
 #include <boost/range/iterator_range.hpp>
+#include <graehl/shared/path_traits.hpp>
 
 namespace graehl {
 

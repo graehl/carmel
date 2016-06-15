@@ -31,11 +31,10 @@
 #define GRAEHL_SHARED__STABLE_VECTOR
 #pragma once
 #include <graehl/shared/cpp11.hpp>
-
-#include <vector>
+#include <graehl/shared/small_vector.hpp>
 #include <memory>
 #include <utility>
-#include <graehl/shared/small_vector.hpp>
+#include <vector>
 
 namespace graehl {
 
@@ -45,8 +44,7 @@ inline void reinit(T& val) {
   new (&val) T();
 }
 
-template <class T, bool UseSmall = true, unsigned kMaxInlineSize = kDefaultMaxInlineSize,
-          class Size = small_vector_default_size_type>
+template <class T, bool UseSmall = true, unsigned kMaxInlineSize = kDefaultMaxInlineSize, class Size = small_vector_default_size_type>
 struct use_small_vector {
   typedef small_vector<T, kMaxInlineSize, Size> type;
 };
@@ -190,12 +188,12 @@ struct stable_vector {
     return i rel o.i;                               \
   }
 
-    GRAEHL_STABLE_VECTOR_RELATION(== )
-    GRAEHL_STABLE_VECTOR_RELATION(!= )
-    GRAEHL_STABLE_VECTOR_RELATION(<= )
-    GRAEHL_STABLE_VECTOR_RELATION(>= )
-    GRAEHL_STABLE_VECTOR_RELATION(< )
-    GRAEHL_STABLE_VECTOR_RELATION(> )
+    GRAEHL_STABLE_VECTOR_RELATION(==)
+    GRAEHL_STABLE_VECTOR_RELATION(!=)
+    GRAEHL_STABLE_VECTOR_RELATION(<=)
+    GRAEHL_STABLE_VECTOR_RELATION(>=)
+    GRAEHL_STABLE_VECTOR_RELATION(<)
+    GRAEHL_STABLE_VECTOR_RELATION(>)
 #undef GRAEHL_STABLE_VECTOR_RELATION
 
     iterator_impl(self_type const& self, I i) : self(const_cast<self_type&>(self)), i(i) {}
@@ -475,8 +473,8 @@ void clear_destroy(graehl::stable_vector<A, B, C, D>& v) {
 #ifndef _WIN32
 #ifdef GRAEHL_TEST
 
-#include <graehl/shared/test.hpp>
 #include <graehl/shared/small_vector.hpp>
+#include <graehl/shared/test.hpp>
 
 namespace graehl {
 namespace unit_test {
@@ -507,9 +505,8 @@ BOOST_AUTO_TEST_CASE(stable_vector_test_case) {
   test_stable_vector<StableVector2>();
   test_stable_vector<Vector3>(false);
 }
-
-
-}}
+}
+}
 
 #endif
 #endif

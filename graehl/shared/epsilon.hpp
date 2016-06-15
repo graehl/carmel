@@ -20,12 +20,12 @@
 #define GRAEHL__SHARED__EPSILON_HPP
 #pragma once
 
-#include <cmath>
-#include <algorithm>
-#include <cstdlib>
 #include <boost/cstdint.hpp>
 #include <graehl/shared/nan.hpp>
 #include <graehl/shared/order_preserving.hpp>
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
 
 #ifndef GRAEHL_EPSILON
 /**
@@ -240,8 +240,7 @@ inline boost::int64_t ieee_apart(double a, double b) {
 
    see http://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
 */
-inline bool few_ieee_floats_apart(float a, float b,
-                                  boost::int32_t max_floats_apart = GRAEHL_DEFAULT_IEEE_APART) {
+inline bool few_ieee_floats_apart(float a, float b, boost::int32_t max_floats_apart = GRAEHL_DEFAULT_IEEE_APART) {
   return sign_ieee(a) == sign_ieee(b) ? ieee_floats_apart(a, b) <= max_floats_apart : a == b;
   // implementation note: we could instead check a==b first, but by checking sign
   // using integral ops, then floats_apart using integral ops, in the common case
@@ -352,8 +351,6 @@ BOOST_AUTO_TEST_CASE(TEST_epsilon) {
 }
 
 #endif
-
-
 
 
 #endif

@@ -74,31 +74,30 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 #endif
 
 #include <boost/any.hpp>
-#include <boost/noncopyable.hpp>
 #include <boost/detail/atomic_count.hpp>
-#include <graehl/shared/function.hpp>
-#include <graehl/shared/shared_ptr.hpp>
-#include <graehl/shared/type_traits.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/optional.hpp>
 #include <graehl/shared/assign_traits.hpp>
-#include <graehl/shared/shell_escape.hpp>
-#include <graehl/shared/word_spacer.hpp>
-#include <graehl/shared/warn.hpp>
-#include <graehl/shared/string_to.hpp>
-#include <graehl/shared/type_string.hpp>
-#include <graehl/shared/example_value.hpp>
-#include <graehl/shared/value_str.hpp>
-#include <graehl/shared/validate.hpp>
-#include <graehl/shared/leaf_configurable.hpp>
-#include <graehl/shared/string_match.hpp>
 #include <graehl/shared/configure_init.hpp>
-
+#include <graehl/shared/example_value.hpp>
+#include <graehl/shared/function.hpp>
+#include <graehl/shared/leaf_configurable.hpp>
+#include <graehl/shared/shared_ptr.hpp>
+#include <graehl/shared/shell_escape.hpp>
+#include <graehl/shared/string_builder.hpp>
+#include <graehl/shared/string_match.hpp>
+#include <graehl/shared/type_string.hpp>
+#include <graehl/shared/type_traits.hpp>
+#include <graehl/shared/validate.hpp>
+#include <graehl/shared/value_str.hpp>
+#include <graehl/shared/warn.hpp>
+#include <graehl/shared/word_spacer.hpp>
 #include <algorithm>
-#include <string>
-#include <vector>
+#include <exception>
 #include <map>
 #include <set>
-#include <boost/optional.hpp>
-#include <exception>
+#include <string>
+#include <vector>
 
 // TODO: overridable free fn for default usage string, e.g. longer explanation of enum type meaning
 
@@ -267,7 +266,7 @@ template <class T>
 struct is_string : false_type {};
 
 template <class charT, typename traits, typename Alloc>
-struct is_string<std::basic_string<charT, traits, Alloc> > : true_type {};
+struct is_string<std::basic_string<charT, traits, Alloc>> : true_type {};
 
 // leaf_configurable means don't expect a .configure member.
 template <class Val, class Enable>
@@ -586,8 +585,7 @@ struct conf_opt {
       o << ")";
     }
     template <class C, class T>
-    friend std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T>& o,
-                                                allow_unrecognized_args const& self) {
+    friend std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T>& o, allow_unrecognized_args const& self) {
       self.print(o);
       return o;
     }
@@ -635,8 +633,7 @@ struct conf_opt {
     bool enable;
     value_str value;
     template <class T>
-    implicit_args(bool enable, T const& implicit)
-        : enable(enable), value(implicit) {}
+    implicit_args(bool enable, T const& implicit) : enable(enable), value(implicit) {}
     template <class O>
     void print(O& o) const {
       if (enable) o << " implicit value of no-argument option=" << value;
@@ -651,8 +648,7 @@ struct conf_opt {
     bool enable;
     value_str value;
     template <class T>
-    init_args(bool enable, T const& init)
-        : enable(enable), value(init) {}
+    init_args(bool enable, T const& init) : enable(enable), value(init) {}
     template <class O>
     void print(O& o) const {
       if (enable) o << " default value=" << value;
@@ -775,20 +771,13 @@ struct config_action {
 
 inline char const* name(config_action_type type) {
   switch (type) {
-    case kInitConfig:
-      return "init";
-    case kStoreConfig:
-      return "store";
-    case kValidateConfig:
-      return "validate";
-    case kHelpConfig:
-      return "help";
-    case kShowExampleConfig:
-      return "show-example";
-    case kShowEffectiveConfig:
-      return "show-effective";
-    default:
-      return "invalid action type";
+    case kInitConfig: return "init";
+    case kStoreConfig: return "store";
+    case kValidateConfig: return "validate";
+    case kHelpConfig: return "help";
+    case kShowExampleConfig: return "show-example";
+    case kShowEffectiveConfig: return "show-effective";
+    default: return "invalid action type";
   };
 }
 
@@ -938,7 +927,7 @@ struct conf_expr_base {
   template <class Val>
   bool custom_validate(Val* pval) const {
     if (!validator) return false;
-    boost::any_cast<function<void(Val&)> > (*validator)(*pval);
+    boost::any_cast<function<void(Val&)>> (*validator)(*pval);
     return true;
   }
   template <class Val>
@@ -952,8 +941,7 @@ struct conf_expr_base {
       throw config_exception(msg.str());
     }
   }
-  explicit conf_expr_base(string_consumer const& warn_to = warn_consumer(),
-                          opt_path const& root_path = opt_path())
+  explicit conf_expr_base(string_consumer const& warn_to = warn_consumer(), opt_path const& root_path = opt_path())
       : path(root_path), depth(), warn_to(warn_to), opt(new conf_opt()) {}
 
   /// parent is cloned with inheritance of (used to be require, now nothing)
@@ -1547,8 +1535,7 @@ struct configure_backend_base : configure_backend {
     sub().print_map_sequence_action_close(a, pval, conf);
   }
   template <class Val>
-  void do_print_map_sequence_action_close(show_example_config const& a, Val* pval,
-                                          conf_expr_base const& conf) const {
+  void do_print_map_sequence_action_close(show_example_config const& a, Val* pval, conf_expr_base const& conf) const {
     sub().print_map_sequence_action_close(a, pval, conf);
   }
   template <class Val>

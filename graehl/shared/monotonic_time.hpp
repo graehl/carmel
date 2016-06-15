@@ -20,8 +20,8 @@
 #define MONOTONIC_CLOCK_JG_2015_04_27_HPP
 #pragma once
 
-#include <time.h>
 #include <sys/time.h>
+#include <time.h>
 
 #ifdef __MACH__
 #include <mach/clock.h>

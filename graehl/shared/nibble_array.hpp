@@ -21,8 +21,8 @@
 #define GRAEHL__NIBBLE_ARRAY_HPP
 #pragma once
 
-#include <cstdlib>
 #include <graehl/shared/log_intsize.hpp>
+#include <cstdlib>
 
 #ifndef CHAR_BIT
 #define CHAR_BIT 8
@@ -112,7 +112,7 @@ struct nibble_array {
   }
 
  private:
-  static inline size_type nblocks(size_type sz) { return (sz + perblock_-1) / perblock_; }
+  static inline size_type nblocks(size_type sz) { return (sz + perblock_ - 1) / perblock_; }
   static inline char repeated_byte(value_type v) {
     return nibblesz_ == 2 ? (v | (v << 2) | (v << 4) | (v << 6)) : (v | (v << 4));
   }
@@ -169,8 +169,6 @@ BOOST_AUTO_TEST_CASE(nibble_array_test_case) {
   }
 }
 #endif
-
-
 
 
 #endif

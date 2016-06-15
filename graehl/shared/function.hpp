@@ -45,7 +45,7 @@ struct unwrap_reference {
   typedef T type;
 };
 template <class T>
-struct unwrap_reference<reference_wrapper<T> > {
+struct unwrap_reference<reference_wrapper<T>> {
   typedef T type;
 };
 #else

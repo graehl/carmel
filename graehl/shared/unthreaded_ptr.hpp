@@ -34,8 +34,8 @@
 #ifndef GRAEHL__UNTHREADED_PTR
 #define GRAEHL__UNTHREADED_PTR
 #pragma once
-#include <graehl/shared/cpp11.hpp>
 #include <graehl/shared/alloc_new_delete.hpp>
+#include <graehl/shared/cpp11.hpp>
 #include <cassert>
 #include <cstring>
 

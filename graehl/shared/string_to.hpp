@@ -54,16 +54,14 @@
 #ifndef GRAEHL__SHARED__STRING_TO_HPP
 #define GRAEHL__SHARED__STRING_TO_HPP
 #pragma once
+#include <graehl/shared/append.hpp>
 #include <graehl/shared/cpp11.hpp>
-
+#include <graehl/shared/type_traits.hpp>
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <iostream>
-#include <algorithm>
 #include <iterator>
-#include <graehl/shared/type_traits.hpp>
-#include <graehl/shared/string_buffer.hpp>
-#include <graehl/shared/append.hpp>
 #ifndef GRAEHL_DEBUG_STRING_TO
 #define GRAEHL_DEBUG_STRING_TO 0
 #endif
@@ -88,12 +86,33 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #define GRAEHL_USE_BOOST_LEXICAL_CAST 0
 #endif
 
+#include <graehl/shared/atoi_fast.hpp>
+#include <graehl/shared/base64.hpp>
+#include <graehl/shared/have_64_bits.hpp>
+#include <graehl/shared/is_container.hpp>
+#include <graehl/shared/itoa.hpp>
+#include <graehl/shared/nan.hpp>
+#include <graehl/shared/shared_ptr.hpp>
+#include <graehl/shared/snprintf.hpp>
+#include <graehl/shared/word_spacer.hpp>
+#include <boost/functional/hash.hpp>
+#include <limits>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#if GRAEHL_USE_FTOA
+#include <graehl/shared/ftoa.hpp>
+#else
+#include <cstdlib>
+#endif
+
 #include <graehl/shared/warning_compiler.h>
 #include <graehl/shared/warning_push.h>
-#include <graehl/shared/shared_ptr.hpp>
+
 CLANG_DIAG_IGNORE_NEWER(unused-local-typedef)
 #include <boost/optional.hpp>
-#include <boost/shared_ptr.hpp>
 #if GRAEHL_USE_BOOST_LEXICAL_CAST
 #ifndef BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
 #define BOOST_LEXICAL_CAST_ASSUME_C_LOCALE
@@ -101,26 +120,8 @@ CLANG_DIAG_IGNORE_NEWER(unused-local-typedef)
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #include <boost/lexical_cast.hpp>
 #endif
+
 #include <graehl/shared/warning_pop.h>
-#include <limits>  //numeric_limits
-#include <string>
-#include <sstream>
-#include <stdexcept>
-#include <vector>
-#include <graehl/shared/word_spacer.hpp>
-#include <graehl/shared/nan.hpp>
-#include <graehl/shared/have_64_bits.hpp>
-#include <graehl/shared/atoi_fast.hpp>
-#include <graehl/shared/itoa.hpp>
-#include <graehl/shared/is_container.hpp>
-#if GRAEHL_USE_FTOA
-#include <graehl/shared/ftoa.hpp>
-#else
-#include <cstdlib>
-#endif
-#include <graehl/shared/snprintf.hpp>
-#include <boost/functional/hash.hpp>
-#include <graehl/shared/base64.hpp>
 
 namespace graehl {
 
@@ -205,7 +206,7 @@ static std::string const str_true = "true";
 static std::string const str_false = "false";
 
 inline char uc(char lc) {
-  return lc + ('A'-'a');
+  return lc + ('A' - 'a');
 }
 
 inline bool islc(char c, char lc) {
@@ -533,7 +534,7 @@ struct is_pair {
 };
 
 template <class A, class B>
-struct is_pair<std::pair<A, B> > {
+struct is_pair<std::pair<A, B>> {
   enum { value = 1 };
 };
 
@@ -564,7 +565,7 @@ struct is_optional {
 };
 
 template <class V>
-struct is_optional<boost::optional<V> > {
+struct is_optional<boost::optional<V>> {
   enum { value = 1 };
 };
 
@@ -575,13 +576,13 @@ struct is_shared_ptr {
 
 #if GRAEHL_CPP11
 template <class V>
-struct is_shared_ptr<std::shared_ptr<V> > {
+struct is_shared_ptr<std::shared_ptr<V>> {
   enum { value = 1 };
 };
 #endif
 
 template <class V>
-struct is_shared_ptr<boost::shared_ptr<V> > {
+struct is_shared_ptr<boost::shared_ptr<V>> {
   enum { value = 1 };
 };
 
@@ -600,33 +601,6 @@ struct to_string_select<V, typename enable_if<is_shared_ptr<V>::value>::type> {
   template <class Str>
   static inline void string_to(Str const& s, V& v) {
     string_to_shared_ptr(s, v);
-  }
-};
-}
-
-
-#include <graehl/shared/string_builder.hpp>
-
-namespace graehl {
-template <class V>
-struct to_string_select<V, typename enable_if<is_nonstring_container<V>::value>::type> {
-  static inline std::string to_string(V const& val) {
-    string_builder b;
-    b('[');
-    bool first = true;
-    for (typename V::const_iterator i = val.begin(), e = val.end(); i != e; ++i) {
-      if (first)
-        first = false;
-      else
-        b(' ');
-      b(*i);
-    }
-    b(']');
-    return b.str();
-  }
-  template <class Str>
-  static inline void string_to(Str const& s, V& v) {
-    throw "string_to for sequences not yet supported";
   }
 };
 

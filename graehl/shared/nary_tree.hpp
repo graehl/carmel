@@ -77,10 +77,10 @@ struct nary_tree {
 // TODO: use pool_traits?
 
 template <class T, class R = atomic_count, class U = alloc_new_delete>
-struct shared_nary_tree : nary_tree<T, boost::intrusive_ptr<T> >, intrusive_refcount<T, R, U> {
+struct shared_nary_tree : nary_tree<T, boost::intrusive_ptr<T>>, intrusive_refcount<T, R, U> {
   typedef intrusive_refcount<T, R, U> RefCount;
   friend struct intrusive_refcount<T, R, U>;
-  typedef nary_tree<T, boost::intrusive_ptr<T> > TreeBase;
+  typedef nary_tree<T, boost::intrusive_ptr<T>> TreeBase;
   typedef shared_nary_tree self_type;
 
   shared_nary_tree() {}

@@ -20,40 +20,59 @@
 #define ADL_TO_STRING_GRAEHL_2015_10_29_HPP
 #pragma once
 
-#include <string>
 #include <graehl/shared/string_to.hpp>
-
-namespace graehl {}
+#include <string>
 
 namespace adl {
 
 template <class V>
-inline void adl_to_string(V const&);
+inline std::string adl_to_string(V const&);
+
+template <class V>
+inline void adl_append_to_string(std::string& s, V const&);
 
 template <class V, class Enable = void>
 struct ToString {
-  template <class O>
   static std::string call(V const& v) {
-    using namespace graehl;
-    return string_to_impl(v);
+    using namespace ::graehl;
+    return to_string_impl(v);
   }
 };
 
 template <>
 struct ToString<std::string, void> {
-  template <class O>
-  static std::string const& call(std::string const& v) {
-    return v;
-  }
+  static std::string const& call(std::string const& v) { return v; }
+};
+
+template <class V, class Enable = void>
+struct AppendToString {
+  static void call(std::string& s, V const& v) { s.append(ToString<V>::call(v)); }
 };
 
 template <>
-struct ToString<std::string, void> {
-  template <class O>
-  static std::string call(char const* v) {
-    return v;
-  }
+struct AppendToString<std::string, void> {
+  static void call(std::string& s, std::string const& v) { s.append(v); }
 };
+
+template <>
+struct AppendToString<char const*, void> {
+  static void call(std::string& s, char const* v) { s.append(v); }
+};
+
+template <>
+struct AppendToString<char, void> {
+  static void call(std::string& s, char v) { s.push_back(v); }
+};
+
+template <class V>
+inline std::string adl_to_string(V const& v) {
+  return ToString<V>::call(v);
+}
+
+template <class V>
+inline void adl_append_to_string(std::string& s, V const& v) {
+  AppendToString<V>::call(s, v);
+}
 
 
 }

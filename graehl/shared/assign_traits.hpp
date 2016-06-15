@@ -33,10 +33,10 @@ it. any_cast requires a copy constructor (returns by value)
 #define GRAEHL_SHARED__ASSIGN_TRAITS_JG_HPP
 #pragma once
 
-#include <graehl/shared/cpp11.hpp>
-#include <stdexcept>
-#include <memory>
 #include <boost/any.hpp>
+#include <graehl/shared/cpp11.hpp>
+#include <memory>
+#include <stdexcept>
 #if GRAEHL_CPP11
 #include <utility>
 #endif

@@ -20,11 +20,11 @@
 #ifndef STRING_BUFFER_GRAEHL_2015_10_29_HPP
 #define STRING_BUFFER_GRAEHL_2015_10_29_HPP
 #pragma once
-#include <graehl/shared/cpp11.hpp>
 
+#include <graehl/shared/append.hpp>
+#include <graehl/shared/cpp11.hpp>
 #include <string>
 #include <vector>
-#include <graehl/shared/append.hpp>
 
 namespace graehl {
 

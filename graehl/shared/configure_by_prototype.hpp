@@ -91,7 +91,7 @@ enum { kSingleAllowedInstance = 1, kUnlimitedInstances = -1 };
 
 /// Backend is required because there's no
 /// configure_backend_any yet
-template <class Backend, class Base = configure_by<Backend> >
+template <class Backend, class Base = configure_by<Backend>>
 struct configure_dynamic {
   typedef configure_by<Backend> ConfigureBy;
   typedef shared_ptr<Configurable> ConfigureByPtr;

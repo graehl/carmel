@@ -30,7 +30,7 @@ struct put_iterator {
   void operator=(V const& v) const {
     o->put(v);
   }
-  self_type const& operator++(int) const { return *this; }
+  self_type const& operator++(int)const { return *this; }
   self_type const& operator++() const { return *this; }
   self_type const& operator*() const { return *this; }
   bool operator!=(self_type const&) const { return true; }
@@ -52,7 +52,7 @@ struct insertion_iterator {
   void operator=(V const& v) const {
     o << v;
   }
-  insertion_iterator const& operator++(int) const { return *this; }
+  insertion_iterator const& operator++(int)const { return *this; }
   insertion_iterator const& operator++() const { return *this; }
   insertion_iterator const& operator*() const { return *this; }
   bool operator!=(self_type const&) const { return true; }
@@ -72,7 +72,7 @@ struct insertion_iterator_typed {
   explicit insertion_iterator_typed(O& o) : o(o) {}
   typedef insertion_iterator_typed self_type;
   void operator=(V const& v) const { o << v; }
-  self_type const& operator++(int) const { return *this; }
+  self_type const& operator++(int)const { return *this; }
   self_type const& operator++() const { return *this; }
   self_type const& operator*() const { return *this; }
   bool operator!=(self_type const&) const { return true; }

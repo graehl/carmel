@@ -44,14 +44,15 @@
 #endif
 
 
-#include <cmath>  // also needed for boost/random :( (pow)
+#include <graehl/shared/os.hpp>
+#include <graehl/shared/shared_ptr.hpp>
+#include <boost/optional.hpp>
 #include <algorithm>  // min for boost/random
+#include <cmath>  // also needed for boost/random :( (pow)
+#include <ctime>
 
 #include <graehl/shared/warning_push.h>
-#if HAVE_GCC_DIAG_OFF
 GCC_DIAG_IGNORE(attributes)
-#endif
-
 
 #if GRAEHL_USE_RANDOM_DEVICE
 #include <boost/random/random_device.hpp>
@@ -65,10 +66,9 @@ GCC_DIAG_IGNORE(attributes)
 //#include <boost/random.hpp>
 //#include <boost/random/generate_canonical.hpp>
 //#include <boost/random/seed_seq.hpp>
-#include <boost/random/random_number_generator.hpp>
-
-#include <boost/random/uniform_01.hpp>
 #include <boost/random/lagged_fibonacci.hpp>
+#include <boost/random/random_number_generator.hpp>
+#include <boost/random/uniform_01.hpp>
 #include <boost/random/variate_generator.hpp>
 #endif
 
@@ -78,11 +78,6 @@ GCC_DIAG_IGNORE(attributes)
 #include <cstdlib>
 #endif
 
-#include <graehl/shared/shared_ptr.hpp>
-#include <boost/optional.hpp>
-
-#include <ctime>
-#include <graehl/shared/os.hpp>
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>

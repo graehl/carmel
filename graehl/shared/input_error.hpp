@@ -25,9 +25,9 @@
 
 #include <cstddef>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <sstream>
 
 namespace graehl {
 
@@ -54,10 +54,8 @@ template <class C>
 inline C scrunch_char(C c, char with = '/') {
   switch (c) {
     case '\n':
-    case '\t':
-      return with;
-    default:
-      return c;
+    case '\t': return with;
+    default: return c;
   }
 }
 

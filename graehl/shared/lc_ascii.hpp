@@ -24,7 +24,7 @@
 namespace graehl {
 
 inline char lc_ascii(char c) {
-  if (c >= 'A' && c <= 'Z') c -= ('A'-'a');
+  if (c >= 'A' && c <= 'Z') c -= ('A' - 'a');
   return c;
 }
 

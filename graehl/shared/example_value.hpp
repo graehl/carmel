@@ -25,10 +25,10 @@
 #pragma once
 
 
-#include <graehl/shared/int_types.hpp>
-#include <graehl/shared/string_to.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <boost/optional.hpp>
+#include <graehl/shared/int_types.hpp>
+#include <graehl/shared/shared_ptr.hpp>
+#include <graehl/shared/string_to.hpp>
 
 namespace graehl {
 

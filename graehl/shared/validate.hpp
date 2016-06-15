@@ -34,14 +34,14 @@
 #pragma once
 
 #include <boost/filesystem.hpp>
-#include <graehl/shared/verbose_exception.hpp>
-#include <graehl/shared/from_strings.hpp>
-#include <vector>
-#include <map>
-#include <set>
 #include <boost/optional.hpp>
+#include <graehl/shared/from_strings.hpp>
 #include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/type_traits.hpp>
+#include <graehl/shared/verbose_exception.hpp>
+#include <map>
+#include <set>
+#include <vector>
 
 namespace configure {
 
@@ -132,7 +132,10 @@ struct one_of {
   std::vector<Val> allowed;
   one_of(std::vector<Val> const& allowed) : allowed(allowed) {}
   one_of(one_of const& o) : allowed(o.allowed) {}
-  one_of& operator()(Val const& v) { allowed.push_back(v); return *this;}
+  one_of& operator()(Val const& v) {
+    allowed.push_back(v);
+    return *this;
+  }
   template <class Key>
   void operator()(Key const& key) const {
     if (std::find(allowed.begin(), allowed.end(), key) == allowed.end())

@@ -36,10 +36,10 @@
 #define SPRINTF_JG_2013_05_21_HPP
 #pragma once
 #include <graehl/shared/cpp11.hpp>
-#include <cstdio>
-#include <cstddef>
-#include <cstdarg>
 #include <cassert>
+#include <cstdarg>
+#include <cstddef>
+#include <cstdio>
 #include <cstdlib>
 // for MS, this has some microsoft-only _snprintf etc fns that aren't fully C99 compliant - we'll provide a
 // ::snprintf that is
@@ -237,8 +237,7 @@ struct Sprintf : std::string {
      varargs in GCC even if no reallocation is needed.
   */
   template <class V1>
-  Sprintf(char const* format, V1 const& v1)
-      : std::string(first_buflen, '\0') {
+  Sprintf(char const* format, V1 const& v1) : std::string(first_buflen, '\0') {
     unsigned size = (unsigned)C99snprintf(buf(), buflen, format, v1);
     if (size >= first_buflen) {
       unsigned heapsz = size + 1;
@@ -249,8 +248,7 @@ struct Sprintf : std::string {
   }
 
   template <class V1, class V2>
-  Sprintf(char const* format, V1 const& v1, V2 const& v2)
-      : std::string(first_buflen, '\0') {
+  Sprintf(char const* format, V1 const& v1, V2 const& v2) : std::string(first_buflen, '\0') {
     unsigned size = (unsigned)C99snprintf(buf(), buflen, format, v1, v2);
     if (size >= first_buflen) {
       unsigned heapsz = size + 1;
@@ -261,8 +259,7 @@ struct Sprintf : std::string {
   }
 
   template <class V1, class V2, class V3>
-  Sprintf(char const* format, V1 const& v1, V2 const& v2, V3 const& v3)
-      : std::string(first_buflen, '\0') {
+  Sprintf(char const* format, V1 const& v1, V2 const& v2, V3 const& v3) : std::string(first_buflen, '\0') {
     unsigned size = (unsigned)C99snprintf(buf(), buflen, format, v1, v2, v3);
     if (size >= first_buflen) {
       unsigned heapsz = size + 1;

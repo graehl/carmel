@@ -25,13 +25,14 @@
 #define GRAEHL__SHARED__HEX_INT_HPP
 #pragma once
 
-#include <graehl/shared/print_read.hpp>
-#include <graehl/shared/type_string.hpp>
-#include <graehl/shared/string_to.hpp>
+#include <graehl/shared/atoi_fast.hpp>
+#include <graehl/shared/bit_arithmetic.hpp>
 #include <graehl/shared/have_64_bits.hpp>
+#include <graehl/shared/print_read.hpp>
+#include <graehl/shared/string_buffer.hpp>
+#include <graehl/shared/string_to.hpp>
 #include <graehl/shared/type_string.hpp>
 #include <iomanip>
-#include <graehl/shared/bit_arithmetic.hpp>
 
 namespace graehl {
 

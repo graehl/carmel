@@ -23,9 +23,9 @@
 #define BAND_MATRIX_GRAEHL_2015_07_30_HPP
 #pragma once
 
-#include <cstdlib>
-#include <cassert>
 #include <graehl/shared/cpp11.hpp>
+#include <cassert>
+#include <cstdlib>
 
 namespace graehl {
 

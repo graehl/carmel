@@ -233,13 +233,11 @@ struct configure_list : configurable {
     for (configurables::const_iterator p = confs.begin(), e = confs.end(); p != e; ++p)
       p->standard_help(o, warn, concat(root_path, p->prefix));
   }
-  virtual void effective(std::ostream& o, string_consumer const& warn,
-                         opt_path const& root_path = opt_path()) const {
+  virtual void effective(std::ostream& o, string_consumer const& warn, opt_path const& root_path = opt_path()) const {
     for (configurables::const_iterator p = confs.begin(), e = confs.end(); p != e; ++p)
       p->effective(o, warn, concat(root_path, p->prefix));
   }
-  virtual void example(std::ostream& o, string_consumer const& warn,
-                       opt_path const& root_path = opt_path()) const {
+  virtual void example(std::ostream& o, string_consumer const& warn, opt_path const& root_path = opt_path()) const {
     for (configurables::const_iterator p = confs.begin(), e = confs.end(); p != e; ++p)
       p->example(o, warn, concat(root_path, p->prefix));
   }

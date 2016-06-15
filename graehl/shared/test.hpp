@@ -16,9 +16,9 @@
 #define GRAEHL__SHARED__TEST_HPP
 #pragma once
 
-#include <string>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 #if defined(GRAEHL__SINGLE_MAIN)
 #define GRAEHL_TEST_MAIN

@@ -23,12 +23,12 @@
 #define GRAEHL_SHARED__CONTAINER_HPP
 #pragma once
 
-#include <vector>
+#include <graehl/shared/append.hpp>
+#include <graehl/shared/containers.hpp>
 #include <deque>
 #include <list>
 #include <map>
-#include <graehl/shared/append.hpp>
-#include <graehl/shared/containers.hpp>
+#include <vector>
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(TEST_CONTAINER) {
   containertest<VectorS>();
   small_vector<int> a(10, 2);
   a[1] = 1;
-  std::cout << a << "\n" << map<small_vector<int> >(a, plus1) << "\n";
+  std::cout << a << "\n" << map<small_vector<int>>(a, plus1) << "\n";
 }
 #endif
 

@@ -34,12 +34,12 @@ template <class ValueContainer,
           class Better = std::less<typename DistanceMap::value_type>,
           class IndexInHeapPropertyMap
           = no_index_in_heap<typename ValueContainer::value_type, typename ValueContainer::size_type>,
-          class Size = typename ValueContainer::size_type,
-          class Equal = std::equal_to<typename ValueContainer::value_type> >
+          class Size = typename ValueContainer::size_type, class Equal = std::equal_to<typename ValueContainer::value_type>>
 struct priority_queue : d_ary_heap_indirect<typename ValueContainer::value_type, Arity, DistanceMap,
                                             IndexInHeapPropertyMap, Better, ValueContainer, Size, Equal> {
   typedef d_ary_heap_indirect<typename ValueContainer::value_type, Arity, DistanceMap, IndexInHeapPropertyMap,
-                              Better, ValueContainer, Size, Equal> Base;
+                              Better, ValueContainer, Size, Equal>
+      Base;
   priority_queue(DistanceMap const& distance,
                  IndexInHeapPropertyMap const& indexInHeap = IndexInHeapPropertyMap(),
                  Better const& better = Better(), Size containerReserve = 100, Equal const& equal = Equal())

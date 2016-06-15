@@ -78,28 +78,28 @@ arguments and returns as UTF-8, do this:
 codecvt argument, too
 
  */
-#include <utility>
-#include <algorithm>
-#include <graehl/shared/large_streambuf.hpp>
-#include <graehl/shared/null_deleter.hpp>
-#include <graehl/shared/stream_util.hpp>
-#include <graehl/shared/teestream.hpp>
-#include <graehl/shared/null_ostream.hpp>
-#include <graehl/shared/warn.hpp>
-#include <graehl/shared/size_mega.hpp>
-#include <graehl/shared/string_match.hpp>
-#include <graehl/shared/shared_ptr.hpp>
-#include <graehl/shared/program_options.hpp>
+#include <boost/config.hpp>
+#include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-#include <boost/filesystem/convenience.hpp>
-#include <boost/config.hpp>
-#include <string>
-#include <iostream>
+#include <graehl/shared/large_streambuf.hpp>
+#include <graehl/shared/null_deleter.hpp>
+#include <graehl/shared/null_ostream.hpp>
+#include <graehl/shared/program_options.hpp>
+#include <graehl/shared/shared_ptr.hpp>
+#include <graehl/shared/size_mega.hpp>
+#include <graehl/shared/stream_util.hpp>
+#include <graehl/shared/string_match.hpp>
+#include <graehl/shared/teestream.hpp>
+#include <graehl/shared/warn.hpp>
+#include <algorithm>
 #include <fstream>
+#include <iostream>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
-#include <memory>
+#include <string>
+#include <utility>
 #ifdef _MSC_VER
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 #endif
@@ -416,8 +416,8 @@ struct file_arg {
 #else
     std::unique_ptr
 #endif
-        <filestream> f(
-            new filestream(filename.c_str(), std::ios::binary));  // will delete if we have an exception
+        <filestream>
+            f(new filestream(filename.c_str(), std::ios::binary));  // will delete if we have an exception
     set_checked(*f, filename, delete_after, fail_msg);
     f.release();  // w/o delete
   }
@@ -454,7 +454,8 @@ struct file_arg {
 #else
     std::unique_ptr
 #endif
-        <filestream> fa(f);
+        <filestream>
+            fa(f);
     set_checked(*f, filename, delete_after, fail_msg);  // exception safety provided by f
     fa.release();  // now owned by smart ptr
     buf.reset();

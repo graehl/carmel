@@ -29,14 +29,15 @@
 #endif
 #endif
 
-#include <graehl/shared/warning_compiler.h>
-#include <graehl/shared/verbose_exception.hpp>
 #include <boost/integer_traits.hpp>
-#include <limits>
-#include <cstdlib>
+#include <graehl/shared/verbose_exception.hpp>
+#include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <cstring>
-// for faster numeric to/from string. TODO: separate into optional header
+#include <iterator>
+#include <limits>
+
 #if GRAEHL_HAVE_STRTOUL
 #include <limits.h>  //strtoul
 #endif
@@ -44,8 +45,9 @@
 #undef max
 #undef DELETE
 
-#include <algorithm>
-#include <iterator>
+#ifdef GRAEHL_TEST
+#include <graehl/shared/test.hpp>
+#endif
 
 namespace graehl {
 
@@ -225,8 +227,8 @@ inline U atou_fast_complete(Str const& s) {
 
 template <class U>
 inline U atou_fast_complete(char const* s) {
-  return atou_fast_complete<U>(
-      s, s + std::strlen(s));  // TODO: could skip strlen call w/ a few more lines of code
+  return atou_fast_complete<U>(s, s + std::strlen(
+                                          s));  // TODO: could skip strlen call w/ a few more lines of code
 }
 
 template <class I>
@@ -383,8 +385,7 @@ struct StrCursor {
   bool operator!() const { return p == end; }
   operator bool() const { return p != end; }
   template <class Str>
-  StrCursor(Str const& str)
-      : p(&*str.begin()), end(&*str.end()) {}
+  StrCursor(Str const& str) : p(&*str.begin()), end(&*str.end()) {}
   StrCursor(char const* cstr) : p(cstr), end(cstr + std::strlen(cstr)) {}
   StrCursor(char const* begin, char const* end) : p(begin), end(end) {}
 };

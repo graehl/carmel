@@ -40,9 +40,9 @@
 #include <graehl/shared/shared_ptr.hpp>
 #endif
 
+#include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <cmath>
 
 namespace graehl {
 

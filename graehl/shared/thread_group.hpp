@@ -30,10 +30,10 @@ using boost::thread_group;
 typedef thread_group unsynchronized_thread_group;
 }
 #else
-#include <thread>
-#include <vector>
 #include <mutex>
+#include <thread>
 #include <utility>
+#include <vector>
 
 namespace graehl {
 
@@ -44,8 +44,8 @@ struct unsynchronized_thread_group : std::vector<std::thread> {
   void create_thread(Args&&... args) {
     this->emplace_back(std::forward<Args>(args)...);
   }
-  void add_thread(std::thread && p) { this->push_back(std::move(p)); }
-  void add_thread(std::thread &p) { this->push_back(std::move(p)); }
+  void add_thread(std::thread&& p) { this->push_back(std::move(p)); }
+  void add_thread(std::thread& p) { this->push_back(std::move(p)); }
   void join_all() {
     for (auto& thread : *this)
       if (thread.joinable()) thread.join();

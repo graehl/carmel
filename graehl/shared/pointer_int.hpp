@@ -21,8 +21,8 @@
 #define GRAEHL_SHARED__POINTER_INT_JG_2013_06_10_HPP
 #pragma once
 
-#include <cstddef>  //size_t
 #include <cassert>
+#include <cstddef>  //size_t
 #include <iomanip>
 
 namespace graehl {
@@ -59,8 +59,7 @@ inline void set_pointer_int(Val*& p, std::size_t n) {
 struct PointerInt {
   void* p;
   template <class Val>
-  PointerInt(Val* p)
-      : p(p) {}
+  PointerInt(Val* p) : p(p) {}
   friend inline std::ostream& operator<<(std::ostream& out, PointerInt const& self) {
     self.print(out);
     return out;

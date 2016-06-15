@@ -32,20 +32,20 @@
 #include <type_traits>
 #else
 #define GRAEHL_TYPE_TRAITS_NS boost
-#include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/remove_cv.hpp>
-#include <boost/type_traits/remove_reference.hpp>
-#include <boost/type_traits/remove_pointer.hpp>
-#include <boost/type_traits/is_lvalue_reference.hpp>
-#include <boost/type_traits/is_integral.hpp>
-#include <boost/type_traits/is_arithmetic.hpp>
-#include <boost/type_traits/is_fundamental.hpp>
-#include <boost/type_traits/is_enum.hpp>
-#include <boost/type_traits/is_class.hpp>
-#include <boost/type_traits/is_pointer.hpp>
-#include <boost/type_traits/is_base_of.hpp>
 #include <boost/mpl/bool_fwd.hpp>
 #include <boost/type_traits/integral_constant.hpp>
+#include <boost/type_traits/is_arithmetic.hpp>
+#include <boost/type_traits/is_base_of.hpp>
+#include <boost/type_traits/is_class.hpp>
+#include <boost/type_traits/is_enum.hpp>
+#include <boost/type_traits/is_fundamental.hpp>
+#include <boost/type_traits/is_integral.hpp>
+#include <boost/type_traits/is_lvalue_reference.hpp>
+#include <boost/type_traits/is_pointer.hpp>
+#include <boost/type_traits/remove_cv.hpp>
+#include <boost/type_traits/remove_pointer.hpp>
+#include <boost/type_traits/remove_reference.hpp>
+#include <boost/utility/enable_if.hpp>
 #endif
 
 #include <boost/icl/type_traits/is_container.hpp>

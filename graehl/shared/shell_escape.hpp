@@ -20,10 +20,10 @@
 #define GRAEHL_SHARED__SHELL_ESCAPE_HPP
 #pragma once
 
-#include <sstream>
-#include <algorithm>
-#include <string>
 #include <graehl/shared/string_to.hpp>
+#include <algorithm>
+#include <sstream>
+#include <string>
 #include <vector>
 
 namespace graehl {
@@ -51,10 +51,8 @@ inline bool is_shell_special(C c) {
     case '$':
     case '!':
     case '(':
-    case ')':
-      return true;
-    default:
-      return false;
+    case ')': return true;
+    default: return false;
   }
 }
 
@@ -65,10 +63,8 @@ inline bool needs_shell_escape_in_quotes(C c) {
     case '"':
     case '$':
     case '`':
-    case '!':
-      return true;
-    default:
-      return false;
+    case '!': return true;
+    default: return false;
   }
 }
 
@@ -111,8 +107,7 @@ inline CharAcceptor const& shell_quote_chars_iter(CharAcceptor const& chars, Cha
 }
 
 template <class CharAcceptor, class Str>
-inline CharAcceptor const& shell_quote_chars(CharAcceptor const& chars, Str const& str,
-                                             bool quote_empty = true) {
+inline CharAcceptor const& shell_quote_chars(CharAcceptor const& chars, Str const& str, bool quote_empty = true) {
   return shell_quote_chars_iter(chars, str.begin(), str.end(), quote_empty);
 }
 

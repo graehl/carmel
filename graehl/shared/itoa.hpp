@@ -25,12 +25,12 @@
 #define GRAEHL_SHARED__ITOA_H
 #pragma once
 
-#include <graehl/shared/int_types.hpp>
 #include <graehl/shared/append.hpp>
-#include <string>
+#include <graehl/shared/int_types.hpp>
+#include <cassert>
 #include <cstring>
 #include <limits>
-#include <cassert>
+#include <string>
 
 
 // define this if you're paranoid about converting 0-9 (int) to 0-9 (char) by

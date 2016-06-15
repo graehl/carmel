@@ -25,11 +25,9 @@
 #if GRAEHL_CPP11
 #include <memory>
 #else
-#include <graehl/shared/warning_push.h>
 #include <boost/ref.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <graehl/shared/warning_pop.h>
+#include <boost/shared_ptr.hpp>
 #include <boost/smart_ptr/make_shared.hpp>
 #endif
 

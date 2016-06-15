@@ -21,11 +21,15 @@
 #define STRING_BUILDER_GRAEHL_2015_10_29_HPP
 #pragma once
 
-#include <vector>
-#include <string>
-#include <graehl/shared/string_buffer.hpp>
-#include <graehl/shared/adl_print.hpp>
+#include <graehl/shared/string_to.hpp>
+//
+#include <graehl/shared/adl_to_string.hpp>
 #include <graehl/shared/base64.hpp>
+#include <graehl/shared/itoa.hpp>
+#include <graehl/shared/string_buffer.hpp>
+#include <graehl/shared/word_spacer.hpp>
+#include <string>
+#include <vector>
 
 namespace graehl {
 
@@ -230,7 +234,7 @@ struct string_builder : string_buffer {
 
   template <class T>
   string_builder& operator()(T const& t) {
-    (*this)(to_string(t));
+    adl::adl_append_to_string(*this, t);
     return *this;
   }
   string_builder& operator()(std::streambuf& ibuf) {
@@ -247,7 +251,7 @@ struct string_builder : string_buffer {
 #ifndef _MSC_VER
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
-  //TODO: remove pragma
+// TODO: remove pragma
 #if GRAEHL_CPP11
   explicit string_builder(char const* str) : string_buffer(str) {}
   /// destructive: move away from current buffer (can't use any more w/o clear)
@@ -291,13 +295,15 @@ struct string_builder : string_buffer {
     return prefixLen > this->size() ? std::string() : std::string(this->begin() + prefixLen, this->end());
   }
   std::string str(std::size_t len) const {
-    len = std::min(len, this->size());
-    return std::string(this->begin(), this->begin() + len);
+    if (this->size() <= len) return *this;
+    const_iterator b = this->begin();
+    return std::string(b, b + len);
   }
   std::string shorten(std::size_t drop_suffix_chars) {
     std::size_t n = this->size();
     if (drop_suffix_chars > n) return std::string();
-    return std::string(this->begin(), this->begin() + (n - drop_suffix_chars));
+    const_iterator b = this->begin();
+    return std::string(b, b + (n - drop_suffix_chars));
   }
 
   /**
@@ -444,6 +450,28 @@ std::string joined_seq(Seq const& seq, Sep const& sep) {
   b.join(seq, sep);
   return std::string(b.begin(), b.end());
 }
+
+template <class V>
+struct to_string_select<V, typename enable_if<is_nonstring_container<V>::value>::type> {
+  static inline std::string to_string(V const& val) {
+    string_builder b;
+    b('[');
+    bool first = true;
+    for (typename V::const_iterator i = val.begin(), e = val.end(); i != e; ++i) {
+      if (first)
+        first = false;
+      else
+        b(' ');
+      b(*i);
+    }
+    b(']');
+    return b.str();
+  }
+  template <class Str>
+  static inline void string_to(Str const& s, V& v) {
+    throw "string_to for sequences not yet supported";
+  }
+};
 
 
 }

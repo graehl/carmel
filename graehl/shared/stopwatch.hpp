@@ -41,8 +41,8 @@
 #undef max
 #undef DELETE
 #else
-#include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/time.h>
 #endif
 
 #include <graehl/shared/print_read.hpp>
@@ -137,7 +137,7 @@ class stopwatch {
     if (!running) return 0;
     rusage now_usage;
     measure_usage(now_usage);
-    return now_usage.ru_majflt-then_usage.ru_majflt;
+    return now_usage.ru_majflt - then_usage.ru_majflt;
 #else
     return 0;  // TODO: implement Win32 version
 #endif
@@ -151,18 +151,12 @@ class stopwatch {
     if (!valid_type(type)) throw std::runtime_error("stopwatch: invalid timer type");
     if (!running) return 0;
     switch (type) {
-      case WALL_TIME:
-        return recent_wall_time();
-      case TOTAL_TIME:
-        return recent_total_time();
-      case USER_TIME:
-        return recent_user_time();
-      case SYSTEM_TIME:
-        return recent_system_time();
-      case PAGEFAULTS:
-        return recent_major_pagefaults();
-      default:
-        throw std::runtime_error("bug-didn't handle timer type in stopwatch::recent_time");
+      case WALL_TIME: return recent_wall_time();
+      case TOTAL_TIME: return recent_total_time();
+      case USER_TIME: return recent_user_time();
+      case SYSTEM_TIME: return recent_system_time();
+      case PAGEFAULTS: return recent_major_pagefaults();
+      default: throw std::runtime_error("bug-didn't handle timer type in stopwatch::recent_time");
     }
   }
 

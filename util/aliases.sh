@@ -10,7 +10,9 @@ export VISUAL=emacsclient
 export GCCVERSION=6.1.0
 xmtc=$(echo ~/c)
 xmtx=$(echo ~/x)
+racer=$(echo $xmtx)
 xmtxs=$xmtx/sdl
+GRAEHL_INCLUDE=$xmtxs
 xmtextbase=$(echo ~/c/xmt-externals)
 xmtexts=$xmtextbase/Shared
 xmtextc=$xmtexts/cpp
@@ -71,6 +73,73 @@ chosts="j c-graehl gitbuild1 gitbuild2"
 chost=c-graehl
 jhost=j
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1"
+
+mendco() {
+    git checkout "$@"
+    git commit -C HEAD --amend
+}
+mendcop() {
+    mendco perfrace "$1"
+}
+gitnrev() {
+    git show-refs "${1:-HEAD}" --count
+}
+lastline() {
+    tail -1 "$@"
+}
+lastlineis() {
+    local is=$1
+    shift
+    for f in "$@"; do
+        local l=`lastline "$f"`
+        if [[ $is = $l ]] ; then
+            echo $f
+        fi
+    done
+}
+rmsub() {
+    perl -e '$_=shift;s/'"$1"'//;print' "$2"
+}
+mvrmsub() {
+    ag -g "$1" |
+    while read f; do
+        g=$(rmsub "$1" "$f")
+        mv "$f" "$g"
+    done
+}
+smallest() {
+    ls -rS "$@" | head -1
+}
+rmsmallest() {
+    local h=$1
+    local g=$2
+    local smallestdir=${smallestdir:-$TMPDIR/smallest}
+    if [[ -f "$h" ]] && [[ -f "$g" ]] ; then
+        h=$(smallest "$h" "$g")
+        if [[ -d $smallestdir ]] ; then
+            mv $h $smallestdir/
+        fi
+    fi
+}
+rmsmallvariant() {
+    t="trash$1"
+    mkdir -p "$t"
+    ag -g "$1" |
+    while read f; do
+        rmsmallest "$f" $(rmsub "$1" "$f")
+    done
+}
+rmvariant() {
+    t="trash$1"
+    mkdir -p "$t"
+    ag -g "$1" |
+    while read f; do
+        g=$(rmsub "$1" "$f")
+        if [[ -f "$g" ]] ; then
+            mv "$f" "$t/"
+        fi
+    done
+}
 cmakeinstall() {
     make DESTDIR=${1} install
 }
@@ -123,10 +192,10 @@ makertags() {
     )
 }
 useclanglibc() {
-    export CC="clang-3.6"
-    export CXX="clang++-3.6 -stdlib=libc++"
-    export CXXFLAGS="$CXXFLAGS -nostdinc++ -I/usr/local/opt/llvm36/lib/llvm-3.6/include/c++/v1"
-    export LDFLAGS="$LDFLAGS -L/usr/local/opt/llvm36/lib/llvm-3.6/lib"
+    export CC="clang-3.8"
+    export CXX="clang++-3.8 -stdlib=libc++"
+    export CXXFLAGS="$CXXFLAGS -nostdinc++ -I/usr/local/opt/llvm36/lib/llvm-3.8/include/c++/v1"
+    export LDFLAGS="$LDFLAGS -L/usr/local/opt/llvm36/lib/llvm-3.8/lib"
 }
 gitignorerm() {
     git ls-files --deleted -z | git update-index --assume-unchanged -z --stdin
@@ -147,36 +216,42 @@ bent() {
     (
         [[ $vg ]] && vgcmd=vg
         vgscript=script.txt
-        [[ $vg ]] && vgscript=valgrind.txt
+        #[[ $vg ]] && vgscript=valgrind.txt
         cd ~/ent/docs
-        ./make.sh
+        [[ $redox ]] && ./make.sh
+        cd ~
+        [[ $clean ]] && rm -rf bent/
+        mkdir -p bent
         set -e
-        cd ~/bent
-        gccsuf=${gccsuf:--5}
-        gccsuf=
+        cd bent
+        gccsuf=${gccsuf:--6}
+        #gccsuf=
         #rm -rf entcore
         CC=gcc$gccsuf CXX=g++$gccsuf BUILD_TYPE=Debug cmakemac ../ent "$@"
-        [[ $notest ]]  || cd entscripttests && $vgcmd ./entscripttests $vgscript
+        set -x
+        [[ $notest ]]  || cd entscripttests && echo | $vgcmd ./entscripttests $vgscript
     )
 }
 scanbent() {
     (
         set -e
+        cd ~
+        mkdir -p scanbent
         cd ~/scanbent
-        rm -rf ent*
-        clangsuf= SCAN=1 cmake36 ../ent 2>&1 | tee ~/tmp/scanbent.log
+        [[ $noclean ]] || rm -rf ent*
+        clangsuf= SCAN=1 cmake38 ../ent 2>&1 | tee ~/tmp/scanbent.log
     )
 }
 bcent() {
     (set -e
      cd ~/bcent
      #rm -rf entcore
-     cmake36 ../ent -DCMAKE_EXPORT_COMPILE_COMMANDS=1
-     [[ $notest ]]  || cd entscripttests && ./entscripttests
+     cmake38 ../ent -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+     [[ $notest ]]  || cd entscripttests && echo | ./entscripttests
     )
 }
-cmake36() {
-    clangsuf=-3.6
+cmake38() {
+    clangsuf=-3.8
     CC=clang$clangsuf CXX=clang++$clangsuf BUILD_TYPE=Debug cmakemac "$@"
 }
 cmakemac() {
@@ -184,8 +259,8 @@ cmakemac() {
         #export CMAKE_OSX_SYSROOT=
         #/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/
         #[[ $noclean ]] || rm -f CMakeCache.txt
-        nosysroot="-DCMAKE_OSX_DEPLOYMENT_TARGET:STRING= -DCMAKE_OSX_SYSROOT:STRING=/"
-        nosysroot=
+        nosysroot="-DCMAKE_OSX_DEPLOYMENT_TARGET:STRING= -DCMAKE_OSX_SYSROOT:STRING=/ -DCMAKE_MACOSX_RPATH=0 -DCMAKE_FIND_FRAMEWORK=NEVER -DCMAKE_FIND_APPBUNDLE=NEVER"
+        #nosysroot=
         scanbuild=
         if [[ $SCAN ]] ; then
             scanbuild=scan-build
@@ -193,7 +268,7 @@ cmakemac() {
         fi
         set -x
         #-DCMAKE_EXPORT_COMPILE_COMMANDS=1
-        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DCMAKE_C_COMPILER=${CC:-gcc$gccsuf} -DCMAKE_CXX_COMPILER=${CXX:-g++$gccsuf} $nosysroot "$@" && TERM=dumb $scanbuild make VERBOSE=1 -j 3
+        cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DCMAKE_C_COMPILER=${CC:-gcc$gccsuf} -DCMAKE_CXX_COMPILER=${CXX:-g++$gccsuf} $nosysroot "$@" && TERM=dumb $scanbuild make VERBOSE=1 -j ${NCPUS:-3}
     )
 }
 
@@ -1397,6 +1472,10 @@ buildclang() {
 cppfilenames() {
     grep -E '\.(hpp|cpp|ipp|cc|hh|c|h|C|H)$' "$@"
 }
+gitdiffstat() {
+    git diff ${1:-HEAD^1} --shortstat
+    git diff ${1:-HEAD^1} --dirstat
+}
 gitchangedfast() {
     git diff --cached --name-only --diff-filter=ACMRT ${1:-HEAD^1}
 }
@@ -1606,7 +1685,7 @@ xcpps() {
      diffstat HEAD
     )
 }
-gitdiffstat() {
+gitdiffstatfull() {
     git diff --stat "$@"
 }
 optllvm() {
@@ -4901,9 +4980,14 @@ tryre() {
 
 upre() {
     local remote=${1:-origin}
+    local loosearg
+    if [[ $loose ]] ; then
+        #will keep *their* (master) whitespace, unlike 'merge'
+        loosearg="-Xignore-all-space -Xdiff-algorithm=histogram"
+    fi
     (set -e
      git fetch $remote
-     git rebase $remote/master
+     git rebase -Xpatience $loosearg $remote/master
     ) || git rebase --continue
 }
 showbest() {
@@ -5424,11 +5508,9 @@ killbranch() {
 killbranch1() {
     git branch -D "$1" || true
 }
-racer=$(echo $xmtx)
 if [[ $HOST = c-ydong ]] || [[ $HOST = c-mdreyer ]] ; then
     export PATH=$SDL_EXTERNALS_PATH/tools/cmake/bin:$PATH
 fi
-GRAEHL_INCLUDE=$xmtxs
 
 ffmpegaudio1() {
     local input=$1
@@ -8456,9 +8538,9 @@ g1() {
     local linkcmd="g++"
     local archarg=
     if [[ $OS = Darwin ]] ; then
-        ccmd="g++"
-        linkcmd="g++"
-        archarg="-arch x86_64"
+        ccmd="g++-6"
+        linkcmd="g++-6"
+        #archarg="-arch x86_64"
         macboost
     fi
     local program_options_lib="-lboost_program_options$BOOST_SUFFIX -lboost_system$BOOST_SUFFIX"
@@ -8470,7 +8552,8 @@ g1() {
     local out=${OUT:-$source.`filename_from $HOST "$*"`}
     (
         set -e
-        local flags="$CXXFLAGS $MOREFLAGS -I$GRAEHL_INCLUDE -I$BOOST_INCLUDEDIR -DGRAEHL_G1_MAIN"
+        local flags="-std=c++11 $CXXFLAGS $MOREFLAGS -I$GRAEHL_INCLUDE -I$BOOST_INCLUDEDIR -DGRAEHL_G1_MAIN"
+        #-Wno-pragma-once-outside-header
         showvars_optional ARGS MOREFLAGS flags
         if ! [ "$OPT" ] ; then
             flags="$flags -O0"
@@ -8486,10 +8569,10 @@ g1() {
         set +e
     )
 }
-
 gtest() {
     MOREFLAGS="$GCPPFLAGS" OUT=$1.test ARGS="--catch_system_errors=no" g1 "$@" -DGRAEHL_TEST -DGRAEHL_INCLUDED_TEST -ffast-math -lboost_unit_test_framework${BOOST_SUFFIX:-mt} -lboost_random${BOOST_SUFFIX:-mt}
 }
+
 gsample() {
     local s=$1
     shift

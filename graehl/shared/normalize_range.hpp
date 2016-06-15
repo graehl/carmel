@@ -21,8 +21,8 @@
 #pragma once
 
 #include <boost/range.hpp>
-#include <boost/range/numeric.hpp>
 #include <boost/range/algorithm/transform.hpp>
+#include <boost/range/numeric.hpp>
 #include <boost/range/value_type.hpp>
 
 namespace graehl {

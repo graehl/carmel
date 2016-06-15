@@ -40,12 +40,12 @@
 #define ADL_PRINT_GRAEHL_2015_10_29_HPP
 #pragma once
 
-#include <string>
-#include <utility>
+#include <graehl/shared/is_container.hpp>
+#include <graehl/shared/type_traits.hpp>
 #include <iostream>
 #include <sstream>
-#include <graehl/shared/type_traits.hpp>
-#include <graehl/shared/is_container.hpp>
+#include <string>
+#include <utility>
 
 #ifndef GRAEHL_ADL_PRINTER_MOVE_OVERLOAD
 /** (C++11 only): the AdlPrinterMove and PrinterMove classes will be selected
@@ -64,8 +64,7 @@ template <class O, class V, class If = typename graehl::enable_if<graehl::is_non
 O& operator<<(O& o, V const& v);
 
 #if GRAEHL_ADL_PRINT_CONTAINER3
-template <class O, class V, class S,
-          class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
+template <class O, class V, class S, class If = typename graehl::enable_if<graehl::is_nonstring_container<V>::value>::type>
 void print(O& o, V const& v, S const& s);
 #endif
 
@@ -436,13 +435,13 @@ struct PrinterType<V, S, false_type> {
 };
 
 template <class V>
-typename AdlPrinterType<V, is_lvalue_reference<V> >::type printer(V&& v) {
+typename AdlPrinterType<V, is_lvalue_reference<V>>::type printer(V&& v) {
   return std::forward<V>(v);
 }
 
 template <class V, class S>
-typename PrinterType<V, S, is_lvalue_reference<V> >::type printer(V&& v, S const& s) {
-  return typename PrinterType<V, S, is_lvalue_reference<V> >::type(std::forward<V>(v), s);
+typename PrinterType<V, S, is_lvalue_reference<V>>::type printer(V&& v, S const& s) {
+  return typename PrinterType<V, S, is_lvalue_reference<V>>::type(std::forward<V>(v), s);
 }
 
 #endif

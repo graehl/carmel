@@ -29,8 +29,8 @@
 #ifndef BOOST_SYSTEM_NO_DEPRECATED
 #define BOOST_SYSTEM_NO_DEPRECATED 1
 #endif
-#include <boost/config.hpp>
 #include <boost/chrono/chrono.hpp>
+#include <boost/config.hpp>
 #include <boost/timer/timer.hpp>
 #else
 #include <graehl/shared/stopwatch.hpp>

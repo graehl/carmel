@@ -30,7 +30,7 @@ static const unsigned doubling_prime_list[]
 
 enum { doubling_num_primes = sizeof(doubling_prime_list) / sizeof(doubling_prime_list[0]) };
 
-unsigned const* const last_doubling_prime = doubling_prime_list + doubling_num_primes-1;
+unsigned const* const last_doubling_prime = doubling_prime_list + doubling_num_primes - 1;
 };
 
 // return next doubled (roughly) prime larger than or equal to n

@@ -37,10 +37,10 @@
 #pragma once
 
 
-#include <graehl/shared/graph.hpp>
 #include <boost/property_map/shared_array_property_map.hpp>  // new A[n]
-#include <graehl/shared/word_spacer.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+#include <graehl/shared/graph.hpp>
+#include <graehl/shared/word_spacer.hpp>
 
 namespace graehl {
 
@@ -98,7 +98,7 @@ inline std::size_t get(identity_offset_map, std::size_t i) {
 namespace graehl {
 
 template <class T, class Size = unsigned>
-struct array_pmap : boost::put_get_helper<T&, array_pmap<T> >, boost::shared_array<T> {
+struct array_pmap : boost::put_get_helper<T&, array_pmap<T>>, boost::shared_array<T> {
   typedef Size size_type;
   typedef Size key_type;
   typedef T value_type;
@@ -212,8 +212,8 @@ void print(O& o, R const& r, pmap_pair_getter<A, P> const& p) {
  */
 template <typename V>
 class const_sink_property_map
-    //: public boost::put_get_helper<V, const_sink_property_map<V> >
-    {
+//: public boost::put_get_helper<V, const_sink_property_map<V> >
+{
   V v;
 
  public:

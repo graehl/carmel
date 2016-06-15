@@ -39,9 +39,9 @@
 };
 */
 
-#include <graehl/shared/no_locking.hpp>
 #include <boost/detail/lightweight_mutex.hpp>
 #include <boost/thread/locks.hpp>
+#include <graehl/shared/no_locking.hpp>
 
 namespace graehl {
 

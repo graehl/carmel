@@ -29,9 +29,9 @@
 #endif
 
 // find is_null, set_null by ADL (Koenig lookup).
-#include <cstddef>
-#include <graehl/shared/nan.hpp>
 #include <graehl/shared/int_types.hpp>
+#include <graehl/shared/nan.hpp>
+#include <cstddef>
 
 //#define FLOAT_NULL HUGE_VALF
 //#define DOUBLE_NULL HUGE_VAL
@@ -111,8 +111,6 @@ BOOST_AUTO_TEST_CASE(TEST_is_null) {
   BOOST_CHECK_EQUAL(is_nan(f), true);
 }
 #endif
-
-
 
 
 #endif

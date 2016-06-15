@@ -21,9 +21,9 @@
 #define SPLIT_NOQUOTE_GRAEHL_2015_10_29_HPP
 #pragma once
 
-#include <string>
-#include <cstddef>
 #include <graehl/shared/input_error.hpp>
+#include <cstddef>
+#include <string>
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>

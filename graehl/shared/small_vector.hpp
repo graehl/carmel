@@ -95,31 +95,31 @@
 #define GRAEHL_SMALL_VECTOR_SERIALIZE_VERSION 0
 #endif
 #if GRAEHL_SMALL_VECTOR_SERIALIZE_VERSION
-#include <boost/serialization/version.hpp>
 #include <boost/serialization/item_version_type.hpp>
+#include <boost/serialization/version.hpp>
 #endif
 
 #define GRAEHL_BOOST_SERIALIZATION_NVP(v) BOOST_SERIALIZATION_NVP(v)
 #define GRAEHL_BOOST_SERIALIZATION_NVP_VERSION(v) BOOST_SERIALIZATION_NVP(v)
 
-#include <vector>
-#include <iterator>
-#include <functional>
-#include <boost/serialization/array.hpp>
-#include <boost/serialization/wrapper.hpp>
-#include <boost/serialization/split_member.hpp>
-#include <boost/serialization/collection_size_type.hpp>
 #include <boost/assign/list_inserter.hpp>
-#include <boost/range/iterator_range.hpp>
-#include <algorithm>
-#include <cstring>
-#include <cassert>
 #include <boost/cstdint.hpp>
-#include <new>
 #include <boost/functional/hash.hpp>
+#include <boost/range/iterator_range.hpp>
+#include <boost/serialization/array.hpp>
+#include <boost/serialization/collection_size_type.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/wrapper.hpp>
+#include <graehl/shared/good_alloc_size.hpp>
 #include <graehl/shared/swap_pod.hpp>
 #include <graehl/shared/word_spacer.hpp>
-#include <graehl/shared/good_alloc_size.hpp>
+#include <algorithm>
+#include <cassert>
+#include <cstring>
+#include <functional>
+#include <iterator>
+#include <new>
+#include <vector>
 
 namespace graehl {
 
@@ -146,8 +146,7 @@ struct pod_array_ref {
   pod_array_ref(T* a, Size sz) : sz(sz), a(a) {}
   pod_array_ref(T* begin, T* end) : sz(end - begin), a(begin) {}
   template <class Vec>
-  explicit pod_array_ref(Vec const& vec)
-      : sz((Size)vec.size()), a(&vec[0]) {
+  explicit pod_array_ref(Vec const& vec) : sz((Size)vec.size()), a(&vec[0]) {
     assert(vec.size() == sz);
   }
   Size size() const { return sz; }
@@ -438,8 +437,7 @@ struct small_vector {
   enum { kTargetBiggerSz = kMaxInlineSize * 3 + 1 / 2 };
   enum { kTargetBiggerUnaligned = sizeof(T) * kTargetBiggerSz };
   enum {
-    kTargetBiggerAligned
-    = (kTargetBiggerUnaligned + ktarget_first_alloc_mask) & ~(size_type)ktarget_first_alloc_mask
+    kTargetBiggerAligned = (kTargetBiggerUnaligned + ktarget_first_alloc_mask) & ~(size_type)ktarget_first_alloc_mask
   };
   static const size_type kInitHeapSize = Tarsize::ktarget_first_sz > kMaxInlineSize
                                              ? Tarsize::ktarget_first_sz
@@ -706,7 +704,7 @@ struct small_vector {
     if (where == end())
       append_unconstructed(N);
     else
-      insert_hole_index(where-begin(), N);
+      insert_hole_index(where - begin(), N);
   }
 
   /**
@@ -764,7 +762,7 @@ struct small_vector {
     while (--n) *o++ = t;
   }
 
-  void insert_index(iterator where, size_type n, T const& t) { insert_index(where-begin(), n, t); }
+  void insert_index(iterator where, size_type n, T const& t) { insert_index(where - begin(), n, t); }
 
   void push_back_heap(T const& v) {
     if (d_.stack.sz_ == d_.heap.capacity_) ensure_capacity_grow(d_.stack.sz_ + 1);
@@ -784,8 +782,8 @@ struct small_vector {
     }
   }
 
-  T& back() { return this->operator[](d_.stack.sz_-1); }
-  T const& back() const { return this->operator[](d_.stack.sz_-1); }
+  T& back() { return this->operator[](d_.stack.sz_ - 1); }
+  T const& back() const { return this->operator[](d_.stack.sz_ - 1); }
   T& front() { return this->operator[](0); }
   T const& front() const { return this->operator[](0); }
 
@@ -1190,7 +1188,7 @@ template <class T>
 struct hash;
 
 template <class V, unsigned MaxInline, class Size>
-struct hash<graehl::small_vector<V, MaxInline, Size> > {
+struct hash<graehl::small_vector<V, MaxInline, Size>> {
  public:
   std::size_t operator()(graehl::small_vector<V, MaxInline, Size> const& vec) const {
     return vec.hash_impl();
@@ -1202,7 +1200,7 @@ namespace boost {
 namespace assign {
 
 template <class V, unsigned MaxInline, class Size, class V2>
-inline list_inserter<assign_detail::call_push_back<graehl::small_vector<V, MaxInline, Size> >, V>
+inline list_inserter<assign_detail::call_push_back<graehl::small_vector<V, MaxInline, Size>>, V>
 operator+=(graehl::small_vector<V, MaxInline, Size>& c, V2 v) {
   return push_back(c)(v);
 }
@@ -1211,7 +1209,7 @@ operator+=(graehl::small_vector<V, MaxInline, Size>& c, V2 v) {
 namespace serialization {
 
 template <class V, unsigned MaxInline, class Size>
-struct implementation_level<graehl::small_vector<V, MaxInline, Size> > {
+struct implementation_level<graehl::small_vector<V, MaxInline, Size>> {
   typedef mpl::int_<object_serializable> type;
   typedef mpl::integral_c_tag tag;
   BOOST_STATIC_CONSTANT(int, value = implementation_level::type::value);
@@ -1224,7 +1222,7 @@ struct implementation_level<graehl::small_vector<V, MaxInline, Size> > {
    applies by default.
 */
 template <class V, unsigned MaxInline, class Size>
-struct tracking_level<graehl::small_vector<V, MaxInline, Size> > {
+struct tracking_level<graehl::small_vector<V, MaxInline, Size>> {
   typedef mpl::int_<track_never> type;
   typedef mpl::integral_c_tag tag;
   BOOST_STATIC_CONSTANT(int, value = tracking_level::type::value);
@@ -1236,10 +1234,10 @@ struct tracking_level<graehl::small_vector<V, MaxInline, Size> > {
 #include <graehl/shared/test.hpp>
 #include <graehl/shared/warning_compiler.h>
 CLANG_DIAG_IGNORE(tautological-undefined-compare)
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <sstream>
 
@@ -1498,41 +1496,39 @@ void test_small_vector_2() {
   EXPECT_TRUE(vg >= v4);
   EXPECT_TRUE(vg > v4);
   EXPECT_TRUE(v4 < vg);
-  vg[2] = v4[2]-1;
+  vg[2] = v4[2] - 1;
   vg[1] = v4[1] + 1;
   EXPECT_TRUE(vg >= v4);
   EXPECT_TRUE(vg > v4);
   EXPECT_TRUE(v4 < vg);
-  vg[0] = v4[1]-1;
+  vg[0] = v4[1] - 1;
   EXPECT_TRUE(v4 >= vg);
   EXPECT_TRUE(v4 > vg);
   EXPECT_TRUE(vg < v4);
 }
 
 BOOST_AUTO_TEST_CASE(test_small_vector_larger_than_2) {
-  test_small_vector_1<small_vector<int, 1> >();
-  test_small_vector_1<small_vector<int, 3, std::size_t> >();
-  test_small_vector_1<small_vector<int, 5, unsigned short> >();
+  test_small_vector_1<small_vector<int, 1>>();
+  test_small_vector_1<small_vector<int, 3, std::size_t>>();
+  test_small_vector_1<small_vector<int, 5, unsigned short>>();
 }
 
 BOOST_AUTO_TEST_CASE(test_small_vector_small) {
-  test_small_vector_2<small_vector<int, 1> >();
-  test_small_vector_2<small_vector<int, 3, std::size_t> >();
-  test_small_vector_2<small_vector<int, 5, unsigned short> >();
+  test_small_vector_2<small_vector<int, 1>>();
+  test_small_vector_2<small_vector<int, 3, std::size_t>>();
+  test_small_vector_2<small_vector<int, 5, unsigned short>>();
 }
 
 BOOST_AUTO_TEST_CASE(small_vector_compatible_serialization) {
-  test_small_vector_same_serializations<small_vector<int, 1> >();
-  test_small_vector_same_serializations<small_vector<int, 3, std::size_t> >();
-  test_small_vector_same_serializations<small_vector<int, 5, unsigned short> >();
+  test_small_vector_same_serializations<small_vector<int, 1>>();
+  test_small_vector_same_serializations<small_vector<int, 3, std::size_t>>();
+  test_small_vector_same_serializations<small_vector<int, 5, unsigned short>>();
 }
 }
 }
 
 #endif
 // GRAEHL_TEST
-
-
 
 
 #endif

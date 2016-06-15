@@ -22,10 +22,10 @@
 #define GRAEHL_SHARED__NAMED_MAIN_HPP
 #pragma once
 
-#include <vector>
-#include <map>
-#include <iostream>
 #include <graehl/shared/lc_ascii.hpp>
+#include <iostream>
+#include <map>
+#include <vector>
 
 #ifndef GRAEHL_NAMED_SINGLE_MAIN
 #define GRAEHL_NAMED_SINGLE_MAIN 0

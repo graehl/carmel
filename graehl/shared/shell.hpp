@@ -15,9 +15,9 @@
 #define SHELL_JG2012615_HPP
 #pragma once
 
-#include <graehl/shared/shell_escape.hpp>
-#include <graehl/shared/os.hpp>
 #include <boost/filesystem.hpp>
+#include <graehl/shared/os.hpp>
+#include <graehl/shared/shell_escape.hpp>
 
 namespace graehl {
 

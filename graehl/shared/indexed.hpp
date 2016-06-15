@@ -21,13 +21,13 @@
 #define GRAEHL_SHARED__INDEXED_JG_2014_03_04_HPP
 #pragma once
 
-#include <graehl/shared/stable_vector.hpp>
 #include <boost/functional/hash.hpp>
+#include <graehl/shared/farmhash.hpp>
+#include <graehl/shared/int_types.hpp>
+#include <graehl/shared/stable_vector.hpp>
 #include <algorithm>
 #include <cassert>
 #include <string>
-#include <graehl/shared/int_types.hpp>
-#include <graehl/shared/farmhash.hpp>
 
 #ifndef GRAEHL_INDEXED_EXTRA_ASSERT
 #define GRAEHL_INDEXED_EXTRA_ASSERT 0
@@ -107,8 +107,7 @@ struct indexed_traits<std::string> {
   std::size_t operator()(char const* s) const { return farmhash(s, std::strlen(s)); }
 };
 
-template <class T, class IndexT = unsigned, class Vector = stable_vector<T>,
-          class HashEqualsTraits = indexed_traits<T> >
+template <class T, class IndexT = unsigned, class Vector = stable_vector<T>, class HashEqualsTraits = indexed_traits<T>>
 struct indexed : HashEqualsTraits {
   typedef IndexT I;
   typedef I* Indices;
@@ -334,7 +333,7 @@ struct indexed : HashEqualsTraits {
   void init_empty_hash(I capacityPowerOf2) {
     if (capacityPowerOf2 < 4) capacityPowerOf2 = 4;
     assert(is_power_of_2(capacityPowerOf2));
-    I const newmask = capacityPowerOf2-1;
+    I const newmask = capacityPowerOf2 - 1;
     if (!index_ || mask_ < newmask) {
       freehash();
       mask_ = newmask;
@@ -346,7 +345,7 @@ struct indexed : HashEqualsTraits {
 
   void setGrowAt(I capacityPowerOf2) {
     growAt_ = (I)(kMaxIndexedHashLoad * capacityPowerOf2);
-    if (growAt_ >= mask_) growAt_ = mask_-1;
+    if (growAt_ >= mask_) growAt_ = mask_ - 1;
   }
 
   void clear_hash() {

@@ -25,10 +25,10 @@
 
 // FIXME: doesn't seem to work w/ boost 1.37
 
-#include <streambuf>
-#include <ostream>
-#include <string>
 #include <boost/iostreams/stream.hpp>
+#include <ostream>
+#include <streambuf>
+#include <string>
 
 namespace graehl {
 
@@ -42,7 +42,7 @@ struct null_device {
 
 
 template <class C>
-class basic_null_ostream : public boost::iostreams::stream<null_device<C> > {};
+class basic_null_ostream : public boost::iostreams::stream<null_device<C>> {};
 
 typedef basic_null_ostream<char> null_ostream;
 

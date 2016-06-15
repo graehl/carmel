@@ -26,10 +26,8 @@
 #ifndef GRAEHL_SHARED__THREADLOCAL_HPP
 #define GRAEHL_SHARED__THREADLOCAL_HPP
 #pragma once
-#include <graehl/shared/cpp11.hpp>
-
-
 #include <boost/utility.hpp>  // for BOOST_NO_MT
+#include <graehl/shared/cpp11.hpp>
 
 #ifdef BOOST_NO_MT
 #define THREADLOCAL
@@ -84,8 +82,7 @@ struct SetLocal {
   D& value;
   Old old_value;
   template <class NewValue>
-  SetLocal(D& val, NewValue const& new_value)
-      : value(val), old_value(val) {
+  SetLocal(D& val, NewValue const& new_value) : value(val), old_value(val) {
     value = new_value;
   }
   ~SetLocal() { value = old_value; }
@@ -107,8 +104,7 @@ struct SetLocalSwap {
   D& value;
   D old_value;
   template <class NewValue>
-  SetLocalSwap(D& val, NewValue const& new_value)
-      : value(val), old_value(new_value) {
+  SetLocalSwap(D& val, NewValue const& new_value) : value(val), old_value(new_value) {
     using namespace std;
     swap(value, old_value);
   }

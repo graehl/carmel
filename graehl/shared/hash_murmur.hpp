@@ -25,8 +25,8 @@
 #define GRAEHL__SHARED__HASH_MURMUR_HPP
 #pragma once
 
-#include <graehl/shared/have_64_bits.hpp>
 #include <graehl/shared/bit_arithmetic.hpp>
+#include <graehl/shared/have_64_bits.hpp>
 
 namespace graehl {
 
@@ -161,10 +161,8 @@ inline void MurmurHash3_x86_128(const void* key, const int len, uint32_t seed, v
   uint32_t k4 = 0;
 
   switch (len & 15) {
-    case 15:
-      k4 ^= tail[14] << 16;
-    case 14:
-      k4 ^= tail[13] << 8;
+    case 15: k4 ^= tail[14] << 16;
+    case 14: k4 ^= tail[13] << 8;
     case 13:
       k4 ^= tail[12] << 0;
       k4 *= c4;
@@ -172,12 +170,9 @@ inline void MurmurHash3_x86_128(const void* key, const int len, uint32_t seed, v
       k4 *= c1;
       h4 ^= k4;
 
-    case 12:
-      k3 ^= tail[11] << 24;
-    case 11:
-      k3 ^= tail[10] << 16;
-    case 10:
-      k3 ^= tail[9] << 8;
+    case 12: k3 ^= tail[11] << 24;
+    case 11: k3 ^= tail[10] << 16;
+    case 10: k3 ^= tail[9] << 8;
     case 9:
       k3 ^= tail[8] << 0;
       k3 *= c3;
@@ -185,12 +180,9 @@ inline void MurmurHash3_x86_128(const void* key, const int len, uint32_t seed, v
       k3 *= c4;
       h3 ^= k3;
 
-    case 8:
-      k2 ^= tail[7] << 24;
-    case 7:
-      k2 ^= tail[6] << 16;
-    case 6:
-      k2 ^= tail[5] << 8;
+    case 8: k2 ^= tail[7] << 24;
+    case 7: k2 ^= tail[6] << 16;
+    case 6: k2 ^= tail[5] << 8;
     case 5:
       k2 ^= tail[4] << 0;
       k2 *= c2;
@@ -198,12 +190,9 @@ inline void MurmurHash3_x86_128(const void* key, const int len, uint32_t seed, v
       k2 *= c3;
       h2 ^= k2;
 
-    case 4:
-      k1 ^= tail[3] << 24;
-    case 3:
-      k1 ^= tail[2] << 16;
-    case 2:
-      k1 ^= tail[1] << 8;
+    case 4: k1 ^= tail[3] << 24;
+    case 3: k1 ^= tail[2] << 16;
+    case 2: k1 ^= tail[1] << 8;
     case 1:
       k1 ^= tail[0] << 0;
       k1 *= c1;
@@ -294,18 +283,12 @@ inline void MurmurHash3_x64_128(const void* key, const int len, const uint32_t s
   uint64_t k2 = 0;
 
   switch (len & 15) {
-    case 15:
-      k2 ^= ((uint64_t)tail[14]) << 48;
-    case 14:
-      k2 ^= ((uint64_t)tail[13]) << 40;
-    case 13:
-      k2 ^= ((uint64_t)tail[12]) << 32;
-    case 12:
-      k2 ^= ((uint64_t)tail[11]) << 24;
-    case 11:
-      k2 ^= ((uint64_t)tail[10]) << 16;
-    case 10:
-      k2 ^= ((uint64_t)tail[9]) << 8;
+    case 15: k2 ^= ((uint64_t)tail[14]) << 48;
+    case 14: k2 ^= ((uint64_t)tail[13]) << 40;
+    case 13: k2 ^= ((uint64_t)tail[12]) << 32;
+    case 12: k2 ^= ((uint64_t)tail[11]) << 24;
+    case 11: k2 ^= ((uint64_t)tail[10]) << 16;
+    case 10: k2 ^= ((uint64_t)tail[9]) << 8;
     case 9:
       k2 ^= ((uint64_t)tail[8]) << 0;
       k2 *= c2;
@@ -313,20 +296,13 @@ inline void MurmurHash3_x64_128(const void* key, const int len, const uint32_t s
       k2 *= c1;
       h2 ^= k2;
 
-    case 8:
-      k1 ^= ((uint64_t)tail[7]) << 56;
-    case 7:
-      k1 ^= ((uint64_t)tail[6]) << 48;
-    case 6:
-      k1 ^= ((uint64_t)tail[5]) << 40;
-    case 5:
-      k1 ^= ((uint64_t)tail[4]) << 32;
-    case 4:
-      k1 ^= ((uint64_t)tail[3]) << 24;
-    case 3:
-      k1 ^= ((uint64_t)tail[2]) << 16;
-    case 2:
-      k1 ^= ((uint64_t)tail[1]) << 8;
+    case 8: k1 ^= ((uint64_t)tail[7]) << 56;
+    case 7: k1 ^= ((uint64_t)tail[6]) << 48;
+    case 6: k1 ^= ((uint64_t)tail[5]) << 40;
+    case 5: k1 ^= ((uint64_t)tail[4]) << 32;
+    case 4: k1 ^= ((uint64_t)tail[3]) << 24;
+    case 3: k1 ^= ((uint64_t)tail[2]) << 16;
+    case 2: k1 ^= ((uint64_t)tail[1]) << 8;
     case 1:
       k1 ^= ((uint64_t)tail[0]) << 0;
       k1 *= c1;
@@ -392,10 +368,8 @@ inline MurmurHashResult MurmurHash(void const* key, int len, MurmurSeed seed = G
   uint32_t k1 = 0;
 
   switch (len & 3) {
-    case 3:
-      k1 ^= tail[2] << 16;
-    case 2:
-      k1 ^= tail[1] << 8;
+    case 3: k1 ^= tail[2] << 16;
+    case 2: k1 ^= tail[1] << 8;
     case 1:
       k1 ^= tail[0];
       k1 *= c1;
@@ -461,18 +435,12 @@ inline uint64_t WideMurmurHash(void const* key, int len, MurmurSeed seed = GRAEH
   uint64_t k2 = 0;
 
   switch (len & 15) {
-    case 15:
-      k2 ^= ((uint64_t)tail[14]) << 48;
-    case 14:
-      k2 ^= ((uint64_t)tail[13]) << 40;
-    case 13:
-      k2 ^= ((uint64_t)tail[12]) << 32;
-    case 12:
-      k2 ^= ((uint64_t)tail[11]) << 24;
-    case 11:
-      k2 ^= ((uint64_t)tail[10]) << 16;
-    case 10:
-      k2 ^= ((uint64_t)tail[9]) << 8;
+    case 15: k2 ^= ((uint64_t)tail[14]) << 48;
+    case 14: k2 ^= ((uint64_t)tail[13]) << 40;
+    case 13: k2 ^= ((uint64_t)tail[12]) << 32;
+    case 12: k2 ^= ((uint64_t)tail[11]) << 24;
+    case 11: k2 ^= ((uint64_t)tail[10]) << 16;
+    case 10: k2 ^= ((uint64_t)tail[9]) << 8;
     case 9:
       k2 ^= ((uint64_t)tail[8]) << 0;
       k2 *= c2;
@@ -480,20 +448,13 @@ inline uint64_t WideMurmurHash(void const* key, int len, MurmurSeed seed = GRAEH
       k2 *= c1;
       h2 ^= k2;
 
-    case 8:
-      k1 ^= ((uint64_t)tail[7]) << 56;
-    case 7:
-      k1 ^= ((uint64_t)tail[6]) << 48;
-    case 6:
-      k1 ^= ((uint64_t)tail[5]) << 40;
-    case 5:
-      k1 ^= ((uint64_t)tail[4]) << 32;
-    case 4:
-      k1 ^= ((uint64_t)tail[3]) << 24;
-    case 3:
-      k1 ^= ((uint64_t)tail[2]) << 16;
-    case 2:
-      k1 ^= ((uint64_t)tail[1]) << 8;
+    case 8: k1 ^= ((uint64_t)tail[7]) << 56;
+    case 7: k1 ^= ((uint64_t)tail[6]) << 48;
+    case 6: k1 ^= ((uint64_t)tail[5]) << 40;
+    case 5: k1 ^= ((uint64_t)tail[4]) << 32;
+    case 4: k1 ^= ((uint64_t)tail[3]) << 24;
+    case 3: k1 ^= ((uint64_t)tail[2]) << 16;
+    case 2: k1 ^= ((uint64_t)tail[1]) << 8;
     case 1:
       k1 ^= ((uint64_t)tail[0]) << 0;
       k1 *= c1;
@@ -566,21 +527,13 @@ inline uint64_t MurmurHash64(const void* key, int len, MurmurSeed seed = GRAEHL_
   const unsigned char* data2 = (const unsigned char*)data;
 
   switch (len & 7) {
-    case 7:
-      h ^= uint64_t(data2[6]) << 48;
-    case 6:
-      h ^= uint64_t(data2[5]) << 40;
-    case 5:
-      h ^= uint64_t(data2[4]) << 32;
-    case 4:
-      h ^= uint64_t(data2[3]) << 24;
-    case 3:
-      h ^= uint64_t(data2[2]) << 16;
-    case 2:
-      h ^= uint64_t(data2[1]) << 8;
-    case 1:
-      h ^= uint64_t(data2[0]);
-      h *= m;
+    case 7: h ^= uint64_t(data2[6]) << 48;
+    case 6: h ^= uint64_t(data2[5]) << 40;
+    case 5: h ^= uint64_t(data2[4]) << 32;
+    case 4: h ^= uint64_t(data2[3]) << 24;
+    case 3: h ^= uint64_t(data2[2]) << 16;
+    case 2: h ^= uint64_t(data2[1]) << 8;
+    case 1: h ^= uint64_t(data2[0]); h *= m;
   };
 
   h ^= h >> r;
@@ -633,13 +586,9 @@ inline uint32_t MurmurHash32(const void* key, int len, MurmurSeed seed = GRAEHL_
   // Handle the last few bytes of the input array
 
   switch (len) {
-    case 3:
-      h ^= data[2] << 16;
-    case 2:
-      h ^= data[1] << 8;
-    case 1:
-      h ^= data[0];
-      h *= m;
+    case 3: h ^= data[2] << 16;
+    case 2: h ^= data[1] << 8;
+    case 1: h ^= data[0]; h *= m;
   };
 
   // Do a few final mixes of the hash to ensure the last few
@@ -715,13 +664,9 @@ inline uint64_t MurmurHash64(const void* key, int len, MurmurSeed seed = GRAEHL_
   }
 
   switch (len) {
-    case 3:
-      h2 ^= ((unsigned char*)data)[2] << 16;
-    case 2:
-      h2 ^= ((unsigned char*)data)[1] << 8;
-    case 1:
-      h2 ^= ((unsigned char*)data)[0];
-      h2 *= m;
+    case 3: h2 ^= ((unsigned char*)data)[2] << 16;
+    case 2: h2 ^= ((unsigned char*)data)[1] << 8;
+    case 1: h2 ^= ((unsigned char*)data)[0]; h2 *= m;
   };
 
   h1 ^= h2 >> 18;

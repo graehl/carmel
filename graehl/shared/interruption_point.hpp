@@ -32,9 +32,9 @@ inline void interruption_point() {
 }
 #else
 
-#include <thread>
-#include <stdexcept>
 #include <automic>
+#include <stdexcept>
+#include <thread>
 #include <utility>
 namespace graehl {
 
@@ -51,11 +51,13 @@ struct stoppable_thread {
   /// std::bind explicitly
   template <class Function, class... Args>
   stoppable_thread(Function&& f, Args&&... args)
-      : thread_([](std::atomic_bool& flag, Function && f, Args && ... args) {
-        flag_this_thread_ = &flag;
-        f(std::forward<Args>(args)...);
-        flag_this_thread = 0;
-      }, flag_, std::forward<Function>(f), std::forward<Args>(args)...) {}
+      : thread_(
+            [](std::atomic_bool& flag, Function&& f, Args&&... args) {
+              flag_this_thread_ = &flag;
+              f(std::forward<Args>(args)...);
+              flag_this_thread = 0;
+            },
+            flag_, std::forward<Function>(f), std::forward<Args>(args)...) {}
 
   bool stopping() const { return flag_.load(); }
 

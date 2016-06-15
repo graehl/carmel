@@ -126,18 +126,16 @@
 #endif
 
 
-#include <graehl/shared/os.hpp>
-#include <graehl/shared/containers.hpp>
-#include <memory>
-
 #include <boost/noncopyable.hpp>
-#include <graehl/shared/percent.hpp>
 #include <graehl/shared/assertlvl.hpp>
-
-#include <cstddef>
-#include <vector>
-#include <stdexcept>
+#include <graehl/shared/containers.hpp>
+#include <graehl/shared/os.hpp>
+#include <graehl/shared/percent.hpp>
 #include <algorithm>
+#include <cstddef>
+#include <memory>
+#include <stdexcept>
+#include <vector>
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
@@ -397,8 +395,8 @@ struct lazy_kbest_stats {
       o << n_passed << " [sub-]derivations found]";
       return;
     }
-    o << "uniqueness-filtered " << n_filtered << " of " << n_total() << " [sub-]derivations, leaving " << n_passed
-      << ", or " << graehl::percent<5>((double)n_passed, (double)n_total()) << "]";
+    o << "uniqueness-filtered " << n_filtered << " of " << n_total() << " [sub-]derivations, leaving "
+      << n_passed << ", or " << graehl::percent<5>((double)n_passed, (double)n_total()) << "]";
   }
   typedef lazy_kbest_stats self_type;
 };
@@ -657,8 +655,7 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
   derivation_type get_best(Environment& env, lazy_kbest_index_type n) {
     EIFDBG(LAZYF, 2, KBESTINFOT("GET_BEST n=" << n << " node=" << *this); KBESTNESTT);
     if (n < memo.size()) {
-      EIFDBG(LAZYF, 3,
-             KBESTINFOT("existing " << this << "[n=" << n << "] = " << memo[n] << ", queue=" << *this));
+      EIFDBG(LAZYF, 3, KBESTINFOT("existing " << this << "[n=" << n << "] = " << memo[n] << ", queue=" << *this));
       if (memo[n] == PENDING()) {
         KBESTERRORQ("lazy_forest::get_best",
                     "memo entry " << n << " for lazy_forest@0x" << (void*)this

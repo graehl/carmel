@@ -20,9 +20,9 @@
 #define GRAEHL_SHARED__VERBOSE_EXCEPTION_HPP
 #pragma once
 
-#include <stdexcept>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 namespace graehl {
@@ -86,8 +86,7 @@ struct verbose_exception : public std::exception {
                     M4 const& m4)
       : file(fil), function(fun), line(lin) {
     std::stringstream mbuf;
-    mbuf << function << "() [" << file << ":" << line << "]: " << m1 << ' ' << m2 << ' ' << m3 << ' ' << m4
-         << ".";
+    mbuf << function << "() [" << file << ":" << line << "]: " << m1 << ' ' << m2 << ' ' << m3 << ' ' << m4 << ".";
     message = mbuf.str();
   }
 
@@ -155,8 +154,6 @@ struct verbose_exception : public std::exception {
   struct etype : graehl::verbose_exception { \
     VERBOSE_EXCEPTION_WRAP(etype)            \
   };
-
-
 
 
 #endif

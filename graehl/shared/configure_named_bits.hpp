@@ -36,8 +36,8 @@
 #pragma once
 
 #include <graehl/shared/hex_int.hpp>
-#include <graehl/shared/string_to.hpp>
 #include <graehl/shared/split.hpp>
+#include <graehl/shared/string_builder.hpp>
 
 namespace graehl {
 

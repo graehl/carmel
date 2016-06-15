@@ -20,15 +20,15 @@
 #define GRAEHL_SHARED__OS_HPP
 #pragma once
 
-#include <graehl/shared/warning_compiler.h>
-#include <fstream>
-#include <string>
-#include <cstdio>
-#include <stdexcept>
-#include <stdlib.h>
-#include <cstring>
-#include <sstream>
 #include <graehl/shared/atoi_fast.hpp>
+#include <graehl/shared/warning_compiler.h>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <stdlib.h>
 // see also shell.hpp for things relying on unix or cygwin shell
 
 #if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && !defined(__CYGWIN__)
@@ -36,12 +36,12 @@
 #include <io.h>
 #include <windows.h>
 #else
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <unistd.h>
 #endif
 
 #if !defined(MEMMAP_IO_WINDOWS) && !defined(MEMMAP_IO_POSIX)
@@ -290,7 +290,7 @@ inline void throw_last_error(std::string const& module = "ERROR") {
 inline bool is_tmpnam_template(std::string const& filename_template) {
   unsigned len = (unsigned)filename_template.length();
   return !(len < TMPNAM_SUFFIX_LEN
-           || filename_template.substr(len-TMPNAM_SUFFIX_LEN, TMPNAM_SUFFIX_LEN) != TMPNAM_SUFFIX);
+           || filename_template.substr(len - TMPNAM_SUFFIX_LEN, TMPNAM_SUFFIX_LEN) != TMPNAM_SUFFIX);
 }
 
 //!< file is removed if keepfile==false (dangerous: another program could grab the filename first!). returns
@@ -304,9 +304,9 @@ inline std::string safe_tmpnam(std::string const& filename_template = "/tmp/tmp.
   if (!is_tmpnam_template(filename_template)) std::strcpy(tmp + filename_template.length(), TMPNAM_SUFFIX);
 
 #ifdef OS_WINDOWS
-  int err = ::_mktemp_s(
-      tmp,
-      ::strlen(tmp) + 1);  // this does not create the file, sadly. alternative (with many retries:
+  int err = ::_mktemp_s(tmp,
+                        ::strlen(tmp)
+                            + 1);  // this does not create the file, sadly. alternative (with many retries:
   // http://stackoverflow.com/questions/6036227/mkstemp-implementation-for-win32/6036308#6036308
   // )
   if (err) throw_last_error(std::string("safe_tmpnam couldn't mkstemp ").append(tmp));
@@ -347,8 +347,7 @@ inline bool safe_unlink(std::string const& file, bool must_succeed = true) {
 }
 
 //!< returns dir/name unless dir is empty (just name, then). if name begins with / then just returns name.
-inline std::string joined_dir_file(std::string const& basedir, std::string const& name = "",
-                                   char pathsep = '/') {
+inline std::string joined_dir_file(std::string const& basedir, std::string const& name = "", char pathsep = '/') {
   if (!name.empty() && name[0] == pathsep)  // absolute name
     return name;
   if (basedir.empty())  // relative base dir
@@ -359,8 +358,7 @@ inline std::string joined_dir_file(std::string const& basedir, std::string const
 }
 
 // FIXME: test
-inline void split_dir_file(std::string const& fullpath, std::string& dir, std::string& file,
-                           char pathsep = '/') {
+inline void split_dir_file(std::string const& fullpath, std::string& dir, std::string& file, char pathsep = '/') {
   using namespace std;
   string::size_type p = fullpath.rfind(pathsep);
   if (p == string::npos) {

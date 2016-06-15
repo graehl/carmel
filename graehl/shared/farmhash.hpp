@@ -63,7 +63,7 @@
 #endif
 
 #include <graehl/shared/cpp11.hpp>
-#include <sdl/graehl/shared/int_types.hpp>
+#include <graehl/shared/int_types.hpp>
 #include <string>
 #if GRAEHL_CPP11
 #include <utility>

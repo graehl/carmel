@@ -28,16 +28,16 @@
 #pragma once
 
 
-#include <vector>
+#include <boost/optional.hpp>
+#include <boost/type_traits/is_integral.hpp>
+#include <graehl/shared/int_types.hpp>
+#include <graehl/shared/shared_ptr.hpp>
+#include <graehl/shared/type_traits.hpp>
+#include <graehl/shared/unordered.hpp>
 #include <map>
 #include <set>
 #include <string>
-#include <boost/optional.hpp>
-#include <graehl/shared/type_traits.hpp>
-#include <graehl/shared/shared_ptr.hpp>
-#include <graehl/shared/int_types.hpp>
-#include <graehl/shared/unordered.hpp>
-#include <boost/type_traits/is_integral.hpp>
+#include <vector>
 
 
 namespace graehl {
@@ -62,28 +62,28 @@ struct TypeString<T, typename graehl::enable_if<graehl::is_integral<T>::value>::
 };
 
 template <class T>
-struct TypeString<std::map<std::string, T> > {
+struct TypeString<std::map<std::string, T>> {
   static std::string get() { return "map to " + TypeString<T>::get(); }
 };
 
 template <class K, class T>
-struct TypeString<std::map<K, T> > {
+struct TypeString<std::map<K, T>> {
   static std::string get() { return "map from " + TypeString<K>::get() + " to " + TypeString<T>::get(); }
 };
 
 template <class K, class T>
-struct TypeString<graehl::unordered_map<K, T> > {
+struct TypeString<graehl::unordered_map<K, T>> {
   static std::string get() { return "map from " + TypeString<K>::get() + " to " + TypeString<T>::get(); }
 };
 
 template <class K, class T>
-struct TypeString<std::pair<K, T> > {
+struct TypeString<std::pair<K, T>> {
   static std::string get() { return "pair of (" + TypeString<K>::get() + ", " + TypeString<T>::get() + ")"; }
 };
 
 #define GRAEHL_TYPE_STRING_TEMPLATE_1(TT, prefix)                                   \
   template <class T>                                                                \
-  struct TypeString<TT<T> > {                                                       \
+  struct TypeString<TT<T>> {                                                        \
     static std::string get() { return std::string(prefix) + TypeString<T>::get(); } \
   };
 

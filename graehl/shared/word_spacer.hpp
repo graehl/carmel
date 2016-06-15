@@ -20,12 +20,12 @@
 #define GRAEHL__SHARED__WORD_SPACER_HPP
 #pragma once
 
-#include <sstream>
-#include <string>
-#include <graehl/shared/print_read.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
+#include <graehl/shared/print_read.hpp>
+#include <graehl/shared/shared_ptr.hpp>
+#include <sstream>
+#include <string>
 
 namespace graehl {
 /// print spaces between each word (none before or after)

@@ -31,8 +31,8 @@ using boost::barrier;
 }
 #else
 #include <cassert>
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
 
 namespace graehl {
 
@@ -74,8 +74,6 @@ struct barrier {
 }
 
 #endif
-
-
 
 
 #endif

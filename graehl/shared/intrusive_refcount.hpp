@@ -34,11 +34,11 @@
 #define GRAEHL__SHARED__INTRUSIVE_REFCOUNT_HPP
 #pragma once
 
-#include <graehl/shared/cpp11.hpp>
-#include <graehl/shared/type_traits.hpp>
-#include <graehl/shared/alloc_new_delete.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <boost/smart_ptr/detail/atomic_count.hpp>
+#include <graehl/shared/alloc_new_delete.hpp>
+#include <graehl/shared/cpp11.hpp>
+#include <graehl/shared/shared_ptr.hpp>
+#include <graehl/shared/type_traits.hpp>
 #include <cassert>
 #include <utility>
 
@@ -180,8 +180,8 @@ struct shared_ptr_maybe_intrusive<T, typename enable_if<is_refcounted<T>::value>
 };
 
 template <class T>
-inline T* intrusive_clone(
-    T const& x)  // result has refcount of 0-must delete yourself or use to build an intrusive_ptr
+inline T*
+intrusive_clone(T const& x)  // result has refcount of 0-must delete yourself or use to build an intrusive_ptr
 {
   return construct_copy<typename intrusive_traits<T>::user_allocator, T>(x);
 }

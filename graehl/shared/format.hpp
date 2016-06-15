@@ -38,6 +38,4 @@ using std::internal;
 #define FSTR(x, y) fm::str(fm::format(x) % y)
 
 
-
-
 #endif

@@ -24,6 +24,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 
 namespace graehl {
 

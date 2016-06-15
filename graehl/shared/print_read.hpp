@@ -63,12 +63,11 @@
     return i;                                                                                             \
   }
 
-#define TO_OSTREAM_PRINT_FREE(self_type)                                                    \
-  template <class Char, class CharTraits>                                                   \
-  std::basic_ostream<Char, CharTraits>& operator<<(std::basic_ostream<Char, CharTraits>& o, \
-                                                   self_type const& me) {                   \
-    me.print(o);                                                                            \
-    return o;                                                                               \
+#define TO_OSTREAM_PRINT_FREE(self_type)                                                                           \
+  template <class Char, class CharTraits>                                                                          \
+  std::basic_ostream<Char, CharTraits>& operator<<(std::basic_ostream<Char, CharTraits>& o, self_type const& me) { \
+    me.print(o);                                                                                                   \
+    return o;                                                                                                      \
   }
 
 #define FROM_ISTREAM_READ_FREE(self_type)                                                                    \

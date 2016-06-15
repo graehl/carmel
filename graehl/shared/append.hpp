@@ -20,6 +20,8 @@
 #define APPEND_JG_2015_01_07_HPP
 #pragma once
 
+#include <string>
+
 namespace graehl {
 
 template <class V, class Iter>

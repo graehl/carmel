@@ -22,12 +22,13 @@
 #define FROM_STRINGS_JG201266_HPP
 #pragma once
 
-#include <graehl/shared/type_traits.hpp>
-#include <graehl/shared/pointer_traits.hpp>
-#include <graehl/shared/is_container.hpp>
+#include <graehl/shared/adl_to_string.hpp>
 #include <graehl/shared/container.hpp>
+#include <graehl/shared/is_container.hpp>
+#include <graehl/shared/pointer_traits.hpp>
 #include <graehl/shared/string_buffer.hpp>
 #include <graehl/shared/string_to.hpp>
+#include <graehl/shared/type_traits.hpp>
 #include <stdexcept>
 
 namespace graehl {
@@ -45,11 +46,14 @@ struct select_from_strings {
       throw std::runtime_error("from_strings: non-container value expected exactly one source string");
   }
   static inline std::vector<std::string> to_strings(Val const& val) {
-    return strings_type(1, graehl::to_string(val));
+    return strings_type(1, adl::adl_to_string(val));
   }
-  static inline std::string to_string(Val const& val, std::string const& sep_each = " ",
-                                      std::string const& pre_each = "") {
-    return pre_each + graehl::to_string(val);
+  static inline std::string to_string(Val const& val, std::string const& sep_each, std::string pre_each) {
+    adl::adl_append_to_string(pre_each, val);
+    return pre_each;
+  }
+  static inline std::string to_string(Val const& val, std::string const& sep_each = " ") {
+    return adl::adl_to_string(val);
   }
   static inline string_or_strings to_string_or_strings(Val const& val) { return to_string(val); }
 };
@@ -67,7 +71,7 @@ inline std::string range_to_string(Container const& container, std::string const
     else
       append(o, sep_each);
     append(o, pre_each);
-    append(o, graehl::to_string(*i));
+    adl::adl_append_to_string(o, *i);
   }
   return str(o);
 }
@@ -87,7 +91,7 @@ struct select_from_strings<Container, typename enable_if<is_nonstring_container<
     // TODO: test
     strings_type r;
     for (typename Container::const_iterator i = container.begin(), e = container.end(); i != e; ++i)
-      add(r, graehl::to_string(*i));
+      add(r, adl::adl_to_string(*i));
     return r;
   }
   static inline std::string to_string(Container const& container, std::string const& sep_each = " ",

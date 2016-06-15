@@ -54,7 +54,7 @@ sub ctor {
   print join(', ', (map { "class T$_" } @n));
   print ">";
   print " self_type(";
-  print join(', ', (map { "T$_".($_[$_-1] ? " const& " : "& ")."t$_" } @n));
+  print join(', ', (map { "T$_".($_[$_ - 1] ? " const& " : "& ")."t$_" } @n));
   print ")\n : base_type(";
   print join(', ', (map { "t$_" } @n));
   print ") {init();}\n";

@@ -53,12 +53,16 @@ DECLARE_DBG_LEVEL(DDARY)
 #define DDARY(x)
 #endif
 
-#include <boost/smart_ptr/shared_array.hpp>
 #include <boost/property_map/property_map.hpp>
-#include <string>
+#include <boost/smart_ptr/shared_array.hpp>
+#include <cstddef>
 #include <functional>
 #include <memory>
-#include <cstddef>
+#include <string>
+
+#ifdef _MSC_VER
+#undef min
+#endif
 
 #define GRAEHL_D_ARY_APPEND_ALWAYS_PUSH 1
 // heapify (0) is untested.  0 means switch between push and heapify depending
@@ -87,7 +91,7 @@ DECLARE_DBG_LEVEL(DDARY)
 
 #if GRAEHL_D_ARY_HEAP_CACHE_ALIGN_ROOT
 #include <graehl/shared/aligned_allocator.hpp>
-#define GRAEHL_D_ARY_DEFAULT_CONTAINER(T, ARITY) std::vector<T, graehl::aligned_allocator<T, ARITY> >
+#define GRAEHL_D_ARY_DEFAULT_CONTAINER(T, ARITY) std::vector<T, graehl::aligned_allocator<T, ARITY>>
 #else
 #define GRAEHL_D_ARY_DEFAULT_CONTAINER(T, ARITY) std::vector<T>
 #endif
@@ -136,13 +140,13 @@ namespace boost {
 template <class PMap>
 struct property_traits;
 template <class Key, class Index>
-struct property_traits<graehl::no_index_in_heap<Key, Index> > {
+struct property_traits<graehl::no_index_in_heap<Key, Index>> {
   typedef boost::writable_property_map_tag category;
   typedef Key key_type;
   typedef Index value_type;
 };
 template <class Key, class Distance>
-struct property_traits<graehl::deref_distance<Key, Distance> > {
+struct property_traits<graehl::deref_distance<Key, Distance>> {
   typedef boost::writable_property_map_tag category;
   typedef Key key_type;
   typedef Distance value_type;
@@ -219,12 +223,12 @@ do in my first uses.  plus, if keys are indices and the map is a vector, it's ba
 //=======================================================================
 //
 
-#include <vector>
-#include <cstddef>
-#include <algorithm>
-#include <utility>
-#include <cassert>
 #include <boost/shared_array.hpp>
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <utility>
+#include <vector>
 
 
 // D-ary heap using an indirect compare operator (use identity_property_map
@@ -256,7 +260,7 @@ template <class Value, std::size_t Arity, class DistanceMap = identity_distance<
           class IndexInHeapPropertyMap = no_index_in_heap<Value, unsigned>,
           class Better = std::less<typename boost::property_traits<DistanceMap>::value_type>,
           class Container = GRAEHL_D_ARY_DEFAULT_CONTAINER(Value, Arity), class Size = unsigned,
-          class Equal = std::equal_to<Value> >
+          class Equal = std::equal_to<Value>>
 class d_ary_heap_indirect {
 
  public:
@@ -801,7 +805,7 @@ This is definitely linear to n.
           GRAEHL_D_ARY_MAYBE_IMPROVE_CHILD_I;
         }
       } else {
-        for (size_type i = 1, e = heap_size-first_child_index; i < e; ++i) {
+        for (size_type i = 1, e = heap_size - first_child_index; i < e; ++i) {
           GRAEHL_D_ARY_MAYBE_IMPROVE_CHILD_I;
         }
       }

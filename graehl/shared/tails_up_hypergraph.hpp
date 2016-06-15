@@ -94,20 +94,20 @@ usage:
   TUHG_EXTRA_Q()
 #define TUHG_SHOWP(l, n, mu) SHOWIF1(TUHG, l, n, TUHG_PRINT(vertices(g), pair_getter(mu)))
 
-#include <graehl/shared/os.hpp>
-#include <graehl/shared/containers.hpp>
-#include <graehl/shared/hypergraph.hpp>
-#include <graehl/shared/property_factory.hpp>
-#include <graehl/shared/print_read.hpp>
-#include <graehl/shared/word_spacer.hpp>
-#include <graehl/shared/d_ary_heap.hpp>
-#include <graehl/shared/string_to.hpp>
-#include <graehl/shared/verbose_exception.hpp>
 #include <boost/property_map/property_map.hpp>
-#include <graehl/shared/type_traits.hpp>
-#include <boost/range/iterator_range.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
+#include <boost/range/iterator_range.hpp>
+#include <graehl/shared/containers.hpp>
+#include <graehl/shared/d_ary_heap.hpp>
+#include <graehl/shared/hypergraph.hpp>
+#include <graehl/shared/os.hpp>
+#include <graehl/shared/print_read.hpp>
+#include <graehl/shared/property_factory.hpp>
+#include <graehl/shared/string_to.hpp>
+#include <graehl/shared/type_traits.hpp>
+#include <graehl/shared/verbose_exception.hpp>
+#include <graehl/shared/word_spacer.hpp>
 
 
 namespace graehl {
@@ -195,8 +195,7 @@ struct HTailMult {
 };
 
 // stores G ref
-template <class G, class EdgeMapFactory = property_factory<G, edge_tag>,
-          class VertMapFactory = property_factory<G, vertex_tag>,
+template <class G, class EdgeMapFactory = property_factory<G, edge_tag>, class VertMapFactory = property_factory<G, vertex_tag>,
           class ContS = VectorS  // how we hold the adjacent edges for tail vert.
           >
 struct TailsUpHypergraph {
@@ -389,7 +388,7 @@ struct TailsUpHypergraph {
     }
 
     BestTreeStats stat;
-    typedef d_ary_heap_indirect<VD, graehl::OPTIMAL_HEAP_ARITY, VertexCostMap, LocsP, better_cost<graph> > Heap;
+    typedef d_ary_heap_indirect<VD, graehl::OPTIMAL_HEAP_ARITY, VertexCostMap, LocsP, better_cost<graph>> Heap;
     Heap heap;
     BestTree(Self& r, VertexCostMap mu_, VertexPredMap pi_, EdgeCostMap ec,
              BestTreeOptionsParsed const& bestOpt = BestTreeOptions())
