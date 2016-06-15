@@ -4,55 +4,98 @@
 ---
 Language:        Cpp
 AccessModifierOffset: -1
-ConstructorInitializerIndentWidth: 4
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
 AlignEscapedNewlinesLeft: true
+AlignOperands:   true
 AlignTrailingComments: false
-AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: true
-AllowShortFunctionsOnASingleLine: Inline
-AlwaysBreakTemplateDeclarations: true
+AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: true
-BreakBeforeBinaryOperators: true
+AlwaysBreakTemplateDeclarations: true
+BinPackArguments: true
+BinPackParameters: true
+BraceWrapping:
+  AfterClass:      false
+  AfterControlStatement: false
+  AfterEnum:       false
+  AfterFunction:   false
+  AfterNamespace:  false
+  AfterObjCDeclaration: false
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeCatch:     false
+  BeforeElse:      false
+  IndentBraces:    false
+BreakBeforeBinaryOperators: All
+BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializersBeforeComma: true
+BreakAfterJavaFieldAnnotations: false
+BreakStringLiterals: true
+ColumnLimit:     110
+CommentPragmas:  '^}}}?}?'
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+DisableFormat:   false
+# ExperimentalAutoDetectBinPacking: false
+ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
+# matched against the filename of an include (including the <> or "") in order. The value belonging to the first matching regular expression is assigned and #includes are sorted first according to increasing category number and then alphabetically within each category:
+IncludeCategories:
+  - Regex:           '^<graehl/'
+    Priority:        1
+  - Regex:           '^<boost/'
+    Priority:        4
+  - Regex:           '^"'
+    Priority:        100
+  - Regex:           /
+    Priority:        5
+  - Regex:           '\.h$'
+    Priority:        7
+  - Regex:           '^<[^.]*>$'
+    Priority:        6
+IncludeIsMainRegex: '(Main|_test)?$'
 IndentCaseLabels: true
+IndentWidth:     2
 IndentWrappedFunctionNames: false
-IndentFunctionDeclarationAfterType: false
-MaxEmptyLinesToKeep: 2
 KeepEmptyLinesAtTheStartOfBlocks: true
+MacroBlockBegin: ''
+MacroBlockEnd:   ''
+MaxEmptyLinesToKeep: 2
 NamespaceIndentation: None
+ObjCBlockIndentWidth: 2
 ObjCSpaceAfterProperty: false
 ObjCSpaceBeforeProtocolList: false
 PenaltyBreakBeforeFirstCallParameter: 40
-ColumnLimit:     110
-PenaltyExcessCharacter: 4
 PenaltyBreakComment: 400
-PenaltyBreakString: 100
 PenaltyBreakFirstLessLess: 10
+PenaltyBreakString: 100
+PenaltyExcessCharacter: 4
 PenaltyReturnTypeOnItsOwnLine: 100
-DerivePointerAlignment: false
-PointerBindsToType: true
 PointerAlignment: Left
-BinPackParameters: true
-ExperimentalAutoDetectBinPacking: false
+ReflowComments:  true
+SortIncludes:    true
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
 SpacesBeforeTrailingComments: 2
-Cpp11BracedListStyle: true
+SpacesInAngles:  false
+SpacesInContainerLiterals: true
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
 Standard:        Cpp11
-IndentWidth:     2
 TabWidth:        8
 UseTab:          Never
-BreakBeforeBraces: Attach
-SpacesInParentheses: false
-SpacesInAngles:  false
-SpaceInEmptyParentheses: false
-SpacesInCStyleCastParentheses: false
-SpacesInContainerLiterals: true
-SpaceBeforeAssignmentOperators: true
-ContinuationIndentWidth: 4
-CommentPragmas:  '^}}}?'
-SpaceBeforeParens: ControlStatements
-ForEachMacros:   [ forall, foreach, Q_FOREACH, BOOST_FOREACH ]
+JavaScriptQuotes: Leave
 ...
