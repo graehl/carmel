@@ -233,7 +233,7 @@ inline uint64_t next_power_of_2(uint64_t x) {
   if (!x) return 1;
 #if HAVE_BUILTIN_CLZ
   assert(sizeof(x) == sizeof(unsigned long));
-  return 1u << (64 - __builtin_clzl(x - 1));
+  return (uint64_t)1 << (64 - __builtin_clzl(x - 1));
 #else
   assert(x <= (1ULL << 60));
   --x;

@@ -596,7 +596,7 @@ struct main {
   int parse_args(int argc, char** argv) {
     std::string const v = "-v";
     if (opt.add_verbose)
-      for (int i = argc - 2; i; --i)
+      for (int i = argc - 2; i > 0; --i)
         if (argv[i] == v) {
           verbose = atoi_nows(argv[i + 1]);
           break;

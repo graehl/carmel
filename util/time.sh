@@ -112,7 +112,7 @@ save12timeram() {
     echo "time $*" 1>&2
     if full_linuxtime ; then
         local timeout=`mktemp /tmp/timeram.out.XXXXXX`
-        /usr/bin/time  -f '%Es - %Mkb peak %Iinputs %Ooutputs' -o $timeout -- "$@" >$save1 2>&1
+        /usr/bin/time  -f '%Es real (user:%U sys:%S) - %Mkb peak %Iinputs %Ooutputs' -o $timeout -- "$@" >$save1 2>&1
         cat $timeout
     else
         TIMEFORMAT='%3lR'
@@ -311,13 +311,16 @@ save1time() {
 
 }
 untilfail() {
-    echo "$*"
     local i=1
     [[ $smallestdir ]] && mkdir -p $smallestdir && echo "smaller outputs in $smallestdir"
+    untildir=${untildir:-untilfail}
+    set -e
     mkdir $untildir || true
-    rm -f $untildir/FAIL*
+    rm -f $untildir/FAIL* $untildir/FINISH*
+    echo "$*" | tee $untildir/do.sh
+    chmod +x $untildir/do.sh
     local lasti=0
-    (set -e
+    local broke=
     while save1time $untildir/$i.out $untildir/$i.time "$@" 2>$untildir/$i.err  ; do
         echo $i `cat $untildir/$i.time` > $untildir/FINISH
         perl -e '$i=$ARGV[0]; $g=10;$gn=100;print ($i % $g == 0 ? $i : ".");print "\n" if $i % $gn == 0' $i
@@ -327,13 +330,21 @@ untilfail() {
         fi
         lasti=$i
         i=$j
+        if [[ $maxi ]] && [[ $i -gt $maxi ]] ; then
+            echo reached maxi=$maxi
+            broke=1
+            break
+        fi
         echo $i > $untildir/START
     done
-    ln -sf $i.out $untildir/FAIL.out
-    ln -sf $i.err $untildir/FAIL.err
-    ln -sf $i.time $untildir/FAIL.time
-    )
-    preview $untildir/FINISH $untildir/FAIL*
-    ls -l $untildir/FINISH $untildir/FAIL*
+    name=FAIL
+    if [[ $broke ]] ; then
+        name=FINAL
+    fi
+    ln -sf $i.out $untildir/$name.out
+    ln -sf $i.err $untildir/$name.err
+    ln -sf $i.time $untildir/$name.time
+    preview $untildir/FINISH $untildir/$name*
+    ls -l $untildir/FINISH $untildir/$name*
     echo "$*"
 }

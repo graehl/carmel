@@ -47,6 +47,22 @@ fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
+cmakebuild() {
+    cmake --build .
+}
+cmakeinstall() {
+    cmake -DCMAKE_INSTALL_PREFIX=${PREFIX:-/usr/local} -P cmake_install.cmake
+}
+linelengths() {
+    perl -lne '$c{length($_)}++ }{ print qq($_ $c{$_}) for (keys %c);' "$@" | sort -n
+    echo "(LENGTH COUNT)"
+
+}
+killbranchr() {
+    (set -x
+     git push origin --delete "$1"
+     )
+}
 #export SDL_LD_PRELOAD=$libasan
 xmtlibshared=$xmtextbase/Shared/cpp
 grepu() {
@@ -73,7 +89,21 @@ chosts="j c-graehl gitbuild1 gitbuild2"
 chost=c-graehl
 jhost=j
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1"
-
+jemalloclib=$xmtlib/jemalloc/lib/libjemalloc.so
+tbbmalloclib=$xmtlib/tbb-4.4.0/lib/libtbbmalloc.so
+tbbmallocproxylib=$xmtlib/tbb-4.4.0/lib/libtbbmalloc_proxy.so
+tbbplay() {
+    LD_PRELOAD=$tbbmallocproxylib:$tbbmalloclib "$@"
+}
+jeprof() {
+    MALLOC_CONF="prof:true,lg_prof_sample:1,prof_accum:false,prof_prefix:jeprof.out" LD_PRELOAD=$jemalloclib "$@"
+}
+jeplay() {
+    MALLOC_CONF="prof:true,prof_accum:false,prof_prefix:jeprof.out" LD_PRELOAD=$jemalloclib "$@"
+}
+jestat() {
+    MALLOC_CONF="stats_print:true" LD_PRELOAD=$jemalloclib "$@"
+}
 mendco() {
     git checkout "$@"
     git commit -C HEAD --amend
@@ -227,9 +257,10 @@ bent() {
         gccsuf=${gccsuf:--6}
         #gccsuf=
         #rm -rf entcore
-        CC=gcc$gccsuf CXX=g++$gccsuf BUILD_TYPE=Debug cmakemac ../ent "$@"
+        CC=gcc$gccsuf CXX=g++$gccsuf BUILD_TYPE=Debug cmakemac ../ent -DGCC_ASAN=1 "$@"
         set -x
-        [[ $notest ]]  || cd entscripttests && echo | $vgcmd ./entscripttests $vgscript
+        [[ $notest ]]  || make test
+            \cd entscripttests && echo | $vgcmd ./entscripttests $vgscript
     )
 }
 scanbent() {
@@ -1234,6 +1265,7 @@ oscptar() {
 }
 osmake() {
     (
+        export SDL_EXTERNALS_PATH=`echo ~/c/sdl-externals/$lwarch`
         set -e
         #rm -rf $osdirbuild
         mkdir -p $osdirbuild
@@ -1241,7 +1273,8 @@ osmake() {
         cd $osdirbuild
         showvars_required CC CXX
         $CXX -v
-        cmake $osgitdir/$hypdir "$@" && TERM=dumb make -j3 VERBOSE=1
+        set -x
+        cmake $osgitdir/$hypdir "$@" && TERM=dumb make -j4 VERBOSE=1
     )
 }
 osmakec() {
@@ -1289,8 +1322,8 @@ linosmake() {
         #-DSDL_BUILD_TYPE=$SDL_BUILD_TYPE
         sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE "
         local cleanpre
-        [[ $noclean ]] || cleanpre="rm -rf $osdirbuild"
-        c-s ". ~/u/localgcc.sh;$cleanpre;mkdir -p $osdirbuild;cd $osdirbuild; set -x; export SDL_EXTERNALS_PATH=/home/graehl/c/sdl-externals/FC12; cmake $sdlbuildarg $osgitdir/$hypdir && TERM=dumb make -j15 VERBOSE=0 && Hypergraph/hyp compose --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn" 2>&1 | filter-gcc-errors
+        [[ $noclean ]] || cleanpre="rm -rf $osdirbuild;"
+        c-s ". ~/u/localgcc.sh;$cleanpre mkdir -p $osdirbuild;cd $osdirbuild; set -x; export SDL_EXTERNALS_PATH=/home/graehl/c/sdl-externals/FC12; cmake $sdlbuildarg $osgitdir/$hypdir && TERM=dumb make -j15 VERBOSE=0 && Hypergraph/hyp compose --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn" 2>&1 | filter-gcc-errors
     )
 }
 osreg() {
@@ -2270,6 +2303,9 @@ changeid() {
     local cid=`git log -1 | grep Change-Id: | cut -d':' -f2`
     echo $cid
 }
+rpathshow() {
+    perl $xmtx/scripts/rpath.pl show ${1:-.}
+}
 rmrpath() {
     perl $xmtx/scripts/rpath.pl strip ${1:-.}
     perl $xmtx/scripts/rpath.pl show ${1:-.}
@@ -2293,7 +2329,7 @@ xmtpub=$(echo ~/pub)
 rmxmt1() {
     (
         set -e
-        cd $xmtpub
+        mkdir -p $xmtpub
         if [[ -L $1 ]] ; then
             local d=`readlink $1`
             require_dir $d
@@ -2330,19 +2366,23 @@ ext2pub12() {
     (
         from=$1/libraries
         ken=KenLM-5.3.0/5-gram
-        libs="$ken nplm nplm01 liblbfgs-1.10 tbb-4.4.0 lmdb apr-1.4.2 apr-util-1.3.10 zeromq-4.0.4 cmph-0.6 hadoop-hdp2.1 openssl-1.0.1e svmtool++ liblinear-1.94 protobuf-2.6.1 turboparser-2.3.1 boost_1_61_0 tinycdb-0.77 icu-55.1 db-5.3.15 zlib-1.2.8 OpenBLAS-0.2.14 bzip2 log4cxx-0.10.0 jemalloc"
+        libs=$ken
+        #libs="$ken nplm nplm01 liblbfgs-1.10 tbb-4.4.0 lmdb apr-1.4.2 apr-util-1.3.10 zeromq-4.0.4 cmph-0.6 hadoop-hdp2.1 openssl-1.0.1e svmtool++ liblinear-1.94 protobuf-2.6.1 turboparser-2.3.1 boost_1_61_0 tinycdb-0.77 icu-55.1 db-5.3.15 zlib-1.2.8 OpenBLAS-0.2.14 bzip2 log4cxx-0.10.0 jemalloc"
+        libs+=" OpenBLAS-0.2.14 ad3-1a08a9 apr-1.4.2 apr-util-1.3.10 boost_1_60_0 caffe-rc3 cmph-0.6 cryptopp-5.6.2 db-5.3.15 gflags-2.2 glog-0.3.5 hadoop-0.20.2-cdh3u3 hdf5-1.8.15-patch1 icu-55.1 jemalloc kytea-0.4.7 liblinear-1.94 lmdb-0.9.14 log4cxx-0.10.0 nplm nplm01 openssl-1.0.1e svmtool++ tbb-4.4.0 tinycdb-0.78 tinyxmlcpp-2.5.4 turboparser-2.3.1 zeromq-4.0.4 zlib-1.2.8"
+        local dest=$2/lib
+        mkdir -p $dest
         for d in $libs; do
             d=$from/$d/lib
             if [[ -d $d ]] ; then
-                if cp -a $d/*.so* $2/; then
+                if cp -a $d/*so* $dest/; then
                     echo $d
                 else
                     echo nothing for $d
                 fi
             fi
         done
-        cp -a $from/$ken/bin/* $2/
-        cp -a $from/gcc/lib64/*.so* $2/
+        cp -a $from/$ken/bin/* $dest/
+        cp -a $from/gcc-${GCCVERSION:-6.1.0}/lib64/*.so* $dest/
     )
 }
 ext2pub() {
@@ -2383,7 +2423,7 @@ bakxmt() {
       forcelink $pub/$change $pub/latest-changeid
       cp -af $xmtx/RegressionTests/launch_server.py $bindir/
       echo xmtbins: $xmtbins
-      for f in $xmtbins xmt/lib/*.so TrainableCapitalizer/libTrainableCapitalizer-shared.so CrfDemo/libCrfDemo-shared.so; do
+      for f in $xmtbins xmt/lib/*.so TrainableCapitalizer/libsdl-TrainableCapitalizer-shared.so CrfDemo/libsdl-CrfDemo-shared.so; do
           local b=`basename $f`
           ls -l $f
           local bin=$bindir/$b
@@ -5118,7 +5158,7 @@ usegcc() {
     fi
     local ccache=${ccache:-$(echo ~/bin/ccache)}
     ccachepre=$ccache-
-    if [[ $HOST = pwn ]] ; then
+    if [[ $noccache ]] ; then
         ccachepre=
     fi
     echo2 GCC_SUFFIX $GCC_SUFFIX
@@ -7451,7 +7491,7 @@ vgsbmt() {
     variant=release tmpsbmt
 }
 dusort() {
-    perl -e 'require "$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl";while (<>) {$n=()=m#/#g;push @ {$a[$n]},$_;} for (reverse(@a)) {print sort_by_num(\&first_mega,$_); }' "$@"
+    perl -e 'require "$ENV{HOME}/u/libgraehl.pl";while (<>) {$n=()=m#/#g;push @ {$a[$n]},$_;} for (reverse(@a)) {print sort_by_num(\&first_mega,$_); }' "$@"
 }
 realwhich() {
     whichreal "$@"
@@ -7561,7 +7601,7 @@ jobseq() {
     seq -f %7.0f "$@"
 }
 lcext() {
-    perl -e 'for (@ARGV) { $o=$_; s/(\.[^. ]+)$/lc($1)/e; if ($o ne $_) { print "mv $o $_\n";rename $o,$_ unless $ENV {DEBUG};} }' -- "$@"
+    perl -e 'for (@ARGV) { $o=$_; s/(\.[^. ]+)$/lc($1)/e; if ($o ne $_) { print "mv $o $_\n";rename $o,$_ unless $ENV{DEBUG};} }' -- "$@"
 }
 
 mkstamps() {
@@ -7803,7 +7843,7 @@ range() {
     local to=${2:-99999999}
     shift
     shift
-    perl -e 'require "$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl";$"=" ";' \
+    perl -e 'require "$ENV{HOME}/u/libgraehl.pl";$"=" ";' \
          -e '$F=shift;$T=shift;&argvz;$n=0;while (<>) { ++$n;;print if $n>=$F && $n<=$T }' \
          $from $to "$@"
     if false ; then
@@ -8078,7 +8118,7 @@ diffother() {
 other1() {
     local f=${1:?'returns $other1dir/$1 with $other1dir in place of the first part of $1'}
     showvars_required other1dir
-    other1=$other1 perl -e 'for (@ARGV) { s|^/?[^/]+/|$ENV {other1}/|; print "$_\n"}' "$@"
+    other1=$other1 perl -e 'for (@ARGV) { s|^/?[^/]+/|$ENV{other1}/|; print "$_\n"}' "$@"
 }
 
 diffother1() {
@@ -8342,9 +8382,9 @@ function cleanr ()
 {
     find . -name '*~' -exec rm {} \;
 }
-alias perl1="perl -e 'require \"\$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";' -e "
-alias perl1p="perl -e 'require \"\$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END {println();}' -e "
-alias perl1c="perl -ne 'require \"\$ENV {HOME}/blobs/libgraehl/latest/libgraehl.pl\";\$\"=\" \";END {while ((\$k,\$v)=each \%c) { print qq {\$k: \$v };println();}' -e "
+alias perl1="perl -e 'require \"\$ENV{HOME}/u/libgraehl.pl\";\$\"=\" \";' -e "
+alias perl1p="perl -e 'require \"\$ENV{HOME}/u/libgraehl.pl\";\$\"=\" \";END {println();}' -e "
+alias perl1c="perl -ne 'require \"\$ENV{HOME}/u/libgraehl.pl\";\$\"=\" \";END {while ((\$k,\$v)=each \%c) { print qq {\$k: \$v };println();}' -e "
 alias clean="rm *~"
 
 alias cpup="cp -vRdpu"
@@ -8679,7 +8719,7 @@ ogetbleu() {
 
 
 hypfromdata() {
-    perl -e '$whole=$ENV {whole};$ns=$ENV {nsents};$ns=999999999 unless defined $ns;while (<>) { if (/^(\d+) -1 \# \# (.*) \# \#/) { if ($l ne $1) { print ($whole ? $_ : "$2\n");last unless $n++ < $ns; $l=$1; } } } ' "$@"
+    perl -e '$whole=$ENV{whole};$ns=$ENV{nsents};$ns=999999999 unless defined $ns;while (<>) { if (/^(\d+) -1 \# \# (.*) \# \#/) { if ($l ne $1) { print ($whole ? $_ : "$2\n");last unless $n++ < $ns; $l=$1; } } } ' "$@"
 }
 
 stripbracespace() {
@@ -8688,7 +8728,7 @@ stripbracespace() {
 
 # input is blank-line separated paragraphs. print first nlines of first nsents paragraphs. blank=1 -> print separating newline
 firstlines() {
-    perl -e '$blank=$ENV {blank};$ns=$ENV {nsents};$ns=999999999 unless defined $ns;$max=1;$max=$ENV {nlines} if exists $ENV {nlines};$nl=0;while (<>) { print if $nl++<$max; if (/^$/) {$nl=0;print "\n" if $blank;last unless $n++ < $ns;} }' "$@"
+    perl -e '$blank=$ENV{blank};$ns=$ENV{nsents};$ns=999999999 unless defined $ns;$max=1;$max=$ENV{nlines} if exists $ENV{nlines};$nl=0;while (<>) { print if $nl++<$max; if (/^$/) {$nl=0;print "\n" if $blank;last unless $n++ < $ns;} }' "$@"
 }
 
 stripunknown() {

@@ -232,6 +232,11 @@ struct small_vector {
     o.clear_nodestroy();
   }
 
+  void init_range(small_vector const& o, size_type begin, size_type end) {
+    const_iterator data = o.begin();
+    init_range(data + begin, data + end);
+  }
+
   /// move
   small_vector& operator=(small_vector&& o) noexcept {
     assert(&o != this);
@@ -368,7 +373,6 @@ struct small_vector {
     init_range(i, end);
   }
 
- protected:
   void init(size_type s, T const& v) {
     assert(s <= kMaxSize);
     alloc(s);
@@ -397,7 +401,6 @@ struct small_vector {
     std::copy(i, end, begin());
   }
 
- public:
   /**
      copy ctor.
   */

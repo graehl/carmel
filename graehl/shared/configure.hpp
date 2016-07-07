@@ -230,6 +230,13 @@ typename Map::mapped_type& append_default(Map& map, typename Map::key_type const
   return r;
 }
 
+template <class V1, class V2>
+V2& append_default(std::pair<V1,V2>& map, V1 const& key) {
+  map.first = key;
+  call_init_default(map.second);
+  return map.second;
+}
+
 template <class Val>
 struct defaulted {
   Val val;
@@ -292,8 +299,20 @@ struct scalar_leaf_configurable<std::map<T1, T2>, void> : false_type {};
 template <class Val, class Enable = void>
 struct map_leaf_configurable : false_type {};
 template <class T1, class T2>
-struct map_leaf_configurable<std::map<T1, T2>, void> : true_type {};
-// TODO: vector<pair> also map config?
+struct map_leaf_configurable<std::map<T1, T2>, void> : true_type {
+  typedef T1 key_type;
+  typedef T2 mapped_type;
+  static inline void clear(std::map<T1, T2> *m) { m->clear(); }
+  enum { is_pair = false };
+};
+template <class T1, class T2>
+struct map_leaf_configurable<std::pair<T1, T2>, void> : true_type {
+  typedef T1 key_type;
+  typedef T2 mapped_type;
+  static inline void clear(std::pair<T1, T2> *) {}
+  enum { is_pair = true };
+};
+
 
 template <class Val, class Enable = void>
 struct set_leaf_configurable : false_type {};
@@ -1182,8 +1201,7 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
   conf_expr const& null_ok(Val const& val = Val()) const { return this->implicit(true, val); }
   template <class V2>
   conf_expr const& implicit(bool enable, V2 const& v2) const {
-    Val val((v2));  // so we store the right type of boost::any
-    opt->implicit = conf_opt::implicit_args(enable, val);
+    opt->implicit = conf_opt::implicit_args(enable, Val(v2));
     return *this;
   }
   template <class V2>
@@ -1192,8 +1210,7 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
   }
   template <class V2>
   conf_expr const& init(bool enable, V2 const& v2) const {
-    Val val((v2));  // so we store the right type of boost::any in init_args
-    opt->init = conf_opt::init_args(enable, val);
+    opt->init = conf_opt::init_args(enable, Val(v2));
     return *this;
   }
   template <class V2>
@@ -1733,6 +1750,12 @@ struct configure_backend_base : configure_backend {
       configure::conf_expr_base subconf(conf, to_string(i->first));
       configure::configure_action_from_base(sub(), action, &i->second, subconf);
     }
+  }
+
+  template <class Action, class A, class B>
+  void defer_map_action(Action const& action, std::pair<A, B>* i, conf_expr_base const& conf) const {
+    configure::conf_expr_base subconf(conf, to_string(i->first));
+    configure::configure_action_from_base(sub(), action, &i->second, subconf);
   }
 
   template <class Action, class Val>
