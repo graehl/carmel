@@ -47,6 +47,19 @@ fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
+aglines() {
+    ag --nogroup --nofilename "$@"
+}
+wpm() {
+    if [[ $1 ]] ; then
+        cd "$1"
+    fi
+    for f in evalresults*; do
+        (ag BLEU $f)
+    done
+    (cd eval_slot;aglines 'Words/Minute|MaxVM' | $UTIL/summarize_num.pl)
+    cat evalresults_avg/test-results.txt
+}
 cmakebuild() {
     cmake --build .
 }
