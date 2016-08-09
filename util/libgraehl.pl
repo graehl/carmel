@@ -12,14 +12,10 @@
 #    $scriptdir = &File::Basename::dirname($0);
 #    ($scriptname) = &File::Basename::fileparse($0);
 #    push @INC, $scriptdir;
-#     $ENV{BLOBS}='/home/nlg-01/blobs' unless exists $ENV{BLOBS};
-#     $ENV{BLOBS}="$ENV{HOME}/blobs" unless -d $ENV{BLOBS};
-#     $BLOBS=$ENV{BLOBS};
-#     my $libgraehl="$BLOBS/libgraehl/v2";
-#     push @INC,$libgraehl if -d $libgraehl;
+#    my $libgraehl="/home/graehl/u";
+#    push @INC,$libgraehl if -d $libgraehl;
 # }
 # require "libgraehl.pl";
-
 
 
 my @ORIG_ARGV=@ARGV;

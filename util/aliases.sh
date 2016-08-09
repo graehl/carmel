@@ -47,6 +47,9 @@ fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
+gitchanged2() {
+    git log --name-status --oneline "$1..$2"
+}
 aglines() {
     ag --nogroup --nofilename "$@"
 }
@@ -2337,7 +2340,7 @@ forcelink() {
         ln -sf "$@"
     fi
 }
-xmtbins="Utf8Normalize/Utf8Normalize xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper Hypergraph/hyp"
+xmtbins="Utf8Normalize/Utf8Normalize xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper Hypergraph/hyp RuleExtractor/MrNNSampleExtract"
 xmtpub=$(echo ~/pub)
 rmxmt1() {
     (
@@ -2413,7 +2416,7 @@ rpathorigin() {
     done
 }
 bakxmt() {
-    ( set -e;
+    ( set -e
       echo ${BUILD:=Release}
       cd $xmtx/$BUILD
       local change=`changeid`
@@ -2459,6 +2462,7 @@ bakxmt() {
               forcelink $pub/$1 $pub2/$1
           fi
       fi
+      set +e
       $bindir/xmt.sh --help 2>&1 | head -3
     )
 }
@@ -4301,6 +4305,10 @@ yreg() {
              xmtbins+=",$xmtpubdir/$f/xmt.sh"
          done
      fi
+     export MAVEN_OPTS="-Xmx512m -Xms128m -Xss2m"
+     export JAVA_HOME=/home/hadoop/jdk1.8.0_60
+     export PATH=$JAVA_HOME/bin:$PATH
+     export SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/
      if [[ ${1:-} ]] ; then
          local regr=$1
          shift
@@ -4406,7 +4414,7 @@ linjen() {
      GCCVERSION=${GCCVERSION:-6.1.0}
      gccprefix=$xmtextbase/FC12/libraries/gcc-$GCCVERSION
      #gccprefix=/local/gcc
-     c-s SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
+     c-s JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/ SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
 }
 jen() {
     cd $xmtx
@@ -7970,7 +7978,7 @@ cprules() {
     popd
 }
 srescue() {
-    find "$@" -name '*.dag.rescue'
+    find "$@" -name '*.dag.rescue*'
 }
 drescue() {
     for f in `srescue "$@"`; do
@@ -7978,7 +7986,7 @@ drescue() {
     done
 }
 rmrescue() {
-    find "$@" -name '*.dag.rescue.*' -exec rm {} \;
+    find "$@" -name '*.dag.rescue*' -exec rm {} \;
 }
 rescue() {
     for f in `srescue "$@"`; do

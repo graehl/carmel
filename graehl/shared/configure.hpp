@@ -44,6 +44,9 @@
 
     also it's not clear if validate gets called on sequence/map elements (but it
     should be)
+
+    TODO: variant (tree) and optional (pointer or boost::optional) expansion:
+    defered-init when store expands one.
 */
 
 #ifndef GRAEHL_SHARED__CONFIGURE_HPP
@@ -752,7 +755,7 @@ struct conf_opt {
   }
 
   template <class Val>
-  void apply_string_value(std::string str, Val* pval, std::string const& pathname,
+  void apply_string_value(std::string const& str, Val* pval, std::string const& pathname,
                           string_consumer const& warn) const {
     warn_deprecated(pathname, warn);
     string_to(str, *pval);

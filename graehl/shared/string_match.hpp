@@ -229,6 +229,7 @@ inline bool equal_streams_as_seq(Istream& i1, Istream& i2) {
   }
   // unreachable!
   assert(0);
+  return false;
 }
 
 template <class ParseAs, class Ch, class Tr>

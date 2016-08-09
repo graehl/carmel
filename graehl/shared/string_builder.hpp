@@ -452,26 +452,20 @@ std::string joined_seq(Seq const& seq, Sep const& sep) {
 }
 
 template <class V>
-struct to_string_select<V, typename enable_if<is_nonstring_container<V>::value>::type> {
-  static inline std::string to_string(V const& val) {
-    string_builder b;
-    b('[');
-    bool first = true;
-    for (typename V::const_iterator i = val.begin(), e = val.end(); i != e; ++i) {
-      if (first)
-        first = false;
-      else
-        b(' ');
-      b(*i);
-    }
-    b(']');
-    return b.str();
+inline std::string to_string_brackets(V const& val) {
+  string_builder b;
+  b('[');
+  bool first = true;
+  for (typename V::const_iterator i = val.begin(), e = val.end(); i != e; ++i) {
+    if (first)
+      first = false;
+    else
+      b(' ');
+    b(*i);
   }
-  template <class Str>
-  static inline void string_to(Str const& s, V& v) {
-    throw "string_to for sequences not yet supported";
-  }
-};
+  b(']');
+  return b.str();
+}
 
 
 }

@@ -57,7 +57,6 @@ struct program_options_exec : boost::noncopyable {
   boost::program_options::positional_options_description positional;
   boost::program_options::variables_map vm;  // TODO!
   ostream_options_description opt_desc;
-  std::set<opt_path> specified_options;  // TODO: needed to check duplicates?
   typedef conf_opt::allow_unrecognized_args allow_unrecognized_args;
   typedef std::map<std::string, allow_unrecognized_args> unrecognized_map;
   unrecognized_map allow_unk_paths;  // TODO: most specific parent so you can have unrecognized nested stuff?
