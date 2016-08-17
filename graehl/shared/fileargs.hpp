@@ -30,7 +30,9 @@
 #ifndef GRAEHL_FILEARGS_DEFAULT_LARGE_BUF
 #define GRAEHL_FILEARGS_DEFAULT_LARGE_BUF 1
 #endif
-
+#ifndef GRAEHL_FILEARGS_LARGE_BUF_BYTES
+#define GRAEHL_FILEARGS_LARGE_BUF_BYTES (64 * 1024)
+#endif
 #ifndef GRAEHL__VALIDATE_INFILE
 // if 1, program options validation for shared_ptr<Stream>
 #define GRAEHL__VALIDATE_INFILE 0
@@ -238,7 +240,7 @@ inline void set_null_file_arg(shared_ptr<std::ostream>& p) {
 template <class Stream>
 struct file_arg {
  protected:
-  typedef large_streambuf<> buf_type;
+  typedef large_streambuf<GRAEHL_FILEARGS_LARGE_BUF_BYTES> buf_type;
   typedef stream_traits<Stream> traits;
   // hold large streambuf separately since iostreams don't destroy their streambufs
   typedef shared_ptr<buf_type> buf_p_type;
@@ -523,10 +525,14 @@ struct file_arg {
   bool is_stdin() const { return name == stdin_filename; }
 
   void set_none() {
+    set_none_keep_name();
+    name = null_filename;
+  }
+
+  void set_none_keep_name() {
     none = true;
     set_null_file_arg(pointer);
     buf.reset();
-    name = null_filename;
   }
 
   bool is_none() const { return none; }
@@ -539,7 +545,12 @@ struct file_arg {
 
   bool is_default_log() const { return pointer.get() == &GRAEHL__DEFAULT_LOG; }
 
-  bool valid() const { return !is_none() && stream(); }
+  bool valid() const {
+    if (is_none()) return false;
+    if (!stream()) const_cast<file_arg*>(this)->set_none_keep_name();
+    return true;
+  }
+
   friend bool valid(self_type const& f) { return f.valid(); }
 
   Stream& stream() const { return *pointer; }
@@ -859,9 +870,8 @@ inline void validate(boost::any& v, std::vector<std::string> const& values,
 }
 #endif
 #endif
-}
 
 
-}
+}}
 
 #endif

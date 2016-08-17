@@ -14,6 +14,11 @@
 #ifndef GRAEHL_SHARED__FTOA_HPP
 #define GRAEHL_SHARED__FTOA_HPP
 
+// http://www.exploringbinary.com/number-of-digits-required-for-round-trip-conversions/
+
+// TODO:
+// http://www.exploringbinary.com/the-shortest-decimal-string-that-round-trips-may-not-be-the-nearest/
+
 // TODO: for fractional digits/non-sci, determine the right amount of left padding (more if the whole number
 // is indeed <1, to keep the significant digits), less if sci notation and/or mantissa has sig. digits (don't
 // want N before . and N after!)
@@ -50,6 +55,7 @@
    0 ; .01
    1 ; 0.01
    2 ; 0.01
+
 
 */
 

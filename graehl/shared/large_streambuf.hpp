@@ -30,7 +30,7 @@ namespace graehl {
 
 // must have at least the lifetime of the stream you attach this to (or else call detach(stream) before this
 // dies)
-template <std::size_t bufsize = 256 * 1024>
+template <std::size_t bufsize = 64 * 1024>
 struct large_streambuf {
   BOOST_STATIC_CONSTANT(std::size_t, size = bufsize);
   char buf[bufsize];

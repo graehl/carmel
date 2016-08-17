@@ -77,17 +77,24 @@ inline void unsync_cout() {
 
    this object should last as long as uses of cout
 */
-struct use_fast_cout {
+struct use_fast_cout_impl {
 #if GRAEHL_BUFFER_STDOUT_NON_TTY
   unique_ptr<bigger_streambuf> pbuf;
 #endif
-  use_fast_cout(std::size_t bufsize = 256 * 1024, bool no_buffer_for_terminal = true) {
+  use_fast_cout_impl(std::size_t bufsize = 32 * 1024, bool no_buffer_for_terminal = true) {
     unsync_stdio();
     unsync_cout();
 #if GRAEHL_BUFFER_STDOUT_NON_TTY
     if (no_buffer_for_terminal && stdout_is_tty()) return;
     pbuf.reset(new bigger_streambuf(bufsize, std::cout, true));
 #endif
+  }
+};
+
+struct use_fast_cout {
+  use_fast_cout(std::size_t bufsize = 32 * 1024, bool no_buffer_for_terminal = true) {
+    static use_fast_cout_impl once(bufsize, no_buffer_for_terminal);
+    (void)once;
   }
 };
 

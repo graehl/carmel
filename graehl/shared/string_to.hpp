@@ -615,13 +615,13 @@ static char const nonstring_container_sep = ',';
 
 template <class V>
 struct to_string_select<V, typename enable_if<is_nonstring_container<V>::value>::type> {
-  static inline std::string to_string(V const& p) {
+  static inline std::string to_string(V const& p, char sep = nonstring_container_sep) {
     std::string r;
     typename V::const_iterator i = p.begin(), e = p.end();
     if (i != e) {
       r.append(graehl::to_string(*i));
       while (++i != e) {
-        r.push_back(nonstring_container_sep);
+        r.push_back(sep);
         r.append(graehl::to_string(*i));
       }
     }

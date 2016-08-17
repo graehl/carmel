@@ -61,10 +61,6 @@ struct MapAsHadoopJobConf : HadoopPipes::JobConf {
   int getInt(std::string const& k) const { return graehl::string_to<int>(get(k)); }
 };
 
-inline void underscoreToHyphen(std::string& str) {
-  ;
-}
-
 // TODO: add non-leaf help info so hadoop_pipes formatted descriptions have at least one-level-nesting
 // headers. or does usage(str) do that already?
 struct configure_hadoop_pipes : configure_backend_base<configure_hadoop_pipes> {

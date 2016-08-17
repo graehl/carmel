@@ -21,6 +21,7 @@
 #pragma once
 
 #include <graehl/shared/string_to.hpp>
+#include <graehl/shared/string_buffer.hpp>
 #include <algorithm>
 #include <sstream>
 #include <string>

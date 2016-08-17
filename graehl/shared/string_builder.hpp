@@ -251,8 +251,10 @@ struct string_builder : string_buffer {
 #ifndef _MSC_VER
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
+  void operator=(std::string const& s) { static_cast<std::string&>(*this) = s; }
 // TODO: remove pragma
 #if GRAEHL_CPP11
+  void operator=(std::string&& s) { static_cast<std::string&>(*this) = std::move(s); }
   explicit string_builder(char const* str) : string_buffer(str) {}
   /// destructive: move away from current buffer (can't use any more w/o clear)
   void to(std::string& str) { str = std::move((std::string&)*this); }
