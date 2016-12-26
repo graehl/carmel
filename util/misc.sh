@@ -1,3 +1,4 @@
+ghost=c-graehl
 nchanged() {
     grep 'file changed' "$@"
     grep -c 'file changed' "$@"
@@ -301,7 +302,7 @@ experimentf() {
     done
 }
 cmertdir=c/ct-archive/archive/3rdParty/mert
-pubdir=/home/graehl/pub/gcc-4.9
+pubdir=/home/graehl/pub
 gmerts() {
     (
     nobuild=1 cwithdir $cmertdir
@@ -312,7 +313,7 @@ gmerts() {
             sanname=
             [[ $SAN ]] && sanname=.$SAN
             name=$pubdir/mert$dname$sanname
-            ssh gitbuild2 ". ~/.e;uselocalgcc;cd $cmertdir; rm -f *.o; make CC=gcc DEBUG=$DEBUG SAN=$SAN && cp mert $name && ln -sf withlib.sh $name.sh"
+            ssh $ghost ". ~/.e;usegcc;cd $cmertdir; rm -f *.o; make CC=gcc DEBUG=$DEBUG SAN=$SAN && cp mert $name && ln -sf withlib.sh $name.sh"
     done
     done
     )

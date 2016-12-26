@@ -52,7 +52,7 @@ struct unthreaded_ptr {
   unthreaded_ptr() : p_() {}
 
 #if GRAEHL_CPP11
-  unthreaded_ptr(unthreaded_ptr&& o) : p_(o.val), others_(o.others_) {
+  unthreaded_ptr(unthreaded_ptr&& o) noexcept : p_(o.val), others_(o.others_) {
     o.p_ = NULL;  // so o.others_ value won't matter
   }
 #endif

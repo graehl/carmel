@@ -47,6 +47,18 @@
 
     TODO: variant (tree) and optional (pointer or boost::optional) expansion:
     defered-init when store expands one.
+
+    caution about validate for configure(c) calling x.configure(c) directly
+    (i.e. not through c("sub", &sub):
+
+    as far as the configure library is concerned, everything in the same
+    namespace is the same object. so it won't know to call validate for the
+    sibling/base-class objects that have keys at the same level. therefore your
+    validate needs to call those validates. but you *shouldn't* call
+    ::adl::adl_validate(sub) since configure will do that for you (do call
+    ::adl::adl_validate(x))
+
+    or: instead of x.configure(c). do c.sibling(&x) or c.template sibling<BaseClass>(this)
 */
 
 #ifndef GRAEHL_SHARED__CONFIGURE_HPP
@@ -80,27 +92,20 @@ DECLARE_DBG_LEVEL(CONFEXPR)
 #include <boost/detail/atomic_count.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/optional.hpp>
-#include <graehl/shared/assign_traits.hpp>
 #include <graehl/shared/configure_init.hpp>
+#include <graehl/shared/configure_policy.hpp>
+#include <graehl/shared/configure_validate.hpp>
 #include <graehl/shared/example_value.hpp>
 #include <graehl/shared/function.hpp>
-#include <graehl/shared/leaf_configurable.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/shell_escape.hpp>
 #include <graehl/shared/string_builder.hpp>
 #include <graehl/shared/string_match.hpp>
 #include <graehl/shared/type_string.hpp>
-#include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/validate.hpp>
-#include <graehl/shared/value_str.hpp>
 #include <graehl/shared/warn.hpp>
 #include <graehl/shared/word_spacer.hpp>
 #include <algorithm>
 #include <exception>
-#include <map>
-#include <set>
-#include <string>
-#include <vector>
 
 // TODO: overridable free fn for default usage string, e.g. longer explanation of enum type meaning
 
@@ -180,22 +185,6 @@ inline std::string prefix_optional(std::string const& pre_if_b, boost::optional<
   return maybe_b ? pre_if_b + *maybe_b + post_if_b : "";
 }
 
-template <class T>
-void init(T& t) {
-}  // default is to do nothing. ADL overridable. used to 'default construct' vectors of configurable objects
-
-template <class T>
-void init_default(T& t)  // used if .init_default() conf_opt
-{
-  graehl::assign_traits<T>::init(t);
-  init(t);
-}
-
-template <class T>
-void call_init_default(T& t) {
-  init_default(t);
-}
-
 template <class Vec>
 typename Vec::value_type& append_default(Vec& v) {
   typedef typename Vec::value_type T;
@@ -234,7 +223,7 @@ typename Map::mapped_type& append_default(Map& map, typename Map::key_type const
 }
 
 template <class V1, class V2>
-V2& append_default(std::pair<V1,V2>& map, V1 const& key) {
+V2& append_default(std::pair<V1, V2>& map, V1 const& key) {
   map.first = key;
   call_init_default(map.second);
   return map.second;
@@ -259,80 +248,6 @@ struct nonconst_pointer<Val const> {
   typedef Val* type;
 };
 
-using graehl::false_type;
-using graehl::true_type;
-using graehl::enable_if;
-using graehl::is_fundamental;
-using graehl::is_integral;
-using graehl::is_enum;
-
-template <class Val, class Enable = void>
-struct has_leaf_configure : false_type {};
-
-template <class Val>
-struct has_leaf_configure<Val, typename Val::leaf_configure> : true_type {};
-
-template <class T>
-struct is_string : false_type {};
-
-template <class charT, typename traits, typename Alloc>
-struct is_string<std::basic_string<charT, traits, Alloc>> : true_type {};
-
-// leaf_configurable means don't expect a .configure member.
-template <class Val, class Enable>
-struct leaf_configurable
-    : graehl::integral_constant<bool, has_leaf_configure<Val>::value || is_fundamental<Val>::value
-                                          || is_enum<Val>::value || is_string<Val>::value> {};
-
-//"leaf" - use this for all classes that should be configured as leaves, where you
-// can't add a member "typedef void leaf_configurable;"
-
-template <class T1>
-struct leaf_configurable<boost::optional<T1>, void> : leaf_configurable<T1> {};
-template <class T1>
-struct leaf_configurable<shared_ptr<T1>, void> : leaf_configurable<T1> {};
-
-template <class Val, class Enable = void>
-struct scalar_leaf_configurable : leaf_configurable<Val> {};
-template <class T1>
-struct scalar_leaf_configurable<std::vector<T1>, void> : false_type {};
-template <class T1, class T2>
-struct scalar_leaf_configurable<std::map<T1, T2>, void> : false_type {};
-
-template <class Val, class Enable = void>
-struct map_leaf_configurable : false_type {};
-template <class T1, class T2>
-struct map_leaf_configurable<std::map<T1, T2>, void> : true_type {
-  typedef T1 key_type;
-  typedef T2 mapped_type;
-  static inline void clear(std::map<T1, T2> *m) { m->clear(); }
-  enum { is_pair = false };
-};
-template <class T1, class T2>
-struct map_leaf_configurable<std::pair<T1, T2>, void> : true_type {
-  typedef T1 key_type;
-  typedef T2 mapped_type;
-  static inline void clear(std::pair<T1, T2> *) {}
-  enum { is_pair = true };
-};
-
-
-template <class Val, class Enable = void>
-struct set_leaf_configurable : false_type {};
-template <class T1>
-struct set_leaf_configurable<std::set<T1>, void> : true_type {};
-
-template <class Val, class Enable = void>
-struct sequence_leaf_configurable : false_type {};
-template <class T1>
-struct sequence_leaf_configurable<std::vector<T1>, void> : true_type {};
-
-
-template <class Val>
-bool is_config_leaf(Val const&) {
-  return leaf_configurable<Val>::value;
-}
-
 
 struct conf_expr_base;
 
@@ -350,113 +265,6 @@ template <class Val>
 struct can_assign_bool<boost::optional<Val>, void> : can_assign_bool<Val> {};
 
 typedef boost::optional<std::string> maybe_string;  // syntax like string*
-
-struct configure_policy_base {
-  template <class Val, class InitVal>
-  static void apply_init(Val* val, InitVal const& initVal, bool isInit, bool isInitDefault) {}
-};
-
-struct tree_configure_policy : configure_policy_base {
-  template <class Val, class Expr>
-  static void configure(Val* pval, Expr& expr) {
-    pval->configure(expr);
-  }
-  template <class Backend, class Action, class Val>
-  static bool init_tree(Backend const& backend, Action const& action, Val* pval, conf_expr_base const& conf) {
-    return backend.do_init_tree(action, pval, conf);
-  }
-  template <class Backend, class Action, class Val>
-  static void action(Backend const& backend, Action const& action, Val* pval, conf_expr_base const& conf) {
-    backend.do_tree_action(action, pval, conf);
-  }
-};
-
-struct leaf_configure_policy : configure_policy_base {
-  template <class Val>
-  static void apply_init(Val* val, value_str const& initVal, bool isInit, bool isInitDefault) {
-    if (isInit)
-      initVal.assign_to(*val);
-    else if (isInitDefault)
-      call_init_default(*val);
-  }
-  template <class Backend, class Action, class Val>
-  static bool init_tree(Backend const& backend, Action const& action, Val* pval, conf_expr_base const& conf) {
-    return false;
-  }
-  template <class Val, class Expr>
-  static void configure(Val* pval, Expr& expr) {}
-  template <class Backend, class Action, class Val>
-  static void action(Backend const& backend, Action const& action, Val* pval, conf_expr_base const& conf) {
-    backend.do_leaf_action(action, pval, conf);
-  }
-};
-
-struct map_configure_policy : configure_policy_base {
-  template <class Backend, class Action, class Val>
-  static bool init_tree(Backend const& backend, Action const& action, Val* pval, conf_expr_base const& conf) {
-    backend.do_print_action_open(action, pval, conf);
-    return true;
-  }
-  template <class Val, class Expr>
-  static void configure(Val* pval, Expr& expr) {}
-  template <class Backend, class Action, class Val>
-  static void action(Backend const& backend, Action const& action, Val* pval, conf_expr_base const& conf) {
-    backend.do_map_action(action, pval, conf);
-    backend.do_print_map_sequence_action_close(action, pval, conf);
-  }
-};
-
-struct set_configure_policy : configure_policy_base {
-  template <class Backend, class Action, class Val>
-  static bool init_tree(Backend const& backend, Action const& action, Val* pval, conf_expr_base const& conf) {
-    backend.do_print_action_open(action, pval, conf);
-    return true;
-  }
-  template <class Val, class Expr>
-  static void configure(Val* pval, Expr& expr) {}
-  template <class Backend, class Action, class Val>
-  static void action(Backend const& backend, Action const& action, Val* pval, conf_expr_base const& conf) {
-    backend.do_set_action(action, pval, conf);
-    backend.do_print_map_sequence_action_close(action, pval, conf);
-  }
-};
-
-struct sequence_configure_policy : configure_policy_base {
-  template <class Backend, class Action, class Val>
-  static bool init_tree(Backend const& backend, Action const& action, Val* pval, conf_expr_base const& conf) {
-    backend.do_print_action_open(action, pval, conf);
-    return true;
-  }
-  template <class Val, class Expr>
-  static void configure(Val* pval, Expr& expr) {}
-  template <class Backend, class Action, class Val>
-  static void action(Backend const& backend, Action const& action, Val* pval, conf_expr_base const& conf) {
-    backend.do_sequence_action(action, pval, conf);
-    backend.do_print_map_sequence_action_close(action, pval, conf);
-  }
-};
-
-// struct rather than member fn because partial member fn template spec is tricky
-template <class Val2, class Enable = void>
-struct select_configure_policy {
-  typedef tree_configure_policy type;
-};
-template <class Val2>
-struct select_configure_policy<Val2, typename enable_if<scalar_leaf_configurable<Val2>::value>::type> {
-  typedef leaf_configure_policy type;
-};
-template <class Val2>
-struct select_configure_policy<Val2, typename enable_if<sequence_leaf_configurable<Val2>::value>::type> {
-  typedef sequence_configure_policy type;
-};
-template <class Val2>
-struct select_configure_policy<Val2, typename enable_if<map_leaf_configurable<Val2>::value>::type> {
-  typedef map_configure_policy type;
-};
-template <class Val2>
-struct select_configure_policy<Val2, typename enable_if<set_leaf_configurable<Val2>::value>::type> {
-  typedef set_configure_policy type;
-};
 
 
 struct conf_opt {
@@ -565,7 +373,7 @@ struct conf_opt {
   template <class Val>
   std::string get_leaf_value(Val const& val) const {
     typedef leaf_configurable<Val> leaf_val;
-    if (!leaf_val::value) return "";
+    if (!leaf_val::value) return std::string();
     SHOWIF1(CONFEXPR, 1, "leaf_value", graehl::to_string(val));
     return graehl::to_string(val);
   }
@@ -755,7 +563,7 @@ struct conf_opt {
   }
 
   template <class Val>
-  void apply_string_value(std::string const& str, Val* pval, std::string const& pathname,
+  void apply_string_value(std::string str, Val* pval, std::string const& pathname,
                           string_consumer const& warn) const {
     warn_deprecated(pathname, warn);
     string_to(str, *pval);
@@ -875,6 +683,11 @@ bool is_store(Action const&) {
   return action_type<Action>() == kStoreConfig;
 }
 
+template <class Action>
+bool is_validate(Action const&) {
+  return action_type<Action>() == kValidateConfig;
+}
+
 inline bool is_store(config_action_type action) {
   return action == kStoreConfig;
 }
@@ -938,24 +751,10 @@ struct conf_expr_base {
   typedef boost::optional<boost::any> validate_callback;
   mutable validate_callback validator;
 
-  // TODO: not sure if this can be correct when using non-compositional
-  // configure() - might need dynamic_cast from Val to whatever validate takes as
-  // its argument? confusing.
-  template <class Val, class Validate>
-  void set_validate(Validate const& validate) const {
-    throw config_exception("TODO: custom validate implementation is questionable");
-    validator = function<void(Val&)>(validate);
-  }
-  template <class Val>
-  bool custom_validate(Val* pval) const {
-    if (!validator) return false;
-    boost::any_cast<function<void(Val&)>> (*validator)(*pval);
-    return true;
-  }
   template <class Val>
   void call_validate(Val* pval) const {
     try {
-      if (!custom_validate(pval)) ::adl::adl_validate(*pval);
+      ::adl::adl_validate(*pval);
     } catch (std::exception& e) {
       graehl::string_builder msg;
       if (!path.empty()) msg("key '")(path_name())("' ");
@@ -1025,6 +824,30 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
   mutable shared_ptr<conf_expr_destroy> subconfig_deleter;
 
  public:
+  /// use to mark sibling-ojects that should have validate called (i.e. not
+  /// sub-objects (*this)("sub", &sub) but rather sibling.configure(*this)). put
+  /// your own .is ("usage") *after* sibling calls.
+  template <class X>
+  conf_expr const& sibling(X* x) const {
+    x->configure(*this);
+    return *this;
+  }
+  template <class X, class A1>
+  conf_expr const& sibling(X* x, A1 const& a1) const {
+    x->configure(*this, a1);
+    return *this;
+  }
+  template <class X, class A1, class A2>
+  conf_expr const& sibling(X* x, A1 const& a1, A2 const& a2) const {
+    x->configure(*this, a1, a2);
+    return *this;
+  }
+  template <class X, class A1, class A2, class A3>
+  conf_expr const& sibling(X* x, A1 const& a1, A2 const& a2, A3 const& a3) const {
+    x->configure(*this, a1, a2, a3);
+    return *this;
+  }
+
   bool store() const { return is_store(action); }
   std::string what() const {
     std::string r(conf_expr_base::path_name());
@@ -1059,7 +882,8 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
       , pval(pval)
   // requirement: Backend(Backend const&)
   {
-    if (!opt->is) opt->is = call_config_is(*pval);
+    if (!opt->is && is_config_leaf(*pval))
+      opt->is = call_config_is(*pval);  // for tree this handled in configure(...) below
     Backend::do_init(action, pval, base());
     init_tree_return = configure_policy::init_tree(backend(), action, pval, base());
     configure_policy::configure(pval, *this);  // unless leaf, call pval->configure(*this);
@@ -1235,12 +1059,6 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
   conf_expr const& inits(V2 const& v2) {
     return defaulted(true);
   }
-
-  template <class V2>
-  conf_expr const& validate(V2 const& validator) const {
-    this->template set_validate<Val, V2>(validator);
-    return *this;
-  }
 };
 
 
@@ -1249,14 +1067,12 @@ void configure_action(Backend const& backend, Action const& action, RootVal* pva
                       string_consumer const& warn_to, opt_path const& root_path) {
   if (backend.do_init_action(action))
     conf_expr<Backend, Action, RootVal> rc(backend, action, pval, conf_expr_base(warn_to, root_path));
-  // destructor makes it happen. pval is irrelevant unless leaf.
 }
 
 template <class Backend, class Action, class RootVal>
 void configure_action_from_base(Backend const& backend, Action const& action, RootVal* pval,
                                 conf_expr_base const& base) {
   if (backend.do_init_action(action)) conf_expr<Backend, Action, RootVal> rc(backend, action, pval, base);
-  // destructor makes it happen. pval is irrelevant unless leaf.
 }
 
 /**
@@ -1266,7 +1082,6 @@ template <class Backend, class RootVal>
 void configure_store_init_from_base(Backend const& backend, RootVal* pval, conf_expr_base const& base) {
   conf_expr<Backend, init_config, RootVal> b1(backend, init_config(), pval, base);
   conf_expr<Backend, store_config, RootVal> b2(backend, store_config(), pval, base);
-  // destructor makes it happen. pval is irrelevant unless leaf.
 }
 
 namespace {
@@ -1935,7 +1750,7 @@ void help(std::ostream& out, RootVal* pval, string_consumer const& warn = warn_c
 
 template <class RootVal>
 void validate_stored(RootVal* pval, string_consumer const& warn = warn_consumer()) {
-  configure_help_action(validate_config(), pval, warn);
+  validate_tree().validate(pval);
 }
 
 template <class RootVal>

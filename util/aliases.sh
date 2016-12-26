@@ -32,6 +32,8 @@ esac
 xmtext=$xmtextbase/$lwarch
 xmtextsrc=$HOME/c/xmt-externals-source
 export SDL_EXTERNALS_PATH=$xmtext
+export HADOOP_DIR=$SDL_EXTERNALS_PATH/../Shared/java/hadoop-2.7.3
+export JAVA_HOME=$SDL_EXTERNALS_PATH/libraries/jdk1.8.0_66
 py=$(echo $xmtx/python)
 export WORKSPACE=$xmtx
 xmtext=$xmtextbase/$lwarch
@@ -47,6 +49,110 @@ fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
+nnexpanded() {
+    echo -n "$1 - "; grep nn-expanded "$1" | summarize_num.pl 2>/dev/null
+}
+nmtsum() {
+    (
+        cd ~/p/nmt/
+        rm  *.derivs *.perf
+        for f in *.log; do
+            echo $f
+            g=${f%.log}
+            d=$g.derivs
+            fgrep 'INFO  sdl.xmt.Derivation - ' $f > $d || rm $d
+            p=$g.perf
+            fgrep ' - Total: processed' $f | egrep 'rescore|decode|segment' > $p
+            fgrep 'avg: {rescore-lattice:' $f >> $p
+            fgrep 'nn-expanded' $f | $UTIL/summarize_num.pl 2>/dev/null >> $p
+        done
+        for f in `ag -l nn-expanded`; do nnexpanded "$f"; done
+    )
+}
+untr() {
+    unhex "$@" |     perl -pe 's| nn-scored=\d+||;
+s|prefix=\S+|prev=.'
+}
+unhex() {
+    perl -pe 's|\b0x[0-9A-Fa-f]+|.|g;s| nn-scored=\d+||' "$@"
+}
+envtr() {
+    branch=${1:-nmtbeam}
+    bin=tmp/TestRescoreLattice.$branch
+}
+runtr() {
+    (
+    envtr $1
+    filter=untr out=~/bugs/nmt/test.$branch.log c12 ./$bin
+    )
+}
+cptr() {
+    (
+        envtr $1
+    c-s cp x/Debug/Hypergraph/TestRescoreLattice $bin
+    runtr $branch
+    )
+}
+gitresetco() {
+    local rev=$1
+    shift
+    (set -e
+     git ls-files $rev -- "$@"
+    bakthis pre.reset.`basename $rev`
+    git reset $rev -- "$@"
+    git checkout $rev -- "$@"
+    )
+}
+testpipes() {
+    local tmppipes=${tmppipes:-/var/tmp/testpipes}
+    c-s stopyarn
+    c-s rm -rf $tmppipes
+    BUILD_TYPE_UC=${BUILD:-Release} c-s ~/x/RegressionTests/HadoopPipes/scripts/pipes.runner.bash $tmppipes $1
+}
+stopyarn() {
+    local HADOOP_DIR=$SDL_EXTERNALS_PATH/../Shared/java/hadoop-2.7.3
+    local log=/tmp/stop-yarn.out
+    $HADOOP_DIR/sbin/stop-yarn.sh $log
+    tail $log
+    pgrepkill java
+}
+jremert() {
+    j-s cp x/Release/mert/mert2 c/ct/main/LW/CME/mert2
+    j-s 'cd c/ct; mend'
+}
+crontest() {
+    ( set -e; set -x; name="mert-update2"; export LW_SHERPADIR=rename; export LW_RUNONEMACHINE=1; export CT=$HOME/c/ct; ( cd $CT/main; set -x; nohup perl Shared/Test/bin/CronTest.pl $CT -name "$name" -steps tests -tests kraken -parallel 10 ) &>crontest.$name.log; echo `pwd`/crontest.$name.log ) &
+    echo "https://condor-web.languageweaver.com/CronTest_graehl/www/index.cgi?"
+}
+reflog() {
+    git reflog --format='%C(auto)%h %<|(17)%gd %C(blue)%ci%C(reset) %s'
+}
+safefilename() {
+    perl -e 'for (@ARGV) { y/:/_/ }; print join " ", @ARGV' "$@"
+}
+cutmp4() {
+    (set -x
+     ffmpeg -i "$1" -ss $2 -to $3 -async 1  -c copy "${1%.mp4}.$(safefilename $2-$3).mp4"
+     )
+}
+nbest() {
+    hyp best -a feature -n "$@"
+}
+nbeststr() {
+    hyp best -a feature --weight=false --quote=unquoted --nbest-index=0 -n "$@"
+}
+chomplast() {
+    perl -e '
+while(<>) {
+    print $p if ($p);
+    $p = $_;
+}
+chomp $p;
+print $p;' "$1" > "$1.chomped" && mv "$1.chomped" "$1"
+}
+xmtsize() {
+    du -h ~/x/Debug/xmt/lib/libxmt_shared_debug.so ~/x/Debug/xmt/xmt
+}
 gitchanged2() {
     git log --name-status --oneline "$1..$2"
 }
@@ -104,7 +210,7 @@ chosts="j c-graehl gitbuild1 gitbuild2"
 
 chost=c-graehl
 jhost=j
-xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1"
+xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DHADOOP_YARN=1"
 jemalloclib=$xmtlib/jemalloc/lib/libjemalloc.so
 tbbmalloclib=$xmtlib/tbb-4.4.0/lib/libtbbmalloc.so
 tbbmallocproxylib=$xmtlib/tbb-4.4.0/lib/libtbbmalloc_proxy.so
@@ -313,7 +419,6 @@ cmakemac() {
             scanbuild=scan-build
             echo $scanbuild
         fi
-        set -x
         #-DCMAKE_EXPORT_COMPILE_COMMANDS=1
         cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DCMAKE_C_COMPILER=${CC:-gcc$gccsuf} -DCMAKE_CXX_COMPILER=${CXX:-g++$gccsuf} $nosysroot "$@" && TERM=dumb $scanbuild make VERBOSE=1 -j ${NCPUS:-3}
     )
@@ -333,7 +438,6 @@ gsldiff() {
         set -e
         sub=GSL/include
         cd ~/src/$sub
-        set -x
         for f in *.h; do
             diff $f $xmtextc/$sub/$f || echo $f
         done
@@ -424,22 +528,8 @@ outsidegitadd() {
     (cd `dirname $1`
      git add `basename $1`)
 }
-tosdlextabs() {
-    (
-        from=${1%/}
-        to=`perl -e '$_=shift; s#/xmt-externals/#/sdl-externals/# || die; print $_' $from`
-        set -x
-        cp -a $from `dirname $to`/
-        outsidegitadd $to
-    )
-}
-tosdlext() {
-    ls -l $1/
-    tosdlextabs `realpath $1`
-}
 reken() {
     (set -e
-     set -x
      clean=1 linnplm
      clean=1 linnplm01
      linken
@@ -508,7 +598,6 @@ sortspeed() {
 pandocslides() {
     (
         set -e
-        set -x
         local f=$1
         base=${f%.md}
         [[ -f $f ]] || f=$base.md
@@ -576,7 +665,6 @@ cspeed() {
             [[ "$rerun" ]]  && chost=git02 c-s "cd ~/p/qf; perl ~/c/coretraining/main/quality_finder/App/yas_speed_test.pl --param-file=$g/$g.params"
             set -e
             mkdir -p $g
-            set -x
             cd $g
             for f in plot.gif report.txt speed_bleu.xml; do
                 scp $chost:p/qf/$g/speed/$f . || true
@@ -587,7 +675,6 @@ cspeed() {
 cspeedboth() {
     (set -e
      cd ~/p/qf
-     set -x
      d=$3$1-$2
      mkdir -p $d
      cd $d
@@ -618,7 +705,6 @@ gitxz() {
     gitroot
     name=$(basename `pwd`)
     (set -e;
-     set -x
      #branch=${branch:-`gitbranch`}
      git archive --format=tar --prefix=$name/ HEAD "$@" | xz -c >$name.tar.xz
     )
@@ -630,7 +716,6 @@ targit() {
     (set -e;
      cd ..
      tar c --exclude=.git --exclude=.gitignore $name | xz -c >$name.tar.xz
-     set -x
      mv $name.tar.xz $name/$name.tar.xz
     )
     ls -l `realpath $name.tar.xz`
@@ -731,7 +816,7 @@ linken() {
     syncken; j-s 'cd ~/xs/KenLM;./make-kenlm.sh'
 }
 scpg() {
-    (set -x
+    (
      cd
      o=`dirname $1`
      c-s `mkdir -p $o`
@@ -744,7 +829,7 @@ scpg() {
     )
 }
 scpgr() {
-    (set -x
+    (
      cd
      local d=$1
      shift
@@ -760,7 +845,6 @@ scpx() {
             shift
             local to=$1
             shift
-            set -x
             if [[ $reverse ]] ; then
                 local a=$from
                 local base=`basename $from`
@@ -804,7 +888,6 @@ macgcc() {
 }
 democompose() {
     (
-        set -x
         hy compose --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn
     )
 }
@@ -847,7 +930,6 @@ makeboost() {
             export LD_LIBRARY_PATH=${LD_LIBRARY_PATH#:}
         fi
         set -e
-        set -x
         cd $1
         xmtext=$2
         icusubdir=${3:-icu-55.1}
@@ -974,7 +1056,6 @@ cjam() {
         in=$1
         exe=${src%.cc}$exesuf
         set -e
-        set -x
         cd ~/jam
         [[ -f $in ]]
         which g++
@@ -1003,7 +1084,6 @@ ccjam() {
             in="$in.in"
         fi
         [[ -f jam/$in ]]
-        set -x
         ssh $chost "release=$release MORECFLAGS=$MORECFLAGS cjam $src $in $*"
         out=jam/${in%.in}.out
         scp $chost:$out $out
@@ -1032,7 +1112,6 @@ cpp11() {
     o=${o%.cc}
     o=${o%.cpp}
     o=${o%.c}
-    set -x
     TERM=dumb ${CXX:-g++} -std=c++11 -Wno-deprecated-declarations $debugargs $src -o $o && $o "$@"
 }
 trackmaster() {
@@ -1138,7 +1217,7 @@ inplace() {
 }
 a2c() {
     for f in aliases.sh misc.sh time.sh gcc.sh ccache-wrapper.sh; do
-        scp ~/u/$f $jhost:u/$f
+        scp ~/u/$f $chost:u/$f
     done
 }
 ospushmend() {
@@ -1221,7 +1300,6 @@ oscom() {
         mend || true
         stagetarball=`mktemp $ostarball.XXXXXX`
         rm -f $stagetarball
-        set -x
         test= tarball=$stagetarball $xmtx/scripts/release.sh
         cd $osgitdir
         tar xzvf $stagetarball
@@ -1231,7 +1309,6 @@ oscom() {
         if ! [[ $msg ]] ; then
             msg=$gitinfo_subject
         fi
-        set -x
         if [[ $mend ]] ;then
             mend
         else
@@ -1269,12 +1346,10 @@ oscptar() {
      if false ; then
          cd $osgitdir
          c-s "mkdir -p $osgitdir" #rm -rf $osgitdir/$hypdir;
-         set -x
          scp $ostarball c-graehl:$osgitdir
          # ~/c/hyp
          c-s "cd $osgitdir && rm -rf sdl; tar xzf $(basename $ostarball)"
      else
-         set -x
          scpx $osgitdir c-graehl:$osgitdir/..
      fi
     )
@@ -1289,7 +1364,6 @@ osmake() {
         cd $osdirbuild
         showvars_required CC CXX
         $CXX -v
-        set -x
         cmake $osgitdir/$hypdir "$@" && TERM=dumb make -j4 VERBOSE=1
     )
 }
@@ -1308,7 +1382,6 @@ osrel() {
         #rm -rf $osgitdir
         rm -f $ostarball
         test= tarball=$ostarball $xmtx/scripts/release.sh $osgitdir
-        set -x
         cd $osgitdir
     )
 }
@@ -1339,7 +1412,7 @@ linosmake() {
         sdlbuildarg="-DCMAKE_BUILD_TYPE=$BUILD_TYPE "
         local cleanpre
         [[ $noclean ]] || cleanpre="rm -rf $osdirbuild;"
-        c-s ". ~/u/localgcc.sh;$cleanpre mkdir -p $osdirbuild;cd $osdirbuild; set -x; export SDL_EXTERNALS_PATH=/home/graehl/c/sdl-externals/FC12; cmake $sdlbuildarg $osgitdir/$hypdir && TERM=dumb make -j15 VERBOSE=0 && Hypergraph/hyp compose --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn" 2>&1 | filter-gcc-errors
+        c-s ". ~/u/localgcc.sh;$cleanpre mkdir -p $osdirbuild;cd $osdirbuild; export SDL_EXTERNALS_PATH=/home/graehl/c/sdl-externals/FC12; cmake $sdlbuildarg $osgitdir/$hypdir && TERM=dumb make -j15 VERBOSE=0 && Hypergraph/hyp compose --project-output=false --in /local/graehl/xmt/RegressionTests/Hypergraph2/compose3a.hgtxt /local/graehl/xmt/RegressionTests/Hypergraph2/compose3b.hgtxt --log-level=warn" 2>&1 | filter-gcc-errors
     )
 }
 osreg() {
@@ -1651,7 +1724,6 @@ addcremotes() {
     (
         set -e
         local csub=${1:? e.g. /home/graehl/c/xmt-externals}
-        set -x
         for chost in $chosts; do
             git remote add $chost ssh://graehl@$chost/$csub
         done
@@ -1674,7 +1746,6 @@ iops() {
 ruledump() {
     (set -e
      require_file $1
-     set -x
      ${ruledumper:-~/pub/dgood/RuleDumper.sh} -c $1 -g ${2:-grammar}
     )
 }
@@ -1849,7 +1920,6 @@ gitforceapply() {
         set -e
         echo $1 ${2?gitapplyforce REV1 REV2}
         forcediff=`mktemp ~/tmp/gitapplyforce.$1-$2.XXXXXX`
-        set -x
         git diff $1 $2 --binary > $forcediff
         if [[ $gitclean ]]  ; then
             gitclean 1
@@ -1871,6 +1941,12 @@ fireadb() {
 fireinstall() {
     fireadb
     adb install -r "$@"
+}
+firepull() {
+    cd /tmp
+    local d=/sdcard/android/data/org.xbmc.kodi/files/.xbmc/userdata
+    adb pull $d/advancedsettings.xml
+    edit advancedsettings.xml && adb push advancedsettings.xml $d
 }
 jcp() {
     chost=$jhost ccp "$@"
@@ -1896,7 +1972,6 @@ cstrings() {
 }
 cprs() {
     if [[ $2 ]] ; then
-        set -x
         cp -Rs `abspath "$1"` $2
         set +x
     fi
@@ -1930,7 +2005,10 @@ c12() {
     (
         local o=${out:-$(echo ~/tmp/c12.`csuf`)}
         out12 "$o" c-s "$@"
-        preview "$o"
+        tail=20 preview1 "$o"
+        fgrep 'Tokens=[' "$o"
+        fgrep 'Total:' "$o" | egrep -v 'StringToHg|HgToString|hg-to-string|Pipeline'
+        echo "$o"
     )
 }
 makesvm() {
@@ -2014,8 +2092,8 @@ edit12() {
 }
 kills() {
     for f in "$@"; do
-        pgrepkill $f
         pkill $f
+        pgrepkill $f
     done
 }
 killxmt() {
@@ -2083,7 +2161,6 @@ fmidway() {
 gitundomaster() {
     (
         set -e
-        set -x
         git reset --hard ${1:-HEAD^1}
         git rebase -f master
         git push -f origin HEAD:master
@@ -2095,7 +2172,7 @@ overc() {
         b=${3-~/bugs/over$chost}
         f=${2:-`basename $1`}
         log=$1
-        log=`perl -e 'shift; s|/Users/|/home/|g; print' "$log"`
+        log=`perl -e 'shift; s|/Users/graehl|~|g; print' "$log"`
         d=$b/$f
         mkdir -p $d
         cd $d
@@ -2340,7 +2417,7 @@ forcelink() {
         ln -sf "$@"
     fi
 }
-xmtbins="Utf8Normalize/Utf8Normalize xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper Hypergraph/hyp RuleExtractor/MrNNSampleExtract"
+xmtbins="mert/mert2 RuleExtractor/MrNNSampleExtract Utf8Normalize/Utf8Normalize xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper Hypergraph/hyp"
 xmtpub=$(echo ~/pub)
 rmxmt1() {
     (
@@ -2384,7 +2461,7 @@ ext2pub12() {
         ken=KenLM-5.3.0/5-gram
         libs=$ken
         #libs="$ken nplm nplm01 liblbfgs-1.10 tbb-4.4.0 lmdb apr-1.4.2 apr-util-1.3.10 zeromq-4.0.4 cmph-0.6 hadoop-hdp2.1 openssl-1.0.1e svmtool++ liblinear-1.94 protobuf-2.6.1 turboparser-2.3.1 boost_1_61_0 tinycdb-0.77 icu-55.1 db-5.3.15 zlib-1.2.8 OpenBLAS-0.2.14 bzip2 log4cxx-0.10.0 jemalloc"
-        libs+=" OpenBLAS-0.2.14 ad3-1a08a9 apr-1.4.2 apr-util-1.3.10 boost_1_60_0 caffe-rc3 cmph-0.6 cryptopp-5.6.2 db-5.3.15 gflags-2.2 glog-0.3.5 hadoop-0.20.2-cdh3u3 hdf5-1.8.15-patch1 icu-55.1 jemalloc kytea-0.4.7 liblinear-1.94 lmdb-0.9.14 log4cxx-0.10.0 nplm nplm01 openssl-1.0.1e svmtool++ tbb-4.4.0 tinycdb-0.78 tinyxmlcpp-2.5.4 turboparser-2.3.1 zeromq-4.0.4 zlib-1.2.8"
+        libs+=" OpenBLAS-0.2.14 ad3-1a08a9 apr-1.4.2 apr-util-1.3.10 boost_1_60_0 caffe-rc3 cmph-0.6 cryptopp-5.6.2 db-5.3.15 gflags-2.2 glog-0.3.5 hadoop-0.20.2-cdh3u3 hdf5-1.8.15-patch1 icu-55.1 jemalloc kytea-0.4.7 liblinear-1.94 lmdb-0.9.14 log4cxx-0.10.0 nplm nplm01 openssl-1.0.1e svmtool++ tbb-4.4.0 tinycdb-0.78 tinyxmlcpp-2.5.4 turboparser-2.3.1 zeromq-4.0.4 zlib-1.2.8 cnpy arrayfire-3.4.0"
         local dest=$2/lib
         mkdir -p $dest
         for d in $libs; do
@@ -2439,8 +2516,9 @@ bakxmt() {
       forcelink $pub/$change $pub/latest-changeid
       cp -af $xmtx/RegressionTests/launch_server.py $bindir/
       echo xmtbins: $xmtbins
-      for f in $xmtbins xmt/lib/*.so TrainableCapitalizer/libsdl-TrainableCapitalizer-shared.so CrfDemo/libsdl-CrfDemo-shared.so; do
+      for f in $xmtbins xmt/lib/*.so TrainableCapitalizer/libsdl-TrainableCapitalizer-shared.so CrfDemo/libsdl-CrfDemo-shared.so TrainableCapitalizer/libsdl-TrainableCapitalizer_debug.so CrfDemo/libsdl-CrfDemo_debug.so; do
           local b=`basename $f`
+          if [[ -f $f ]] ; then
           ls -l $f
           local bin=$bindir/$b
           cp -af $f $bindir/$b
@@ -2448,6 +2526,7 @@ bakxmt() {
           if [[ ${f%.so} = $f ]] ; then
               (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
               chmod +x $bin.sh
+          fi
           fi
       done
       grep "export LD_LIBRARY_PATH" $bindir/xmt.sh > $bindir/env.sh
@@ -2462,8 +2541,7 @@ bakxmt() {
               forcelink $pub/$1 $pub2/$1
           fi
       fi
-      set +e
-      $bindir/xmt.sh --help 2>&1 | head -3
+      $bindir/xmt.sh --help 2>&1
     )
 }
 
@@ -2646,11 +2724,25 @@ c-make() {
      local branch=`git_branch`
      pushc $branch
      c-s forceco $branch
-     if [[ "$*" ]] ; then
-         c-s BUILD=${BUILD:-Debug} threads=13 makeh $tar '&&' "$@"
+     if [[ $BUILD = all ]] ; then
+         builds="Debug Release"
      else
-         c-s BUILD=${BUILD:-Debug} threads=13 makeh $tar
+         builds=${BUILD:-Debug}
      fi
+     for f in $builds; do
+         (
+        if [[ $ASAN ]] ; then
+            f=${f%Asan}Asan
+            echo ASAN: $f
+        fi
+     if [[ "$*" ]] ; then
+         c-s ASAN=$ASAN BUILD=$f threads=16 makeh $tar
+         #'&&' "$@"
+     else
+         c-s ASAN=$ASAN BUILD=$f threads=16 makeh $tar
+     fi
+     )  2>&1 | filter-gcc-errors
+     done
     )
 }
 cs-for() {
@@ -2738,6 +2830,9 @@ c-compile() {
 }
 c-xmtcompile() {
     c-with BUILD=${BUILD:-} xmtcompile "$@"
+}
+cr-makes() {
+    (cr-c;BUILD=all c-make "$@")
 }
 cr-make() {
     (cr-c;c-make "$@")
@@ -2993,7 +3088,6 @@ cppparse() {
 }
 remaster() {
     ( set -e
-      set -x
       git fetch origin
       git reset --hard origin/master
       git checkout origin/master
@@ -3024,7 +3118,6 @@ forceco() {
     local xmtx=${2:-$xmtx}
     (
         set -e
-        set -x
         cd $xmtx
         git reset --hard $branch
         git log -n 1
@@ -3127,8 +3220,26 @@ c-test() {
     local test=$1
     shift
     local rel
-    [[ ${BUILD:-} = Release ]] && rel=Release
-    c-make Test${test:-} Test$test$rel "$@"
+    if [[ $BUILD = Release ]] ; then
+        rel=Release
+    fi
+    if [[ $ASAN ]] ; then
+        rel=Asan
+    fi
+    local uarg
+    if [[ $1 ]] ; then
+        local u=$1
+        shift
+        uarg="--run_test=$u"
+    fi
+    (
+        set -x
+        set -e
+    norun=1 ASAN=$ASAN c-make Test$test $uarg "$@"
+    c-s ASAN=$ASAN Test$test$rel $uarg "$@"
+    #norun= ASAN=$ASAN c-make Test${test:-} Test$test$rel $uarg "$@"
+    #c-s BUILD=${BUILD:-Debug} Test$test$rel $uarg "$@"
+    )
 }
 jr-test() {
     (b-r;j-c;c-test "$@")
@@ -5047,8 +5158,9 @@ upre() {
         loosearg="-Xignore-all-space -Xdiff-algorithm=histogram"
     fi
     (set -e
+     set -x
      git fetch $remote
-     git rebase -Xpatience $loosearg $remote/master
+     git rebase -Xpatience $loosearg ${rev:-$remote/master}
     ) || git rebase --continue
 }
 showbest() {
@@ -5281,17 +5393,28 @@ xmtcmsave() {
 }
 pgkill() {
     local prefile=`mktemp /tmp/pgrep.pre.XXXXXX`
-    pgrep "$@" | grep -v pkill | grep -v ssh | grep -v macs > $prefile
+    pgrep "$@" | grep -v pkill | grep -v sshd | grep -v macs > $prefile
     cat $prefile
-    if false || [[ -x /usr/bin/pkill ]] ; then
+    if false && [[ -x /usr/bin/pkill ]] ; then
         /usr/bin/pkill "$@";
     else
-        kill `cat $prefile | cut -c1-5`
+        if [[ $KILL9 ]] ; then
+            KILLSIG=-9
+        fi
+        local sudo=
+        if [[ $KILLSUDO ]] ; then
+            sudo=sudo
+        fi
+        set -x
+        $sudo kill $KILLSIG `cat $prefile | cut -c1-5`
+        set +x
         # | xargs kill
         echo before:
         cat $prefile
         sleep 1
     fi
+    echo killed:
+    cat $prefile | cut -c1-5
     rm $prefile
     echo now:
     pgrep "$@"
@@ -5368,8 +5491,8 @@ forpaste() {
 yregr() {
     BUILD=Release yreg "$@"
 }
-yregc() {
-    BUILD=DebugClang yreg "$@"
+yrega() {
+    BUILD=DebugAsan yreg "$@"
 }
 rexmt() {
     (set -e
@@ -5519,6 +5642,8 @@ pgrepn() {
 }
 pgrepkill() {
     pgkill "$@"
+    sleep 1
+    KILL9=1 pgkill "$@"
 }
 overwrite() {
     if [[ $3 ]] ; then
@@ -6073,7 +6198,13 @@ makerun() {
             exe=check
         fi
         shift
+        if [[ $ASAN ]] ; then
+            BUILD=${BUILD%Asan}Asan
+            echo ASAN: BUILD $BUILD
+        fi
         cd $xmtx/${BUILD:-Debug}
+        echo -n "makerun pwd: "
+        pwd
         local cpus=${threads:-`ncpus`}
         echo2 "makerun $cpus cpus ... -j$cpus"
         (set -e
@@ -6081,13 +6212,14 @@ makerun() {
          if [[ $exe != test ]] ; then
              set +x
              local f=$(echo */$exe)
-             if [[ -x $f ]] ; then
-                 if ! [[ ${pathrun:-} ]] ; then
-                     if ! [[ ${norun:-} ]] ; then
+             if ! [[ $norun ]] ; then
+                 echo "exe '$exe' found: '$f' pathrun=$pathrun"
+                 if [[ -f $f ]] ; then
+                     if [[ $pathrun ]] ; then
+                         $exe "$@"
+                     else
                          $f "$@"
                      fi
-                 else
-                     $exe "$@"
                  fi
              fi
          fi
@@ -6101,6 +6233,7 @@ makejust() {
     norun=1 makerun "$@"
 }
 makeh() {
+    usegcc
     showvars_required CXX CC
     if [[ $1 = xmt ]] ; then
         makerun xmtShell --help
@@ -6109,14 +6242,12 @@ makeh() {
         if [[ ${2:-} ]] ; then
             bakxmt $2
         fi
-    elif [[ $1 ]] ; then
-        if [[ $2 ]] ; then
-            makerun "$@"
-        else
-            makerun $1 --help
-        fi
+    elif [[ $1 = mert ]] ; then
+        norun=1 makerun $1
+        echo made mert
+        makerun "$@" < /dev/null
     else
-        makerun
+        makerun "$@" < /dev/null
     fi
 }
 hncomment() {
@@ -7035,6 +7166,7 @@ lnhgforce() {
         for t in $b egdb$b gdb$b vg$b; do
             echo $t
             ln -sf $xmtx/run.sh ~/bin/$t
+            ln -sf $xmtx/run.sh ~/bin/${t}Asan
             ln -sf $xmtx/run.sh ~/bin/${t}Clang
             ln -sf $xmtx/run.sh ~/bin/${t}Release
             ln -sf $xmtx/run.sh ~/bin/${t}RelWithDebInfo
@@ -9489,7 +9621,7 @@ if ! [[ $MAKEPROC ]] ; then
     elif [[ $HOST = c-graehl ]] ; then
         MAKEPROC=13
     else
-        MAKEPROC=11
+        MAKEPROC=7
     fi
 fi
 if [[ -d $SDL_EXTERNALS_PATH ]] ; then
@@ -9650,3 +9782,14 @@ loadmethods() {
      done ) | tee $tmpout/time.methods
 }
 add_ldpath $BOOST_LIBDIR
+SDL_HADOOP_ROOT=$SDL_EXTERNALS_PATH/libraries/hadoop-0.20.2-cdh3u3
+if [[ -d $SDL_HADOOP_ROOT ]] ; then
+    SDL_HADOOP_JAVA=$SDL_HADOOP_ROOT/jdk1.8.0_60
+    export JAVA_HOME=$SDL_HADOOP_JAVA
+    export SDL_HADOOP_JAVA
+    export PATH=$JAVA_HOME/bin:$PATH
+fi
+CT=${CT:-`echo ~/c/ct/main`}
+crontest1() {
+    (name=${1:-mert-update3}; export LW_SHERPADIR=rename; export LW_RUNONEMACHINE=1; export CT=$CT/..; ( cd $CT; cd main; nohup perl Shared/Test/bin/CronTest.pl $CT -name "$name" -steps tests -tests kraken/kraken/CompoundSplit kraken/kraken/CountFeats kraken/kraken/Merge kraken/kraken/Preproc kraken/kraken/Xiphias kraken/kraken/XTrain-EJ kraken/kraken/XTrain kraken/kraken/XTrain_S2T -parallel 20 ) &>crontest.$name.log ) &
+}

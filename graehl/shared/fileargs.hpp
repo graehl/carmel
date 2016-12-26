@@ -356,9 +356,9 @@ struct file_arg {
   }
   file_arg(file_arg const& o) : buf(o.buf), pointer(o.pointer), none(o.none), name(o.name) {}
 #if GRAEHL_CPP11
-  file_arg(file_arg&& o)
+  file_arg(file_arg&& o) noexcept
       : buf(std::move(o.buf)), pointer(std::move(o.pointer)), none(o.none), name(std::move(o.name)) {}
-  file_arg& operator=(file_arg&& o) {
+  file_arg& operator=(file_arg&& o) noexcept {
     assert(&o != this);
     buf = std::move(o.buf);
     pointer = std::move(o.pointer);

@@ -108,7 +108,7 @@ struct configure_dynamic {
     prototypes.insert(TypePrototype(type, new_configurable_ptr(proto)));
   }
   Prototypes instances;
-  friend inline void validate(configure_dynamic& x) { x.validate(); }
+  typedef configure_dynamic configure_validate;
   void validate() {
     if (instances.size() > kMaxAllowedInstances)
       throw config_exception("configure_dynamic must have at most " + to_string(kMaxAllowedInstances)

@@ -14,6 +14,7 @@
 #ifndef GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #define GRAEHL__SHARED__LAZY_FOREST_KBEST_HPP
 #pragma once
+
 #include <graehl/shared/cpp11.hpp>
 
 // you may override this with a fully namespace qualified type - but be careful
@@ -23,6 +24,7 @@
 #ifndef LAZY_FOREST_KBEST_SIZE
 #define LAZY_FOREST_KBEST_SIZE unsigned
 #endif
+
 // TODO: cycles - if you found a pending, then try not queueing successors until you're added to memo table.
 // but MAYBE our successors first approach makes us handle negative cost improvements more nicely? not sure.
 // if not, then always queue successors afterwards.
@@ -125,7 +127,6 @@
 #define KBESTERRORQ(x, y) ERRORQ(x, y)
 #endif
 
-
 #include <boost/noncopyable.hpp>
 #include <graehl/shared/assertlvl.hpp>
 #include <graehl/shared/containers.hpp>
@@ -133,6 +134,7 @@
 #include <graehl/shared/percent.hpp>
 #include <algorithm>
 #include <cstddef>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -171,6 +173,8 @@ namespace graehl {
 struct lazy_forest_indent_tag {};
 #define LAZY_FOREST_KBEST_INDENT SCOPED_INDENT(lazy_forest_indent_tag)
 }
+
+#include <graehl/shared/best_tree_options.hpp>
 
 #ifndef LAZY_FOREST_KBEST_MSG
 #define LAZY_FOREST_KBEST_MSG(msg) SHOWP(LAZYF, LAZY_FOREST_KBEST_INDENT << msg)
@@ -421,11 +425,9 @@ void adl_print(A& a, B const& b, C const& c, D const& d) {
 // i've left this copyable even though you should for efficiency's sake only copy empty things, e.g. if you
 // want to compile a vector of them that's fine
 template <class DerivationFactory, class FilterFactory = permissive_kbest_filter_factory>
-class lazy_forest : public FilterFactory::filter_type  // empty base class opt. - may have state e.g. hash of
+struct lazy_forest : public FilterFactory::filter_type  // empty base class opt. - may have state e.g. hash of
 // seen strings or trees
 {
-
- public:
 #if GRAEHL_CPP11
   /// move
   lazy_forest(lazy_forest&& o) noexcept : pq(std::move(o.pq)), memo(std::move(o.memo)) { assert(&o != this); }
@@ -581,9 +583,9 @@ class lazy_forest : public FilterFactory::filter_type  // empty base class opt. 
     }
   }
 
-  void fix_edges(Environment& env, bool dfs = true)  // only needed if you call sort() and the result may be
-  // memo[0] != what you used for best subderivations for
-  // that node
+  /// only needed if you call sort() and the result may be memo[0] != what you
+  /// used for best subderivations for that node
+  void fix_edges(Environment& env, bool dfs = true)
   {
     if (empty()) return;
     assert(!memo.empty() && !pq.empty());

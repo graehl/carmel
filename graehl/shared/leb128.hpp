@@ -18,15 +18,12 @@
     in LEB128 you have a sequence of bytes starting least significant, except
     the bytes only hold 7 bits of info. the high byte (128) is 0 if no more
     bytes follow.
-
-
 */
 
 #ifndef GRAEHL_SHARED__LEB128_HPP
 #define GRAEHL_SHARED__LEB128_HPP
 #pragma once
 
-#include <graehl/shared/pod.hpp>
 #include <cassert>
 #include <cstddef>
 #include <cstring>
@@ -34,7 +31,14 @@
 
 namespace graehl {
 
-typedef encoding_error leb128error;
+struct leb128error : std::exception {
+  char const* what() const throw() { return "binary encoding didn't fit in buffer"; }
+  ~leb128error() throw() {}
+};
+
+typedef unsigned char byte;
+typedef byte const* const_byteptr;
+typedef byte* byteptr;
 
 template <class Uint>
 const_byteptr decode_leb128(Uint& result, const_byteptr p) {
@@ -109,6 +113,34 @@ struct leb128_codec {
   static byteptr encode(byteptr p, const_byteptr end, Uint x) { return encode_leb128(x, p, end); }
 };
 
+template <class Uint>
+struct identity_codec {
+  typedef Uint value_type;
+  enum { k_max_bytes = sizeof(Uint) };
+  static const_byteptr decode(Uint& x, const_byteptr p) {
+    x = *(Uint*)p;
+    return p + sizeof(Uint);
+  }
+  static const_byteptr decode(Uint& x, const_byteptr p, const_byteptr end) {
+    if (p + sizeof(Uint) > end) throw leb128error();
+    x = *(Uint*)p;
+    return p + sizeof(Uint);
+  }
+  static const_byteptr ignore(const_byteptr p, const_byteptr end) {
+    if (p + sizeof(Uint) > end) throw leb128error();
+    return p + sizeof(Uint);
+  }
+  static const_byteptr ignore(const_byteptr p) { return p + sizeof(Uint); }
+  static byteptr encode(byteptr p, Uint x) {
+    *(Uint*)p = x;
+    return p + sizeof(Uint);
+  }
+  static byteptr encode(byteptr p, const_byteptr end, Uint x) {
+    if (p + sizeof(Uint) > end) throw leb128error();
+    *(Uint*)p = x;
+    return p + sizeof(Uint);
+  }
+};
 
 template <class Uint>
 inline unsigned char need_fixed_bytes(Uint x) {

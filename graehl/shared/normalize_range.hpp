@@ -45,9 +45,9 @@ struct normalize_options {
   static char const* caption() { return "Probability Normalization"; }
   template <class Config>
   void configure(Config& c) {
-    c.is("add-k normalization");
     c('k')("addk,k", &addk_num)("add counts of [addk] to every observed event before normalizing");
     c('K')("denom-addk,K", &addk_denom)("add [denom-addk] to the denominator only when normalizing");
+    c.is("add-k normalization");
   }
 };
 

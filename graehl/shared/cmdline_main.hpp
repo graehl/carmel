@@ -218,8 +218,8 @@ struct main {
 
   main_options opt;
 
+  typedef main configure_validate;
   void validate() { opt.validate(ins); }
-  friend inline void validate(main& x) { x.validate(); }
 
   typedef main self_type;
 

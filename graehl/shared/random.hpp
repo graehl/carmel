@@ -121,6 +121,7 @@ struct random_seed {
   template <class Configure>
   void configure(Configure& c) {
     c("random-seed", &seed)("if set, use as initial seed for RNG");
+    c.is("random_seed");
   }
   void operator=(random_seed_type x) { seed = x; }
   operator random_seed_type() const { return seed ? *seed : default_random_seed(); }

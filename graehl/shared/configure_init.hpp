@@ -41,6 +41,27 @@ namespace configure {
 
 template <class Val>
 struct init_expr {
+  template <class X>
+  init_expr const& sibling(X* x) const {
+    x->configure(*this);
+    return *this;
+  }
+  template <class X, class A1>
+  init_expr const& sibling(X* x, A1 const& a1) const {
+    x->configure(*this, a1);
+    return *this;
+  }
+  template <class X, class A1, class A2>
+  init_expr const& sibling(X* x, A1 const& a1, A2 const& a2) const {
+    x->configure(*this, a1, a2);
+    return *this;
+  }
+  template <class X, class A1, class A2, class A3>
+  init_expr const& sibling(X* x, A1 const& a1, A2 const& a2, A3 const& a3) const {
+    x->configure(*this, a1, a2, a3);
+    return *this;
+  }
+
   template <class Child>
   init_expr<Child> operator()(std::string const& name, Child* child) const {
     return init_expr<Child>(child);

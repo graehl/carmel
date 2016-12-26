@@ -259,14 +259,15 @@ struct configure_program_options : configure_backend_base<configure_program_opti
 
   bool init_action(init_config) const { return true; }
 
-
   bool init_action(store_config) const {
     popt->finish_store();
+    // SHOWIF1(CONFEXPR,1, "stored",*popt);
     return false;
   }
 
   bool init_action(help_config const& c) const {
     popt->show_po_help(*c.o);
+    // SHOWIF1(CONFEXPR,1, "helped",*popt);
     return false;
   }
 

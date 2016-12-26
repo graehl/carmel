@@ -251,10 +251,8 @@ struct string_builder : string_buffer {
 #ifndef _MSC_VER
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
-  void operator=(std::string const& s) { static_cast<std::string&>(*this) = s; }
 // TODO: remove pragma
 #if GRAEHL_CPP11
-  void operator=(std::string&& s) { static_cast<std::string&>(*this) = std::move(s); }
   explicit string_builder(char const* str) : string_buffer(str) {}
   /// destructive: move away from current buffer (can't use any more w/o clear)
   void to(std::string& str) { str = std::move((std::string&)*this); }
@@ -454,20 +452,26 @@ std::string joined_seq(Seq const& seq, Sep const& sep) {
 }
 
 template <class V>
-inline std::string to_string_brackets(V const& val) {
-  string_builder b;
-  b('[');
-  bool first = true;
-  for (typename V::const_iterator i = val.begin(), e = val.end(); i != e; ++i) {
-    if (first)
-      first = false;
-    else
-      b(' ');
-    b(*i);
+struct to_string_select<V, typename enable_if<is_nonstring_container<V>::value>::type> {
+  static inline std::string to_string(V const& val) {
+    string_builder b;
+    b('[');
+    bool first = true;
+    for (typename V::const_iterator i = val.begin(), e = val.end(); i != e; ++i) {
+      if (first)
+        first = false;
+      else
+        b(' ');
+      b(*i);
+    }
+    b(']');
+    return b.str();
   }
-  b(']');
-  return b.str();
-}
+  template <class Str>
+  static inline void string_to(Str const& s, V& v) {
+    throw "string_to for sequences not yet supported";
+  }
+};
 
 
 }

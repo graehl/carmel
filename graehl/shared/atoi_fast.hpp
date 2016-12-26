@@ -550,6 +550,11 @@ Float parse_real(char const* p, char const* end, bool require_complete = true) {
     return scan_real<Float>(str);
 }
 
+template <class Float>
+Float parse_real(std::string::const_iterator p, std::string::const_iterator end, bool require_complete = true) {
+  return parse_real<Float>(&*p, &*end, require_complete);
+}
+
 inline float parse_float(char const* p, char const* end, bool require_complete = true) {
   return parse_real<float>(p, end, require_complete);
 }

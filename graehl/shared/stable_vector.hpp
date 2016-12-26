@@ -299,8 +299,9 @@ struct stable_vector {
   }
 
 #if GRAEHL_CPP11
-  stable_vector(stable_vector&& o) : chunks_(std::move(o.chunks_)), size_(o.size_), capacity_(o.capacity_) {}
-  stable_vector& operator=(stable_vector&& o) {
+  stable_vector(stable_vector&& o) noexcept
+      : chunks_(std::move(o.chunks_)), size_(o.size_), capacity_(o.capacity_) {}
+  stable_vector& operator=(stable_vector&& o) noexcept {
     assert(this != &o);
     chunks_ = std::move(o.chunks_);
     size_ = o.size_;
@@ -505,8 +506,9 @@ BOOST_AUTO_TEST_CASE(stable_vector_test_case) {
   test_stable_vector<StableVector2>();
   test_stable_vector<Vector3>(false);
 }
-}
-}
+
+
+}}
 
 #endif
 #endif

@@ -19,7 +19,7 @@
 
     struct M {
       void validate();
-      typedef void configure_validate;
+      typedef M configure_validate; // only called for adl::adl_validate<M>(m)
     };
 
     or
@@ -27,11 +27,28 @@
     namespace configure {
     validate_traits<My::M, void> { void call(My::M &); }
     }
+
+    to call the validate methods for an object and its sub-objects, you must use
+    configure.hpp and configure::validate_stored(&object); TODO: a more concise
+    validateonly traversal of configure methods without using whole
+    configure.hpp
 */
 
 #ifndef GRAEHL_SHARED__VALIDATE_HPP
 #define GRAEHL_SHARED__VALIDATE_HPP
 #pragma once
+
+#ifndef GRAEHL_LOG_VALIDATE
+#define GRAEHL_LOG_VALIDATE 0
+#endif
+
+#if GRAEHL_LOG_VALIDATE
+#include <graehl/shared/configure_is.hpp>
+#define GRAEHL_VALIDATE_LOG(t, x) \
+  std::cerr << "DEBUG: " << x << "((" << configure::configure_is(t) << "*)" << std::hex << t << std::dec << ")\n";
+#else
+#define GRAEHL_VALIDATE_LOG(t, x)
+#endif
 
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
@@ -49,14 +66,17 @@ using graehl::false_type;
 using graehl::true_type;
 using graehl::enable_if;
 
-template <class T, class Enable = void>
+template <class T, class Enable = T>
 struct validate_traits {
   static void call(T&) {}
 };
 
 template <class T>
 struct validate_traits<T, typename T::configure_validate> {
-  static void call(T& t) { t.validate(); }
+  static void call(T& t) {
+    GRAEHL_VALIDATE_LOG(&t, "member validate");
+    t.validate();
+  }
 };
 
 
@@ -146,47 +166,71 @@ struct one_of {
   }
 };
 }
-
-namespace adl {
 /// for primitives etc - hopefully lower priority than in-T's-namespace validate(T) due to 2nd arg
 template <class T>
 void validate(T& t, void* lowerPriorityMatch = 0) {
   configure::validate_traits<T>::call(t);
 }
 
+namespace adl {
 /// you can call this from outside our namespace to get the more specific version via ADL if it exists
 template <class T>
-void adl_validate(T& t) {
-  validate(t);
+void adl_validate(T& t);
 }
+
+
+namespace configure {
+template <class T>
+struct validate_traits<std::vector<T>, std::vector<T>> {
+  typedef std::vector<T> V;
+  static void call(V& t) {
+    for (typename V::iterator i = t.begin(), e = t.end(); i != e; ++i) ::adl::adl_validate(*i);
+  }
+};
+
+template <class Key, class T>
+struct validate_traits<std::map<Key, T>, std::map<Key, T>> {
+  typedef std::map<Key, T> V;
+  static void call(V& t) {
+    for (typename V::iterator i = t.begin(), e = t.end(); i != e; ++i) ::adl::adl_validate(i->second);
+  }
+};
 }
 
 namespace std {
 template <class T>
-void validate(std::set<T> const& v) {
-  for (typename std::vector<T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i)
-    ::adl::adl_validate(*i);
+void validate(std::set<T>& v) {
+  for (typename std::set<T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i)
+    ::adl::adl_validate(const_cast<T&>(*i));
+  // must not change set-key-compare or set data structure won't work
 }
 template <class T>
-void validate(std::vector<T> const& v) {
-  for (typename std::vector<T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i)
-    ::adl::adl_validate(*i);
+void validate(std::vector<T>& v) {
+  for (typename std::vector<T>::iterator i = v.begin(), e = v.end(); i != e; ++i) ::adl::adl_validate(*i);
 }
 template <class Key, class T>
-void validate(std::map<Key, T> const& v) {
-  for (typename std::map<Key, T>::const_iterator i = v.begin(), e = v.end(); i != e; ++i)
+void validate(std::map<Key, T>& v) {
+  for (typename std::map<Key, T>::iterator i = v.begin(), e = v.end(); i != e; ++i)
     ::adl::adl_validate(i->second);
 }
 }
 
 namespace boost {
 template <class T>
-void validate(boost::optional<T> const& i) {
+void validate(boost::optional<T>& i) {
   if (i) ::adl::adl_validate(*i);
 }
 template <class T>
-void validate(shared_ptr<T> const& i) {
+void validate(shared_ptr<T>& i) {
   if (i) ::adl::adl_validate(*i);
+}
+}
+
+namespace adl {
+/// you can call this from outside our namespace to get the more specific version via ADL if it exists
+template <class T>
+void adl_validate(T& t) {
+  validate(t);
 }
 
 

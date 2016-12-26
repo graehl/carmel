@@ -34,29 +34,13 @@
 namespace graehl {
 
 template <class O, class Argv>
-void print_command_line_only(O& out, int argc, Argv const& argv) {
+O& print_command_line(O& out, int argc, Argv const& argv, char const* header = "### COMMAND LINE:\n") {
+  if (header) out << header;
   graehl::word_spacer_c<' '> sep;
   for (int i = 0; i < argc; ++i) {
     out << sep;
     out_shell_quote(out, argv[i]);
   }
-}
-
-struct command_line {
-  int argc;
-  char** argv;
-  command_line(int argc, char** argv) : argc(argc), argv(argv) {}
-  friend inline std::ostream& operator<<(std::ostream& out, command_line const& self) {
-    self.print(out);
-    return out;
-  }
-  void print(std::ostream& out) const { print_command_line_only(out, argc, argv); }
-};
-
-template <class O, class Argv>
-O& print_command_line(O& out, int argc, Argv const& argv, char const* header = "### COMMAND LINE:\n") {
-  if (header) out << header;
-  print_command_line_only(out, argc, argv);
   if (header) out << '\n';
   return out;
 }

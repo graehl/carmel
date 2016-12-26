@@ -15,6 +15,12 @@
 
     avoid no-return-value compiler warnings for infinite loops and throw that
     will never return from a fn
+
+    usage: void f() NORETURN
+
+    c++11 alternative: void f() [[noreturn]] didn't work for me
+
+    perhaps you can put NORETURN before or after the decl; after works
 */
 
 #ifndef NORETURN_JG2012613_HPP
@@ -23,14 +29,13 @@
 
 #if defined(__GNUC__) && __GNUC__ >= 3
 #define NORETURN __attribute__((noreturn))
-#elif defined(__clang__)
-#define ANALYZER_NORETURN _attribute__((analyzer_noreturn))
-#define NORETURN
 #else
 #define NORETURN
 #endif
 
-#ifndef ANALYZER_NORETURN
+#if defined(__clang__)
+#define ANALYZER_NORETURN _attribute__((analyzer_noreturn))
+#else
 #define ANALYZER_NORETURN
 #endif
 

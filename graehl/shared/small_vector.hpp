@@ -224,7 +224,6 @@ struct small_vector {
 
   void push_back() { new (push_back_uninitialized()) T; }
 
-
 #if GRAEHL_CPP11
   /// move
   small_vector(small_vector&& o) noexcept {

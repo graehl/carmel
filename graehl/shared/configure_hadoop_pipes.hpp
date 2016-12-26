@@ -27,39 +27,22 @@
 #define GRAEHL_SHARED__CONFIGURE_HADOOP_PIPES_HPP
 #pragma once
 
-#include <graehl/shared/configure.hpp>
 #include <graehl/shared/warn.hpp>
-#include <algorithm>
-#include <sstream>
-
+#include <graehl/shared/configure.hpp>
 #if GRAEHL_TEST
 #include <graehl/shared/string_builder.hpp>
 namespace HadoopPipes {
 struct JobConf {
-  mutable std::string str;
-  virtual bool hasKey(std::string const& k) const { return k.find('!') == std::string::npos; }
-  virtual std::string const& get(std::string const& k) const {
-    str = graehl::to_string(k.size());
-    return str;
-  }
+  bool hasKey(std::string const& k) const { return k.find('!') == std::string::npos; }
+  std::string get(std::string const& k) const { return graehl::to_string(k.size()); }
 };
 }
 #else
 #include <hadoop/Pipes.hh>
 #endif
+#include <sstream>
 
 namespace configure {
-
-struct MapAsHadoopJobConf : HadoopPipes::JobConf {
-  typedef std::map<std::string, std::string> Map;
-  Map const* map_;
-  MapAsHadoopJobConf(Map const* map = 0) : map_(map) {}
-  bool hasKey(std::string const& k) const { return map_->find(k) != map_->end(); }
-  std::string const& get(std::string const& k) const { return map_->find(k)->second; }
-  bool getBoolean(std::string const& k) const { return graehl::string_to<bool>(get(k)); }
-  float getFloat(std::string const& k) const { return graehl::string_to<float>(get(k)); }
-  int getInt(std::string const& k) const { return graehl::string_to<int>(get(k)); }
-};
 
 // TODO: add non-leaf help info so hadoop_pipes formatted descriptions have at least one-level-nesting
 // headers. or does usage(str) do that already?
@@ -68,36 +51,21 @@ struct configure_hadoop_pipes : configure_backend_base<configure_hadoop_pipes> {
   FORWARD_BASE_CONFIGURE_ACTIONS(base)
   typedef HadoopPipes::JobConf const* JobConfP;
   JobConfP jobconf_;
-  bool tryMinusForUnderscore_;
 
   configure_hadoop_pipes(configure_hadoop_pipes const& o) = default;
-  configure_hadoop_pipes(JobConfP jobconf, string_consumer const& warn_to,
-                         int verbose_max = default_verbose_max, bool tryMinusForUnderscore = true)
-      : base(warn_to, verbose_max), jobconf_(jobconf), tryMinusForUnderscore_(tryMinusForUnderscore) {}
-
-  std::string const* get(std::string const& key) const {
-    if (jobconf_->hasKey(key)) return &jobconf_->get(key);
-    std::string k2((key));
-    std::replace(k2.begin(), k2.end(), '_', '-');
-    if (jobconf_->hasKey(k2)) return &jobconf_->get(k2);
-    return 0;
-  }
+  configure_hadoop_pipes(JobConfP jobconf, string_consumer const& warn_to, int verbose_max = default_verbose_max)
+      : base(warn_to, verbose_max), jobconf_(jobconf) {}
 
   template <class Val>
   void leaf_action(store_config, Val* pval, conf_expr_base const& conf) const {
     std::string const& pathname = conf.path_name();
     auto& opt = *conf.opt;
-    if (std::string const* v = get(pathname))
-      opt.apply_string_value(*v, pval, pathname, warn);
+    if (jobconf_->hasKey(pathname))
+      opt.apply_string_value(jobconf_->get(pathname), pval, pathname, warn);
     else if (opt.is_required_err())
       missing(pathname, false);
     else if (opt.is_required_warn())
       missing(pathname, true);
-  }
-
-  template <class Val>
-  void sequence_action(store_config c, Val* pval, conf_expr_base const& conf) const {
-    leaf_action(c, pval, conf);
   }
 
   static inline void missing(graehl::string_consumer const& o, std::string const& name, bool warn_only) {
@@ -125,27 +93,13 @@ struct configure_hadoop_pipes : configure_backend_base<configure_hadoop_pipes> {
 };
 
 template <class RootVal>
-void hadoop_configure(HadoopPipes::JobConf const* jobconf, RootVal* val, bool tryMinusForUnderscore = true,
+void hadoop_configure(HadoopPipes::JobConf const* jobconf, RootVal* val,
                       string_consumer const& warn = graehl::warn_consumer(), bool init = true,
                       bool validate = true) {
   if (init) configure::configure_init(val, warn);
-  configure_hadoop_pipes conf(jobconf, warn, default_verbose_max, tryMinusForUnderscore);
+  configure_hadoop_pipes conf(jobconf, warn, default_verbose_max);
   configure_action(conf, store_config(), val, warn);
   if (validate) configure::validate_stored(val, warn);
-}
-
-template <class RootVal>
-void map_configure(HadoopPipes::JobConf const& jobconf, RootVal* val, bool tryMinusForUnderscore = true,
-                   string_consumer const& warn = graehl::warn_consumer(), bool init = true, bool validate = true) {
-  hadoop_configure(&jobconf, val, tryMinusForUnderscore, warn, init, validate);
-}
-
-template <class RootVal>
-void map_configure(std::map<std::string, std::string> const& map, RootVal* val,
-                   bool tryMinusForUnderscore = true, string_consumer const& warn = graehl::warn_consumer(),
-                   bool init = true, bool validate = true) {
-  MapAsHadoopJobConf jobconf{&map};
-  hadoop_configure(&jobconf, val, tryMinusForUnderscore, warn, init, validate);
 }
 }
 
@@ -177,7 +131,7 @@ struct HadoopThing2 {
   }
 };
 
-BOOST_AUTO_TEST_CASE(configure_hadoop_pipes) {
+BOOST_AUTO_TEST_CASE(configure_program_options_test) {
   HadoopPipes::JobConf conf;
   HadoopThing2 t;
   configure::hadoop_configure(&conf, &t);
@@ -191,18 +145,6 @@ BOOST_AUTO_TEST_CASE(configure_hadoop_pipes) {
   BOOST_CHECK_EQUAL(t.a.x, 1);
   BOOST_CHECK_EQUAL(t.a.y, "y");
 }
-
-BOOST_AUTO_TEST_CASE(configure_hadoop_pipes_map) {
-  std::map<std::string, std::string> map{{"!z", "0.25"}, {"!a.x", "1"}, {"b.!y", "by"}};
-  HadoopThing2 t;
-  configure::map_configure(map, &t);
-  BOOST_CHECK_EQUAL(t.z, 0.25);
-  BOOST_CHECK_EQUAL(t.a.x, 1);
-  BOOST_CHECK_EQUAL(t.a.y, "y");
-  BOOST_CHECK_EQUAL(t.b.y, "by");
-  BOOST_CHECK_EQUAL(t.b.x, 0);
-}
-
 #endif
 
 #endif
