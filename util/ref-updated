@@ -1,0 +1,177 @@
+#!/bin/bash
+# block large files, warn if .clang-format present without being used on C++ sources
+
+
+add_libpath() {
+    if [[ $1 ]] && [[ -d $1 ]] ; then
+        LD_LIBRARY_PATH="$1:$LD_LIBRARY_PATH"
+        LD_LIBRARY_PATH=${LD_LIBRARY_PATH%:}
+        export LD_LIBRARY_PATH
+    fi
+}
+
+add_path() {
+    if [[ $1 ]] && [[ -d $1 ]] ; then
+        PATH="$1:$PATH"
+        PATH=${PATH%:}
+        export PATH
+    fi
+}
+
+add_libpath /local/gcc/lib
+add_libpath /local/gcc/lib64
+add_path /local/gcc/bin
+
+GITCMD=git
+NULLSHA=0000000000000000000000000000000000000000
+MAXSIZE=1500000000 # 1500 MB limit on file size
+CLANGFORMATCCMD=clang-format
+EXIT=0
+
+# ######################
+# Parse options
+while [[ $# > 1 ]]
+do
+key="$1"
+
+case $key in
+    -p|project)
+    PROJECT="$2"
+    shift
+    ;;
+    -r|refname)
+    refname="$2"
+    shift
+    ;;
+    -u|--uploader)
+    uploader="$2"
+    shift
+    ;;
+    -o|--oldrev)
+    oldref="$2"
+    shift
+    ;;
+    -n|--newrev)
+    newref="$2"
+    shift
+    ;;
+    *)
+    # unknown option
+    ;;
+esac
+shift
+done
+
+if [[ $PROJECT != xmt ]] ; then
+    exit 0
+fi
+#echo "options: project=$project, refname=$refname, uploader=$uploader, oldrev=$oldref, newrev=$newref"
+
+# Skip branch deletions
+if [[ $newref = $NULLSHA ]]; then
+  exit
+fi
+
+# Set oldref properly if this is branch creation.
+if [[ $oldref = $NULLSHA ]]; then
+  oldref=HEAD
+fi
+
+echo2() {
+    echo "$@" 1>&2
+}
+
+
+iscppfile() {
+    local ext=$(echo "$1" | cut -d'.' -f2)
+    [[ $ext = cpp ]] || [[ $ext = hpp ]] || [[ $ext = ipp ]] || [[ $ext = h ]] || [[ $ext = c ]] || [[ $ext = cxx ]] || [[ $ext = hxx ]] || [[ $ext = hh ]] || [[ $ext = cc ]]
+}
+gitfilesize() {
+    ${GITCMD:-git} cat-file -s ${newref:-HEAD}:"$1"
+}
+gitcatnew() {
+    ${GITCMD:-git} cat-file blob ${newref:-HEAD}:"$1"
+}
+checkclangformat() {
+    local rdir=/tmp/clang-format
+    mkdir -p $rdir
+    chmod 755 $rdir
+    if iscppfile "$1" ; then
+        echo2 -n "checking clang-format for $1 ... "
+        repl1=`mktemp /tmp/repl1.XXXXXX`
+        repl2=`mktemp /tmp/repl2.XXXXXX`
+        gitcatnew "$1" | ${CLANGFORMATCCMD:-clang-format} -assume-filename="$rclangformatdir/assume.cpp" -style=file -output-replacements-xml > $repl1
+        if [[ -s $repl1 ]] ; then
+            cat $repl1 | perl -ne 'print if m{replacement offset} && !m{> *\\?&#10; *</replacement>}' > $repl2
+            if [[ -s $repl2 ]] ; then
+                replf=$rdir/`basename $1`.replacements
+                echo "ERROR: $1 needs clang-format - ssh git02 cat $replf"
+                mv $repl1 $replf
+                chmod 644 $replf
+                rm -f $repl2
+                return 1
+            fi
+        fi
+        echo2 OK
+        rm -f $repl1 $repl2
+    fi
+}
+
+clangformatsz=`gitfilesize .clang-format 2>/dev/null`
+checkformat=
+clangviolations=
+if [[ $clangformatsz -gt 1 ]] && $CLANGFORMATCCMD -version >/dev/null 2>/dev/null; then
+    checkformat=1
+    echo2 "checking clang-format since root .clang-format file exists and clang-format binary works"
+    rclangformatdir=`mktemp -d /tmp/clang-format.XXXXXX`
+    gitcatnew .clang-format > $rclangformatdir/.clang-format
+fi
+
+# Get list of files to look at using git diff
+IFS=$'\n' # make newlines the only separator
+for file in $($GITCMD diff --stat --name-only --diff-filter=ACMRT ${oldref}..${newref})
+do
+  #--stat is making diff display a diffstat
+  #--name-only makes the output only contain the name of the files changed
+  #--diff-filter=ACMRT limits the output of the diff to only contain additive operations.
+  #${oldref}..${newref} generates the diff based on changes to be applied to oldref by newref.
+
+  # Get the size of this file
+  size=`gitfilesize "$file"`
+
+  # Check to see if for some reason we didn't get a size
+  if [[ $size ]]; then
+      if [[ $checkformat ]] ; then
+          if ! checkclangformat "$file"; then
+              clangviolations+="$file "
+              #EXIT=2 #TODO
+          fi
+      fi
+
+    # Compare filesize to MAXSIZE
+    if [[ $size -gt $MAXSIZE ]]; then
+      # Send output back to the user about oversized files.
+      echo "ERROR: $file with a size of $size bytes exceed the maximum allowed size of ${MAXSIZE} bytes."
+      EXIT=1
+    fi # End size comparison
+  fi # End check for empty size
+done # End list of files
+
+rm -rf $rclangformatdir
+
+# If we have oversized files, write more information out to the user
+if [[ $EXIT = 1 ]]; then
+  echo "ERROR: Your commit has been blocked due to certain files being too big. Check output above for more information."
+elif [[ $EXIT = 2 ]] ; then
+    echo "ERROR: Your commit is blocked due to clang-format (run $CLANGFORMATCCMD) violations on files:"
+fi
+if [[ $clangviolations ]] ; then
+    echo "please resubmit after:"
+    echo "/home/graehl/bin/ -style=file $clangviolations"
+fi
+
+
+# If the script exits with non-zero return code the push will be rejected.
+# Any output from the script will be returned to the user, regardless of the return code.
+
+exit $EXIT

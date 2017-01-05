@@ -215,21 +215,21 @@ struct stable_vector {
 
 #if GRAEHL_CPP11
   template <class... Args>
-  void emplace_back(Args&&... args) {
-    push_back(T(std::forward<Args>(args)...));
+  T& emplace_back(Args&&... args) {
+    return push_back(T(std::forward<Args>(args)...));
   }
 
   template <class From>
-  void push_back(From&& val) {
+  T& push_back(From&& val) {
     if (size_ == capacity_) {
       push_back_chunk();
       assert((size_ & posmask) == 0);
-      chunks_.back()[0] = std::forward<From>(val);
-    } else
-      chunks_.back()[size_ & posmask] = std::forward<From>(val);
-    ++size_;
+      ++size_;
+      return chunks_.back()[0] = std::forward<From>(val);
+    } else {
+      return chunks_.back()[size_++ & posmask] = std::forward<From>(val);
+    }
   }
-
 #else
   template <class From>
   void push_back(From const& val) {

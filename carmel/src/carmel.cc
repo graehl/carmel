@@ -693,7 +693,7 @@ struct carmel_main {
             long_opts["minimize-determinize"] || long_opts["minimize-determinize-only"],
             long_opts["minimize-rmepsilon"], !long_opts["minimize-determinize-only"],
             !long_opts["minimize-no-connect"], long_opts["minimize-inverted"], long_opts["minimize-pairs"],
-            !long_opts["minimize-pairs-no-epsilon"]))
+            !long_opts["minimize-pairs-no-epsilon"], long_opts["minimize-push-weights-delta"]))
       Config::log() << " (FST not input-determinized, try --minimize-determinize, which may not terminate)";
     if (!flags[(unsigned)'q'])
       Config::log() << " minimized-> " << result->size() << "/" << result->numArcs() << "\n";

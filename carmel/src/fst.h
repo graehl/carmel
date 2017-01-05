@@ -1,32 +1,32 @@
 #ifndef GRAEHL_CARMEL__FST_H
 #define GRAEHL_CARMEL__FST_H
 
-#include <carmel/src/config.hpp>
-#include <vector>
-#include <cstring>
-#include <cstdlib>
-#include <cmath>
-#include <ctime>
-#include <sstream>
-#include <iostream>
 #include <graehl/shared/2hash.h>
-#include <graehl/shared/list.h>
-#include <graehl/shared/weight.h>
-#include <graehl/shared/strhash.h>
-#include <graehl/shared/graph.h>
-#include <graehl/shared/threadlocal.hpp>
-#include <carmel/src/train.h>
-#include <graehl/shared/myassert.h>
-#include <carmel/src/compose.h>
-#include <iterator>
-#include <algorithm>
-#include <graehl/shared/kbest.h>
-#include <boost/config.hpp>
 #include <graehl/shared/config.h>
-#include <graehl/shared/mean_field_scale.hpp>
-#include <graehl/shared/size_mega.hpp>
 #include <graehl/shared/debugprint.hpp>
 #include <graehl/shared/gibbs_opts.hpp>
+#include <graehl/shared/graph.h>
+#include <graehl/shared/kbest.h>
+#include <graehl/shared/list.h>
+#include <graehl/shared/mean_field_scale.hpp>
+#include <graehl/shared/myassert.h>
+#include <graehl/shared/size_mega.hpp>
+#include <graehl/shared/strhash.h>
+#include <graehl/shared/threadlocal.hpp>
+#include <graehl/shared/weight.h>
+#include <boost/config.hpp>
+#include <carmel/src/compose.h>
+#include <carmel/src/config.hpp>
+#include <carmel/src/train.h>
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <vector>
 
 namespace graehl {
 
@@ -361,8 +361,8 @@ class WFST {
   template <class Fst>
   bool minimize_openfst(bool determinize = true, bool rmepsilon = false, bool minimize = true,
                         bool connect = true, bool inverted = false, bool as_pairs = false,
-                        bool pairs_keep_epsilon
-                        = true)  // for debugging, to_openfst then from_openfst, will lose arc indices
+                        bool pairs_keep_epsilon = true, double push_weights_delta = 0)
+  // for debugging, to_openfst then from_openfst, will lose arc indices
   {
     ensure_final_sink();
     if (inverted) invert();
@@ -370,8 +370,18 @@ class WFST {
     {
       as_pairs_fsa scoped_pairs(*this, pairs_keep_epsilon, as_pairs);
       //        DBP(numStates());
-      if (determinize) {
+      if (rmepsilon && determinize && minimize) {
+        to_openfst(f);
+        if (push_weights_delta) Push(&f, REWEIGHT_TO_INITIAL, kPushWeights, push_weight_delta);
+        Determinize(f, &f2);
+        Minimize(&f2);
+        RmEpsilon(&f2);
+        Determinize(f2, &f);
+      } else if (rmepsilon)
+        RmEpsilon(&f);
+      else if (determinize) {
         to_openfst(f2);
+        if (push_weights_delta) Push(&f2, REWEIGHT_TO_INITIAL, kPushWeights, push_weight_delta);
         Determinize(f2, &f);
       } else {
         to_openfst(f);
@@ -380,12 +390,7 @@ class WFST {
           return false;
         }
       }
-      if (rmepsilon) {
-        RmEpsilon(&f);
-      }
-      if (minimize) {
-        Minimize(&f);
-      }
+      if (minimize) Minimize(&f);
       if (connect) Connect(&f);
       /*
         } catch(std::exception &e) {
@@ -556,8 +561,8 @@ class WFST {
   }
 
   static char const* priorgroup_name(prior_group_by p) {
-    return (p == FIXED) ? "0 (fixed priors)" : (p == SINGLE) ? "1 (single prior scale)"
-                                                             : "2 (per-normgroup prior scale)";
+    return (p == FIXED) ? "0 (fixed priors)"
+                        : (p == SINGLE) ? "1 (single prior scale)" : "2 (per-normgroup prior scale)";
   }
 
   struct NormalizeMethod {
@@ -751,7 +756,7 @@ class WFST {
     }
   }
 
-  List<List<PathArc> >* randomPaths(unsigned k, unsigned max_len = -1);  // gives a list of (up to) k paths
+  List<List<PathArc>>* randomPaths(unsigned k, unsigned max_len = -1);  // gives a list of (up to) k paths
   // random paths to final
   // labels are pointers to names in WFST so do not
   // use the path after the WFST is deleted
@@ -1235,7 +1240,7 @@ class WFST {
     unsigned r = states.size();
     states.push_back();
     if (named_states) {
-      GRAEHL_IF_ASSERT(unsigned equals_r = )
+      GRAEHL_IF_ASSERT(unsigned equals_r =)
       stateNames.add_make_unique(name);
       Assert(equals_r == r);
     }
@@ -1359,7 +1364,7 @@ class NormGroupIter {
   State* begin;
   State* state;
   State* end;
-  typedef HashTable<UnsignedKey, List<HalfArc> >::iterator Cit;
+  typedef HashTable<UnsignedKey, List<HalfArc>>::iterator Cit;
   typedef List<HalfArc>::const_iterator Cit2;
   typedef List<FSTArc>::val_iterator Jit;
   Cit Ci;

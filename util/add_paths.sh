@@ -8,13 +8,31 @@ HOSTNAME=${HOSTNAME:-`hostname`}
 HOSTNAME=${HOSTNAME%.isi.edu}
 HOSTNAME=${HOSTNAME%.usc.edu}
 
-function add_ldpath
+add_ldpath()
 {
-if [ "$1" ] ; then
-#  export LD_LIBRARY_PATH="$1:$LD_LIBRARY_PATH"
-#  export LIBRARY_PATH="$1:$LIBRARY_PATH"
-  export LDFLAGS="$LDFLAGS -L$1 -Wl,-rpath,$1"
-fi
+    if [ "$1" ] ; then
+        #  export LD_LIBRARY_PATH="$1:$LD_LIBRARY_PATH"
+        #  export LIBRARY_PATH="$1:$LIBRARY_PATH"
+        export LDFLAGS="$LDFLAGS -L$1 -Wl,-rpath,$1"
+    fi
+}
+
+add_libpath()
+{
+    if [[ $1 ]] && [[ -d $1 ]] ; then
+        LD_LIBRARY_PATH="$1:$LD_LIBRARY_PATH"
+        LD_LIBRARY_PATH=${LD_LIBRARY_PATH%:}
+        export LD_LIBRARY_PATH
+    fi
+}
+
+add_path()
+{
+    if [[ $1 ]] && [[ -d $1 ]] ; then
+        PATH="$1:$PATH"
+        PATH=${PATH%:}
+        export PATH
+    fi
 }
 
 function add_pypath

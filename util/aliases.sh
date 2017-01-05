@@ -42,6 +42,7 @@ xmtlib=$xmtext/libraries
 libasan=$xmtlib/gcc-6.1.0/lib64/libasan.so
 libasanlocal=/local/gcc/lib64/libasan.so
 SDL_EXTERNALS_JAVA=$xmtext/libraries/jdk1.8.0_66
+export OMP_NUM_THREADS=1
 export SDL_EXTERNALS_JAVA
 if [[ -d $SDL_EXTERNALS_JAVA ]] ; then
     export JAVA_HOME=$SDL_EXTERNALS_JAVA
@@ -49,6 +50,219 @@ fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
+buildclangformat() {
+    (set -x
+     set -e
+     # choose rev <= http://llvm.org/svn/llvm-project/
+     CLANG_REV=295516
+     if [[ $force ]] || ! [[ -d llvm ]] ; then
+         (
+     rm -rf llvm
+     mkdir llvm
+     svn co http://llvm.org/svn/llvm-project/llvm/trunk@$CLANG_REV llvm
+     cd llvm/tools
+     svn co http://llvm.org/svn/llvm-project/cfe/trunk@$CLANG_REV clang
+     )
+     fi
+     rm -rf llvm-build
+     mkdir llvm-build
+     cd llvm-build
+     cmake -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Release \
+           -DLLVM_ENABLE_ASSERTIONS=NO -DLLVM_ENABLE_THREADS=NO ../llvm/
+     make -j8
+    )
+    local clf=llvm-build/bin/clang-format
+    ls -l $clf
+     strip $clf
+    ls -l $clf
+}
+
+tolower() {
+    catz "$@" |  tr '[:upper:]' '[:lower:]'
+}
+fstshow() {
+    for f in "$@"; do
+        fstdraw --isymbols=${isymbols:-ascii.syms} --osymbols=${osymbols:-wotw.syms} -portrait $f | dot -Tjpg >$f.jpg; open $f.jpg
+        done
+}
+fstcompinv() {
+    for f in "$@"; do
+        fstcompile --isymbols=${osymbols:-wotw.syms} --osymbols=${isymbols:-ascii.syms} < $f >$f.fst; preview $f
+    done
+}
+fstcomp() {
+    fstcompile --keep_isymbols --keep_osymbols "$@"
+}
+fstprinto() {
+    fstprint --isymbols=${osymbols:-wotw.syms} --osymbols=${osymbols:-wotw.syms} "$@"
+}
+gitchangedls() {
+    git diff-tree --no-commit-id --name-only -r ${1:-HEAD}
+}
+xmtnull=' -o /dev/null --log-config=/home/graehl/warn.xml'
+timenmtchs() {
+    for k in -1 10 0; do
+    for f in "$@"; do
+        khyps=$k xmt=~/pub/$f/xmt timenmtch
+    done
+    done
+}
+timenmtch() {
+    local x=${xmt:-xmtRelease}
+    local k=${khyps:-10}
+    echo -n "k-hyps=$khyps $x :"
+    local root=/home/graehl/bugs/xnn
+    time $x --input=$root/input/nmt-char-sequence --pipeline=nmt-beam-decoder --nmt-beam-decoder.k-hyps-per-state=$khyps --config=$root/config/nmt-beam-decoder.yml -o /dev/null --log-config=/home/graehl/warn.xml
+}
+dups() {
+    md5sum "$@" | sort | perl -e 'while(<>){$m=substr($_,0,32);$f=substr($_,34);if ($m eq $m0) { print STDERR $f0 if $f0; print $f; $f0 = undef ; } else {$f0 = $f;} $m0=$m;}'
+}
+pie() {
+    local e=$1
+    shift
+    perl -i~ -pe "$e" "$@"
+}
+pies() {
+    if [[ $2 ]] ; then
+        (
+        set -x
+        perl -i~ -e '$from=shift;$to=shift; while(<>){s/\Q$from\E/$to/og; print}' "$@"
+        shift
+        if [[ $2 ]] ; then
+            ag --literal "$@"
+        fi
+        )
+    fi
+}
+renameprefix() {
+    if [[ $1 ]] && [[ $2 ]] ; then
+        local t=`mktemp`
+        for f in `ls -d $1*`; do g=${f#$1}; echo mv $f $2$g; done > $t
+        cat $t
+        echo "move $1 => $2 ?"
+        select yn in "Yes" "No"; do
+            if [[ $yn == Yes ]] ; then
+                (set -x
+                 . $t
+                )
+                ls -d $2*
+                echo "moved $1 => $2"
+            fi
+            break
+        done
+        rm $t
+    fi
+}
+mendrescorelen() {
+    mend;co rescorelen;. ~/tmp/co.sh;mend
+}
+ctpath() {
+    export PYTHONPATH=/.auto/home/graehl/c/coretraining/main/3rdParty/python
+    export LD_LIBRARY_PATH=/.auto/home/graehl/c/coretraining/main/lib:/.auto/home/graehl/c/coretraining/main/lib
+    export PERL5LIB=/.auto/home/graehl/c/coretraining/main/kraken/xnmtrescore/App:/.auto/home/graehl/c/coretraining/main/kraken/xnmtrescore/App/bin:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib:/.auto/home/graehl/c/coretraining/main/3rdParty/perl_libs:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib/TroyPerlLib:/.auto/home/graehl/c/coretraining/main/kraken/xtrain/App:/.auto/home/graehl/c/coretraining/main/kraken/xtrain/App/bin:/.auto/home/graehl/c/coretraining/main/Shared/App
+}
+renamepre() {
+    if [[ $1 ]] ; then
+    if [[ $2 ]] ; then
+        for f in $1*; do
+            suf=${f#$1}
+            mv $f $2$suf
+        done
+        for f in $(ag -l --literal "$1" $2.apex); do
+            perl -i~ -pe "s#\Q$1\E#$2#g" $f
+        done
+        ls $2*
+    fi
+    fi
+}
+prewpm() {
+    wpm `lstd $1*`
+}
+wpmbleu() {
+    perl -e 'while(<>) {$wpm=$1 if m#Words/Minute: (?:\[[^/]*/)([^/]+)#;$lcbleu=$1 if /lcBLEU:Avg = (.+)/;$bleu=$1 if /txt:Avg = (.+)/;} $lcbleu=sprintf("%.2f", $lcbleu); $bleu=sprintf("%.2f", $bleu); $wpm=sprintf("%.1f", $wpm); print "($lcbleu) $bleu (lc)BLEU @ $wpm wpm\n"' "$@"
+}
+aglines() {
+    ag --nogroup --nofilename "$@"
+}
+lstd() {
+    for f in `ls -rtd "$@"`; do
+        if [[ -d "$f" ]] ; then
+            echo "$f"
+        fi
+    done
+}
+lst() {
+    lsd -rt "$@"
+}
+sumperf() {
+    (aglines 'Words/Minute|MaxVM' "$@" | $UTIL/summarize_num.pl)     2>/dev/null
+}
+wpm1() {
+    (
+        local d=$1
+        if [[ $d ]] ; then
+            d=${d%/}
+            d=${d%/evalresults_avg}
+            if [[ -d $d/evalresults_avg ]]  ; then
+                (
+                    cd "$d"
+                    b=`basename $d`
+                    printf '%36s \t' "${b%.re}"
+                    ((cd eval_slot;aglines 'Words/Minute|MaxVM' | $UTIL/summarize_num.pl)  2>/dev/null
+                     grep Avg evalresults_avg/test-results.txt evalresults_avg/test-results.txt.lcBLEU
+                     ) | wpmbleu
+                )
+            elif [[ -d $d ]] ; then
+                echo2 "  no evalresults for $d"
+            fi
+            cd "$d" || exit
+        fi
+        if [[ $verbose ]] ; then
+            for f in evalresults*; do
+                (ag BLEU $f)
+            done
+        fi
+    )
+}
+wpm() {
+    forall0 wpm1 "$@"
+}
+
+rea() {
+    . ~/u/aliases.sh
+}
+reapex() {
+    resherp=1 rmapex "$@"
+}
+rmapex() {
+    local apex=${1%.apex}.apex
+    if [[ -f $apex ]] ; then
+        local stem=${apex%.apex}
+        if [[ $stem ]] ; then
+            mv $apex tmp.apex
+            echo rm -rf $stem*
+            select yn in "Yes" "No"; do
+                if [[ $yn == Yes ]] ; then
+                    rm -rf bak.$stem
+                    mkdir bak.$stem
+                    mv $stem* bak.$stem
+                else
+                    return
+                fi
+                break
+            done
+            mv tmp.apex $apex
+            if [[ $resherp ]] ; then
+                sherp $apex
+            fi
+        fi
+    fi
+}
+kraken() {
+    local dir=$1
+    shift
+    chost=c-dmunteanu2 c-s "cd $dir; LANG=;UNSUPPORTED=;PYTHONPATH=/.auto/home/graehl/c/coretraining/main/3rdParty/python;LD_LIBRARY_PATH=/.auto/home/graehl/c/coretraining/main/lib:/.auto/home/graehl/c/coretraining/main/lib;PATH=/.auto/home/graehl/c/coretraining/main/kraken/xnmtrescore/App:/.auto/home/graehl/c/coretraining/main/kraken/xnmtrescore/App/bin:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/xtrain/App:/.auto/home/graehl/c/coretraining/main/kraken/xtrain/App/bin:/.auto/home/graehl/c/coretraining/main/Shared/App:/home/hadoop/jdk1.8.0_60/bin:/home/graehl/c/xmt-externals/FC12/libraries/hadoop-0.20.2-cdh3u3/jdk1.8.0_60/bin:/home/graehl/c/xmt-externals/FC12/../Shared/java/apache-maven-3.0.4/bin:/home/graehl/c/xmt-externals/FC12/libraries/jdk1.8.0_66/bin:/home/graehl/u:/home/graehl/bin:/usr/local/bin:/usr/bin:/usr/lib64/qt-3.3/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:.:/local/bin/usr/X11R6/bin:.;PERL5LIB=/.auto/home/graehl/c/coretraining/main/kraken/xnmtrescore/App:/.auto/home/graehl/c/coretraining/main/kraken/xnmtrescore/App/bin:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib:/.auto/home/graehl/c/coretraining/main/3rdParty/perl_libs:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib/TroyPerlLib:/.auto/home/graehl/c/coretraining/main/kraken/xtrain/App:/.auto/home/graehl/c/coretraining/main/kraken/xtrain/App/bin:/.auto/home/graehl/c/coretraining/main/Shared/App /usr/bin/perl $*"
+}
 nnexpanded() {
     echo -n "$1 - "; grep nn-expanded "$1" | summarize_num.pl 2>/dev/null
 }
@@ -125,7 +339,7 @@ crontest() {
     echo "https://condor-web.languageweaver.com/CronTest_graehl/www/index.cgi?"
 }
 reflog() {
-    git reflog --format='%C(auto)%h %<|(17)%gd %C(blue)%ci%C(reset) %s'
+    git reflog --format='%C(auto)%h %<|(17)%gd %C(blue)%ci%C(reset) %s' | head -${1:-99}
 }
 safefilename() {
     perl -e 'for (@ARGV) { y/:/_/ }; print join " ", @ARGV' "$@"
@@ -138,8 +352,11 @@ cutmp4() {
 nbest() {
     hyp best -a feature -n "$@"
 }
+determinize() {
+    hyp determinize   --log-config=/home/graehl/debug.xml -a feature "$@"
+}
 nbeststr() {
-    hyp best -a feature --weight=false --quote=unquoted --nbest-index=0 -n "$@"
+    hyp best -a feature --weight=false --quote=unquoted --nbest-index=0 "$@"
 }
 chomplast() {
     perl -e '
@@ -155,19 +372,6 @@ xmtsize() {
 }
 gitchanged2() {
     git log --name-status --oneline "$1..$2"
-}
-aglines() {
-    ag --nogroup --nofilename "$@"
-}
-wpm() {
-    if [[ $1 ]] ; then
-        cd "$1"
-    fi
-    for f in evalresults*; do
-        (ag BLEU $f)
-    done
-    (cd eval_slot;aglines 'Words/Minute|MaxVM' | $UTIL/summarize_num.pl)
-    cat evalresults_avg/test-results.txt
 }
 cmakebuild() {
     cmake --build .
@@ -608,6 +812,20 @@ pandocslides() {
             browse $out
     )
 }
+panhtml() {
+    (
+        set -e
+        local f=$1
+        base=${f%.md}
+        [[ -f $f ]] || f=$base.md
+        local out=${2:-$base.html}
+        rm -f $out
+        ln -sf ~/c/reveal.js `dirname $out`/
+        pandoc -s -t html5 --slide-level=2 $f -o $out -V ${2:-black} && perl -i -pe 's{theme/simple}{theme/black}' $out &&
+            browse $out
+    )
+}
+
 dfpercent() {
     df -h "$@" | perl -ne '$p=$1 if /(\S+)%\s+\S*$/;END{print 100-$p}'
 }
@@ -1216,10 +1434,16 @@ inplace() {
     )
 }
 a2c() {
-    for f in aliases.sh misc.sh time.sh gcc.sh ccache-wrapper.sh; do
+    for f in aliases.sh; do
         scp ~/u/$f $chost:u/$f
     done
 }
+all2c() {
+    for f in aliases.sh misc.sh time.sh; do
+        scp ~/u/$f $chost:u/$f
+    done
+}
+
 ospushmend() {
     (set -e
      cd $osgitdir
@@ -1283,6 +1507,9 @@ gitinfo() {
     gitinfo_changeid_get
     gitinfo_author_get
     showvars_optional gitinfo_subject gitinfo_author gitinfo_sha1 gitinfo_author
+}
+gitcherry() {
+    git cherry-pick ${1:---continue}
 }
 gitshows() {
     git show --name-status
@@ -1525,6 +1752,20 @@ c12clang() {
 }
 gitcat() {
     git cat-file blob "$@"
+}
+gitcatm() {
+    (
+            set -x
+            for f in "$@"; do
+                echo2 $f
+        gitcat ${rev:-origin/master}:$f
+        done
+    )
+}
+gitdiffm() {
+    (set -x
+     git diff ${rev:-origin/master} HEAD -- "$@"
+     )
 }
 linuxver() {
     if [ -f /etc/redhat-release ]; then
@@ -2698,6 +2939,22 @@ fi
 if [[ $HOST = c-ydong ]] || [[ $HOST = c-mdreyer ]] ; then
     xmtx=/.auto/home/graehl/x
 fi
+c-head() {
+    c-s head "$@"
+}
+nbest1() {
+    fgrep "nbest=${nbest:-1} " "$@"
+}
+nbest() {
+    for f in "$@"; do
+        echo "$f"
+        nbest1 "$f" | head -10
+        echo ...
+    done
+}
+c-1best() {
+    c-s nbest=$nbest nbest "$@"
+}
 c-cat() {
     c-s catz "$@"
 }
@@ -4256,21 +4513,27 @@ gdbargs() {
     gdb --fullname -ex "set args $*; r" $prog
 }
 rebaseadds() {
-    local adds=`git rebase --continue 2>&1 | perl -ne 'if (/^(.*): needs update/) { print $1," " }'`
+    local adds=`git ${rebasecmd:-rebase} --continue 2>&1 | perl -ne 'if (/^(.*): needs update/) { print $1," " }'`
     echo adds=$adds
     if [[ $adds ]] ; then
         git add -- $adds
     fi
-    git rebase --continue
+    git ${rebasecmd:-rebase} --continue
 }
 rebasex() {
     cd $xmtx
     rebasenext
 }
-rebasenext() {
+rebasecmdnext() {
     gitroot
-    rebasece `git rebase --continue 2>&1 | perl -ne 'if (!$done && /^(.*): needs merge/) { print $1; $done=1; }'`
+    rebasecmdce `git ${rebasecmd:-rebase} --continue 2>&1 | perl -ne 'if (!$done && /^(.*): needs merge/) { print $1; $done=1; }'`
     rebaseadds
+}
+rebasenext() {
+    rebasecmd=rebase rebasecmdnext "$@"
+}
+cherrynext() {
+    rebasecmd=cherry-pick rebasecmdnext "$@"
 }
 gitconflicts() {
     git diff --name-only --diff-filter=U
@@ -4525,7 +4788,7 @@ linjen() {
      GCCVERSION=${GCCVERSION:-6.1.0}
      gccprefix=$xmtextbase/FC12/libraries/gcc-$GCCVERSION
      #gccprefix=/local/gcc
-     c-s JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/ SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
+     c-s nohup=$nohup JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/ SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} NOPIPES=${NOPIPES:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
 }
 jen() {
     cd $xmtx
@@ -4575,11 +4838,16 @@ jen() {
         cc=$gccprefix/bin/gcc
         cxx=$gccprefix/bin/g++
     fi
-    cmake=${cmake:-} CC=$cc CXX=$cxx gccprefix=$gccprefix SDL_ETS_BUILD=$SDL_ETS_BUILD GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    nohupcmd=
+    if [[ $nohup ]] ; then
+        nohupcmd=nohup
+    fi
+    cmake=${cmake:-} CC=$cc CXX=$cxx gccprefix=$gccprefix SDL_ETS_BUILD=$SDL_ETS_BUILD GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} NOPIPES=${NOPIPES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} $nohupcmd jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
     set +x
+    wait
     echo
     echo $log
     fgrep '... FAIL' $log | grep -v postagger | sort > $log.fails
@@ -4600,7 +4868,7 @@ jen() {
 
 
 yjen(){
-    chost=c-ydong linjen "$@"
+    chost=y linjen "$@"
 }
 jjen(){
     chost=$jhost linjen "$@"
@@ -5017,7 +5285,11 @@ panpdf() {
         local geom="-V geometry=${paper:-letter}paper -V geometry=margin=${margin:-0.5cm} -V geometry=${orientation:-portrait} -V geometry=footskip=${footskip:-20pt}"
         #+implicit_figures
         #+line_blocks
-        pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+line_blocks -t latex -w latex -o $out --template ~/u/xetex.template --listings -V mainfont="${mainfont:-Constantia}" -V sansfont="${sansfont:-Corbel}" -V monofont="${monofont:-Consolas}"  -V fontsize=${fontsize:-10pt} -V documentclass=${documentclass:-article}  $in
+        fontarg=
+        if [[ $fonts ]] ; then
+            fontarg="-V mainfont=${mainfont:-Constantia} -V sansfont=${sansfont:-Corbel} -V monofont=${monofont:-Consolas}"
+        fi
+        pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+line_blocks -t latex -w latex -o $out --template ~/u/xetex.template --listings $fontarg  -V fontsize=${fontsize:-10pt} -V documentclass=${documentclass:-article}  $in
         if [[ $open ]] ; then
             open $out
         fi
@@ -5298,7 +5570,11 @@ usegcc() {
     export CC="${ccachepre}gcc${GCC_SUFFIX:-}"
     export CXX="${ccachepre}g++${GCC_SUFFIX:-}"
 }
-
+usepython() {
+    SDL_EXTERNALS_PYTHONHOME=$SDL_EXTERNALS_PATH/libraries/python-2.7.10
+    export PATH=$SDL_EXTERNALS_PYTHONHOME/bin:$PATH
+    export LD_LIBRARY_PATH=$SDL_EXTERNALS_PYTHONHOME/lib:$LD_LIBRARY_PATH
+}
 usegccnocache() {
     export CC="gcc"
     export CXX="g++"
@@ -5761,13 +6037,19 @@ rebases() {
     perl -ne 'print "$1 " if /^(.*): needs merge/g'
     echo
 }
-rebasece() {
+rebasecmdce() {
     (
         for f in "$@"; do
             edit $f
         done
-        rebasec "$@"
+         rebasec "$@"
     )
+}
+rebasece() {
+    rebasecmd=rebase rebasecmdce "$@"
+}
+cherryce() {
+    rebasecmd=cherry-pick rebasecmdce "$@"
 }
 unadd() {
     if [[ $* ]] ; then
@@ -5835,7 +6117,7 @@ gstat() {
 }
 rebasec() {
     git add "$@"
-    git rebase --continue
+    git ${rebasecmd:-rebase} --continue
 }
 mend() {
     (
@@ -6697,6 +6979,23 @@ view() {
         xzgv "$@"
     fi
 }
+
+replacegrep() {
+    local from=$1
+    local to=$2
+    if [[ $to ]] ; then
+        shift
+        shift
+        echo2 "$from = $to in $*"
+        local subs=`mktemp subs.XXXXXX`
+        cat > $subs <<EOF
+$from	$to
+EOF
+        substigrep $subs --literal "$from" "$@"
+        rm $subs
+    fi
+}
+
 substigrep() {
     local repl=$1
     (set -e
@@ -8113,9 +8412,17 @@ srescue() {
     find "$@" -name '*.dag.rescue*'
 }
 drescue() {
+    (
     for f in `srescue "$@"`; do
-        diff $f $f.rescue
+        g=${f%.rescue001}
+        g=${g%.rescue}
+        echo $f
+        if [[ $f != $g ]] ; then
+            banner diff -u "$g" "$f"
+            diff -u "$g" "$f"
+        fi
     done
+    )
 }
 rmrescue() {
     find "$@" -name '*.dag.rescue*' -exec rm {} \;
@@ -8123,23 +8430,19 @@ rmrescue() {
 rescue() {
     for f in `srescue "$@"`; do
         pushd `dirname $f`
-        vds-submit-dag `basename $f`
+        condor_submit_dag `basename $f`
         popd
     done
 }
 csub() {
     pushd `dirname $1`
-    vds-submit-dag `basename $1`
+    condor_submit_dag `basename $1`
     popd
 }
 casubr() {
     casub `ls -dtr *00* | tail -1` "$@"
 }
 
-[[ ${ONHPC:-} ]] && alias qme="qstat -u graehl"
-alias gpi="grid-proxy-init -valid 99999:00"
-alias 1but="cd 1btn0000 && vds-submit-dag 1button.dag; cd .."
-alias rm0="rm -rf *000?"
 alias lsd="ls -al | egrep '^d'"
 releasevariant="release debug-symbols=on --allocator=tbb"
 variant=$releasevariant
@@ -9792,4 +10095,69 @@ fi
 CT=${CT:-`echo ~/c/ct/main`}
 crontest1() {
     (name=${1:-mert-update3}; export LW_SHERPADIR=rename; export LW_RUNONEMACHINE=1; export CT=$CT/..; ( cd $CT; cd main; nohup perl Shared/Test/bin/CronTest.pl $CT -name "$name" -steps tests -tests kraken/kraken/CompoundSplit kraken/kraken/CountFeats kraken/kraken/Merge kraken/kraken/Preproc kraken/kraken/Xiphias kraken/kraken/XTrain-EJ kraken/kraken/XTrain kraken/kraken/XTrain_S2T -parallel 20 ) &>crontest.$name.log ) &
+}
+
+CLANGFORMATCCMD=${CLANGFORMATCCMD:-clang-format}
+GITCMD=${GITCMD:-git}
+
+iscppfile() {
+    local ext=$(echo "$1" | cut -d'.' -f2)
+    [[ $ext = cpp ]] || [[ $ext = hpp ]] || [[ $ext = ipp ]] || [[ $ext = h ]] || [[ $ext = c ]] || [[ $ext = cxx ]] || [[ $ext = hxx ]] || [[ $ext = hh ]] || [[ $ext = cc ]]
+}
+gitfilesize() {
+    ${GITCMD:-git} cat-file -s ${newref:-HEAD}:"$1"
+}
+gitcatnew() {
+    ${GITCMD:-git} cat-file blob ${newref:-HEAD}:"$1"
+}
+checkclangformat() {
+    local rdir=/tmp/clang-format
+    mkdir -p $rdir
+    chmod 755 $rdir
+    if iscppfile "$1" ; then
+        echo2 -n "checking clang-format for $1 ... "
+        repl1=`mktemp /tmp/repl1.XXXXXX`
+        repl2=`mktemp /tmp/repl2.XXXXXX`
+        rclangformatdir=${rclangformatdir:-/home/graehl/x}
+        gitcatnew "$1" | ${CLANGFORMATCCMD:-clang-format} -assume-filename="$rclangformatdir/assume.cpp" -style=file -output-replacements-xml > $repl1
+        if [[ -s $repl1 ]] ; then
+            cat $repl1 | perl -ne 'print if m{replacement offset} && !m{> *\\?&#10; *</replacement>}' > $repl2
+            if [[ -s $repl2 ]] ; then
+                replf=$rdir/`basename $1`.replacements
+                echo "ERROR: $1 needs clang-format - ssh git02 cat $replf"
+                mv $repl1 $replf
+                chmod 644 $replf
+                rm -f $repl2
+                return 1
+            fi
+        fi
+        echo2 OK
+        rm -f $repl1 $repl2
+    fi
+}
+
+checkclangs() {
+    (
+        local ERR=0
+        clangformatsz=`gitfilesize .clang-format`
+        checkformat=
+        if [[ $clangformatsz -gt 1 ]] ; then
+            checkformat=1
+        fi
+        IFS=$'\n' # make newlines the only separator
+
+        rclangformatdir=`mktemp -d /tmp/clang-format.XXXXXX`
+        gitcatnew .clang-format > $rclangformatdir/.clang-format
+        for file in $(${GITCMD:-git} diff --stat --name-only --diff-filter=ACMRT ${oldref:-HEAD^1}..${newref:-HEAD});
+        do
+            size=`gitfilesize "$file"`
+            if [[ ! -z $size ]]; then
+                if [[ $checkformat ]] ; then
+                    checkclangformat "$file" || ERR=1
+                fi
+            fi
+        done
+        rm -rf $rclangformatdir
+        exit $ERR
+    )
 }

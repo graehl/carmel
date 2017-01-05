@@ -375,11 +375,33 @@ wordsn() {
     done
     echo
 }
+replinen() {
+    perl -e '
+$n=shift;
+$m=$n;
+($m,$n)=($1,$2) if $n=~/(\d+)-(\d+)/;
+print STDERR "$m-$n vertical repeats of each line...\n";
+while(<>) {
+ for $i (1..$n) {
+  print;
+ }
+}' "$@"
+}
 repn() {
-    for i in $(seq 1 ${2:-1}); do
-        echo -n "$1"
-    done
-    echo
+    perl -e '
+$n=shift;
+$m=$n;
+($m,$n)=($1,$2) if $n=~/(\d+)-(\d+)/;
+print STDERR "$m-$n horizontal repeats of each line...\n";
+while(<>) {
+ chomp;
+ $one=$_;
+ for $i (1..$n) {
+  print "$_\n" if $i>=$m;
+  $_="$_ $one";
+ }
+}
+' "$@"
 }
 hadlsr() {
     hadfs -lsr "$@"
@@ -708,11 +730,18 @@ maybe_cp() {
 
 lengths() {
     #perl -ne '$l=(scalar split);print "$l\n"' "$@"
-    catz "$@" | awk '{print NF}'
+    local NF=NF
+    if [[ $1 == -c ]] ; then
+        shift
+        NF='length()'
+    fi
+    catz "$@" | awk "{print $NF}"
 }
-
-sum_lengths() {
-    lengths "$@" | summarize-num
+numsum() {
+    summarize_num.pl "$@"
+}
+lengthsum() {
+    lengths "$@" | numsum
 }
 tab() {
     echo -ne "\t$*"

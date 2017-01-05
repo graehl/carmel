@@ -40,6 +40,7 @@ struct log_message_exception : public LogMessage
 #include "fst/minimize.h"
 #include "fst/rmepsilon.h"
 #include "fst/determinize.h"
+#include "fst/push.h"
 #include "fst/connect.h"
 
 // this saves us linking to a separately built lib:
