@@ -50,6 +50,45 @@ fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
+syncmusic() {
+    adb stop-server
+    (set -e
+     set -x
+    adb start-server
+    adb devices
+    cd ~/dropbox
+    adb-sync music /sdcard/music
+    cd ~/music
+    adb-sync local /sdcard/music
+    )
+}
+tarun() {
+    local user=${1:-$USER}
+    shift
+    tarsnap --keyfile "$HOME/$user.tarsnap.key" "$@"
+}
+tarx() {
+    local user=${1?tarx user archive or tarx user-...}
+    local a=$2
+    if [[ $a ]] ; then
+        shift
+    else
+        a=$1
+        user=`perl -e '$_=shift;print "$1" if /([a-z]+)-/;' "$a"`
+    fi
+    shift
+    (
+        echo $user $a
+    d=~/$user/$a
+    mkdir -p $d
+    set -x
+    cd $d
+    tarun $user -x -f "$a" "$@"
+    )
+}
+tarls() {
+    tarsnap --keyfile "$HOME/${1:-$USER}.tarsnap.key" --list-archives | sort
+}
 buildclangformat() {
     (set -x
      set -e
@@ -6071,8 +6110,8 @@ overt() {
         rm -f $gsh/$f
         cp $f $gsh/$f
     done
-    cp $xmtx/scripts/gitcredit ~/c/gitcredit/
-    cp ~/c/mdb/libraries/liblmdb/mdb_from_db.{c,1} $gsh
+#    cp $xmtx/scripts/gitcredit ~/c/gitcredit/
+#    cp ~/c/mdb/libraries/liblmdb/mdb_from_db.{c,1} $gsh
     pushd ~/g
 }
 diffg() {

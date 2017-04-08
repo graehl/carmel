@@ -259,15 +259,14 @@ struct configure_program_options : configure_backend_base<configure_program_opti
 
   bool init_action(init_config) const { return true; }
 
+
   bool init_action(store_config) const {
     popt->finish_store();
-    // SHOWIF1(CONFEXPR,1, "stored",*popt);
     return false;
   }
 
   bool init_action(help_config const& c) const {
     popt->show_po_help(*c.o);
-    // SHOWIF1(CONFEXPR,1, "helped",*popt);
     return false;
   }
 
@@ -301,7 +300,7 @@ void program_options_action(program_options_exec_new const& popt, Action const& 
 
 template <class RootVal>
 bool program_options_maybe_help(std::ostream& o, program_options_exec_new const& popt, RootVal* pval,
-                                string_consumer const& warn_to = warn_consumer()) {
+                                string_consumer const& warn_to = string_consumer()) {
   if (popt.p->is_help()) {
     program_options_action(popt, help_config(o), pval, warn_to);
     return true;

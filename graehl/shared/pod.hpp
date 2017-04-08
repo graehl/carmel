@@ -30,6 +30,7 @@
 #define GRAEHL_SHARED__POD_HPP
 #pragma once
 
+#include <graehl/shared/stacktrace.hpp>
 #include <cassert>
 #include <cstddef>
 #include <cstring>
@@ -37,11 +38,38 @@
 #include <stdexcept>
 #include <string>
 
+#ifndef NDEBUG
+#ifndef GRAEHL_DEBUG_MAX_SIZE
+#define GRAEHL_DEBUG_MAX_SIZE 15000
+#endif
+#endif
+
+#if GRAEHL_DEBUG_MAX_SIZE
+#define GRAEHL_CHECK_DEBUG_MAX_SIZE(x)                                                      \
+  do {                                                                                      \
+    if ((x) > GRAEHL_DEBUG_MAX_SIZE) {                                                      \
+      std::cerr << "\ERROR: (probably) pod array size=" << (x) << " suspiciously large.\n"; \
+      throw encoding_error();                                                               \
+    }                                                                                       \
+  } while (0)
+#else
+#define GRAEHL_CHECK_DEBUG_MAX_SIZE(x)
+#endif
+
 namespace graehl {
 
 struct encoding_error : std::exception {
-  char const* what() const throw() { return "binary encoding didn't fit in buffer"; }
+  char const* what() const throw() {
+    return "binary encoding didn't fit in buffer (or string had extra bytes in decoding)";
+  }
+  encoding_error() throw() { stacktrace(); }
   ~encoding_error() throw() {}
+};
+
+struct decoding_error : encoding_error {
+  char const* what() const throw() {
+    return "binary encoding: buffer had insufficient, or unused, bytes in decoding";
+  }
 };
 
 typedef unsigned char byte;
@@ -50,18 +78,24 @@ typedef byte* byteptr;
 
 template <class Vec>
 void append_array(Vec& vec, typename Vec::value_type const* data, typename Vec::value_type const* end) {
+  GRAEHL_CHECK_DEBUG_MAX_SIZE(end - data);
   vec.insert(vec.end(), data, end);
+  GRAEHL_CHECK_DEBUG_MAX_SIZE(vec.size());
 }
 
 template <class Vec>
 void append_array(Vec& vec, typename Vec::value_type const* data, std::size_t n) {
+  GRAEHL_CHECK_DEBUG_MAX_SIZE(n);
   append_array(vec, data, data + n);
+  GRAEHL_CHECK_DEBUG_MAX_SIZE(vec.size());
 }
 
 template <class Vec>
 void set_array(Vec& vec, typename Vec::value_type const* data, typename Vec::value_type const* end) {
+  GRAEHL_CHECK_DEBUG_MAX_SIZE(end - data);
   vec.~Vec();
   new (&vec) Vec(data, end);
+  GRAEHL_CHECK_DEBUG_MAX_SIZE(vec.size());
 }
 
 template <class Vec>
@@ -70,11 +104,15 @@ void set_array(Vec& vec, typename Vec::value_type const* data, std::size_t n) {
 }
 
 inline void set_array(std::string& str, char const* i, char const* end) {
+  GRAEHL_CHECK_DEBUG_MAX_SIZE(end - i);
   str.assign(i, end);
+  GRAEHL_CHECK_DEBUG_MAX_SIZE(str.size());
 }
 
 inline void set_array(std::string& str, char const* i, std::string::size_type len) {
+  GRAEHL_CHECK_DEBUG_MAX_SIZE(len);
   str.assign(i, i + len);
+  GRAEHL_CHECK_DEBUG_MAX_SIZE(str.size());
 }
 
 typedef char const* charptr;
@@ -87,19 +125,24 @@ struct pod : std::pair<charptr, charptr> {
   }
   template <class Pod>
   static const_byteptr decode(Pod& x, const_byteptr p, const_byteptr end) {
-    if (p + sizeof(Pod) > end) throw encoding_error();
+    if (p + sizeof(Pod) > end) throw decoding_error();
     x = *(Pod*)p;
     return p + sizeof(Pod);
+  }
+  template <class Pod>
+  static Pod prefix(std::string const& str) {
+    if (sizeof(Pod) > str.size()) throw decoding_error();
+    return *(Pod*)&str[0];
   }
 
   template <class Pod>
   static void decode(Pod& x, std::string const& str) {
-    if (str.size() != sizeof(Pod)) throw encoding_error();
+    if (str.size() != sizeof(Pod)) throw decoding_error();
     x = *(Pod*)&str[0];
   }
   template <class Pod>
   static Pod decoded(std::string const& str) {
-    if (str.size() != sizeof(Pod)) throw encoding_error();
+    if (str.size() != sizeof(Pod)) throw decoding_error();
     return *(Pod*)&str[0];
   }
 
@@ -117,6 +160,7 @@ struct pod : std::pair<charptr, charptr> {
 
   template <class Pod>
   static const_byteptr decode_array(Pod* x, std::size_t n, const_byteptr p) {
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(n);
     n *= sizeof(Pod);
     std::memcpy(x, p, n);
     return p + n;
@@ -124,29 +168,34 @@ struct pod : std::pair<charptr, charptr> {
   template <class Pod>
   static const_byteptr decode_array(Pod* x, std::size_t n, const_byteptr p, const_byteptr end) {
     n *= sizeof(Pod);
-    if (p + n > end) throw encoding_error();
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(n);
+    if (p + n > end) throw decoding_error();
     std::memcpy(x, p, n);
     return p + n;
   }
 
   template <class PodVec>
   static const_byteptr decode_resize_array(PodVec& x, std::size_t n, const_byteptr p) {
-    n *= sizeof(x[0]);
+    std::size_t nbytes = n * sizeof(x[0]);
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(nbytes);
     x.resize(n);
-    std::memcpy(&x[0], p, n);
-    return p + n;
+    std::memcpy(&x[0], p, nbytes);
+    return p + nbytes;
   }
   template <class PodVec>
   static const_byteptr decode_resize_array(PodVec& x, std::size_t n, const_byteptr p, const_byteptr end) {
-    n *= sizeof(x[0]);
-    if (p + n > end) throw encoding_error();
-    x.resize(n);
-    std::memcpy(&x[0], p, n);
-    return p + n;
+    std::size_t nbytes = n * sizeof(x[0]);
+    nbytes *= sizeof(x[0]);
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(nbytes);
+    if (p + nbytes > end) throw decoding_error();
+    x.resize(nbytes);
+    std::memcpy(&x[0], p, nbytes);
+    return p + nbytes;
   }
 
   template <class PodVec>
   static const_byteptr decode_reconstruct_array(PodVec& x, std::size_t n, const_byteptr p) {
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(n);
     typedef typename PodVec::value_type const* P;
     P data = (P)p, endp = data + n;
     set_array(x, data, endp);
@@ -155,9 +204,10 @@ struct pod : std::pair<charptr, charptr> {
 
   template <class PodVec>
   static const_byteptr decode_reconstruct_array(PodVec& x, std::size_t n, const_byteptr p, const_byteptr end) {
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(n);
     typedef typename PodVec::value_type const* P;
     P data = (P)p, endp = data + n;
-    if ((const_byteptr)endp > end) throw encoding_error();
+    if ((const_byteptr)endp > end) throw decoding_error();
     set_array(x, data, endp);
     return (const_byteptr)endp;
   }
@@ -177,6 +227,7 @@ struct pod : std::pair<charptr, charptr> {
   }
   template <class Pod>
   static byteptr encode_array(byteptr p, const_byteptr end, Pod const* x, std::size_t n) {
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(n);
     n *= sizeof(Pod);
     if (p + n > end) throw encoding_error();
     std::memcpy(p, x, n);
@@ -199,14 +250,18 @@ struct pod : std::pair<charptr, charptr> {
   template <class Pod>
   static void append_zero(std::string& buf) {
     buf.append(sizeof(Pod), (char)0);
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(buf.size());
   }
   template <class Pod>
   static void append(std::string& buf, Pod const& x) {
     buf.append(reinterpret_cast<charptr>(&x), sizeof(Pod));
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(buf.size());
   }
   template <class Pod>
   static void append_array(std::string& buf, Pod const* x, std::size_t n) {
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(n);
     buf.append((charptr)x, n * sizeof(Pod));
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(buf.size());
   }
   template <class PodVec>
   static void append_array(std::string& buf, PodVec const& x) {
@@ -214,8 +269,10 @@ struct pod : std::pair<charptr, charptr> {
   }
   template <class Size, class Pod>
   static void append_sized(std::string& buf, Pod const* x, Size n) {
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(n);
     append(buf, n);
     append_array(buf, x, n);
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(buf.size());
   }
   template <class Size, class PodVec>
   static void append_sized(std::string& buf, PodVec const& x) {
@@ -260,14 +317,16 @@ struct pod : std::pair<charptr, charptr> {
 
   template <class Pod>
   Pod const* skipArray(std::size_t n) {
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(n);
     Pod const* r = (Pod const*)first;
     skip(sizeof(Pod) * n);
     return r;
   }
 
   void skip(std::size_t n) {
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(n);
     first += n;
-    if (first > second) throw encoding_error();
+    if (first > second) throw decoding_error();
   }
 
   template <class Pod>
@@ -277,11 +336,12 @@ struct pod : std::pair<charptr, charptr> {
     return r;
   }
 
-  void get(void* dest, std::size_t size) {
+  void get(void* dest, std::size_t n) {
+    GRAEHL_CHECK_DEBUG_MAX_SIZE(n);
     void const* from = first;
-    first += size;
-    if (first > second) throw encoding_error();
-    std::memcpy(dest, from, size);
+    first += n;
+    if (first > second) throw decoding_error();
+    std::memcpy(dest, from, n);
   }
 
   std::size_t size() const { return second - first; }
@@ -324,12 +384,12 @@ struct identity_codec {
     return p + sizeof(Uint);
   }
   static const_byteptr decode(Uint& x, const_byteptr p, const_byteptr end) {
-    if (p + sizeof(Uint) > end) throw encoding_error();
+    if (p + sizeof(Uint) > end) throw decoding_error();
     x = *(Uint*)p;
     return p + sizeof(Uint);
   }
   static const_byteptr ignore(const_byteptr p, const_byteptr end) {
-    if (p + sizeof(Uint) > end) throw encoding_error();
+    if (p + sizeof(Uint) > end) throw decoding_error();
     return p + sizeof(Uint);
   }
   static const_byteptr ignore(const_byteptr p) { return p + sizeof(Uint); }

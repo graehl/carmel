@@ -27,4 +27,4 @@ struct Times2 : CaseBase {
   }
 };
 
-CASES_MAIN_MAX(Times2, 2)
+CASES_MAIN_MAX(Times2)

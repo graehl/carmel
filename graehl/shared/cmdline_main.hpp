@@ -659,7 +659,7 @@ struct main {
   }
 
 #if GRAEHL_CMDLINE_MAIN_USE_CONFIGURE
-  configure::warn_consumer to_cerr;  // TODO: set stream to logfile
+  graehl::warn_consumer to_cerr;  // TODO: set stream to logfile
   configure::program_options_exec_new exec;
 #endif
   std::string exename;

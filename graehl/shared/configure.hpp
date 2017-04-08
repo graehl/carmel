@@ -563,7 +563,7 @@ struct conf_opt {
   }
 
   template <class Val>
-  void apply_string_value(std::string str, Val* pval, std::string const& pathname,
+  void apply_string_value(std::string const& str, Val* pval, std::string const& pathname,
                           string_consumer const& warn) const {
     warn_deprecated(pathname, warn);
     string_to(str, *pval);
@@ -741,7 +741,7 @@ inline std::string join_opt_path(Path const& p, std::string const& last, char se
 }
 
 struct conf_expr_base {
-  void warn_if_deprecated() const { opt->warn_deprecated(path_name(), warn_to); }
+  void warn_if_deprecated() const { if (warn_to) opt->warn_deprecated(path_name(), warn_to); }
 
   opt_path path;  // may not be needed, but helps inform exceptions
   unsigned depth;

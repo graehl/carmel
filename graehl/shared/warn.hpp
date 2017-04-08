@@ -28,7 +28,6 @@
 
 namespace graehl {
 
-
 typedef function<void(std::string const&)> string_consumer;
 
 // a string_consumer

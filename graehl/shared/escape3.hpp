@@ -68,13 +68,28 @@ inline bool escape3(void const* i, std::size_t n, String& s, std::size_t maxlen 
 }
 
 /// this is ostream-printable e.g. cout << Escape3(str)
-struct Escape3 : string_builder {
-  Escape3(void const* i, std::size_t n, std::size_t maxlen = 0, bool nbytes = false) { append(i, n, maxlen); }
-  Escape3(std::size_t n, void const* i, std::size_t maxlen = 0, bool nbytes = false) { append(i, n, maxlen); }
-  explicit Escape3(std::string const& str, std::size_t maxlen = 0, bool nbytes = false) {
-    append(str.data(), str.size(), maxlen);
+template <bool PrintLen = false>
+struct Escape3t : string_builder {
+  Escape3t(void const* i, std::size_t n, std::size_t maxlen = 0, bool nbytes = PrintLen) {
+    append(i, n, maxlen, nbytes);
   }
-  void append(void const* i, std::size_t n, std::size_t maxlen = 0, bool nbytes = false) {
+  Escape3t(std::size_t n, void const* i, std::size_t maxlen = 0, bool nbytes = PrintLen) {
+    append(i, n, maxlen, nbytes);
+  }
+  Escape3t(std::pair<char const*, char const*> str, std::size_t maxlen = 0, bool nbytes = PrintLen) {
+    append(str.first, str.second - str.first, maxlen, nbytes);
+  }
+  Escape3t(std::string const& str, std::size_t maxlen, bool nbytes = PrintLen) {
+    append(str.data(), str.size(), maxlen, nbytes);
+  }
+  template <class Str>
+  explicit Escape3t(Str const& str) {
+    append(str.data(), str.size());
+  }
+  Escape3t(std::size_t from, std::string const& str, std::size_t maxlen = 0, bool nbytes = PrintLen) {
+    append(str.data() + from, str.size() - from, maxlen, nbytes);
+  }
+  void append(void const* i, std::size_t n, std::size_t maxlen = 0, bool nbytes = PrintLen) {
     if (escape3(i, n, *this, maxlen)) {
       push_back('.');
       push_back('.');
@@ -88,6 +103,9 @@ struct Escape3 : string_builder {
     }
   }
 };
+
+typedef Escape3t<false> Escape3;
+typedef Escape3t<true> Escape3s;
 
 struct Escape3Exception : std::exception {
   Escape3Exception() {}
@@ -133,7 +151,17 @@ void unescape3(std::string const& in, String& s) {
   unescape3(in.begin(), in.end(), s);
 }
 
+inline std::string unescaped3(std::string const& in) {
+  std::string r;
+  unescape3(in, r);
+  return r;
+}
 
+inline std::string unescaped3(void const* in, std::size_t n) {
+  std::string r;
+  unescape3(in, n, r);
+  return r;
+}
 }
 
 #endif

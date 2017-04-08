@@ -18,9 +18,9 @@
 
 namespace graehl {
 
-static const int MAX_TRACE_DEPTH = 64;
+static const int MAX_TRACE_DEPTH = 255;
 
-void stacktrace(std::ostream& o = std::cerr) {
+inline void stacktrace(std::ostream& o = std::cerr) {
 #ifdef __linux__
   void* trace[MAX_TRACE_DEPTH];
   int trace_size = ::backtrace(trace, MAX_TRACE_DEPTH);

@@ -86,6 +86,7 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #define GRAEHL_USE_BOOST_LEXICAL_CAST 0
 #endif
 
+#include <boost/functional/hash.hpp>
 #include <graehl/shared/atoi_fast.hpp>
 #include <graehl/shared/base64.hpp>
 #include <graehl/shared/have_64_bits.hpp>
@@ -95,7 +96,6 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/snprintf.hpp>
 #include <graehl/shared/word_spacer.hpp>
-#include <boost/functional/hash.hpp>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
@@ -201,7 +201,6 @@ inline void string_to_impl(char const* s, std::size_t& x) {
   x = atou_fast_complete<std::size_t>(s);
 }
 
-namespace {
 static std::string const str_true = "true";
 static std::string const str_false = "false";
 
@@ -253,8 +252,6 @@ inline bool parse_bool(char const* p, unsigned len) {
                                            "{0|false|False|FALSE|on|On|ON|off|Off|OFF}.");
   return false;
 }
-
-}  // ns
 
 /**
    \return bool if string [p, p+len) is a yaml boolean or c++ printed boolean,
@@ -538,9 +535,17 @@ struct is_pair<std::pair<A, B>> {
   enum { value = 1 };
 };
 
-namespace {
+template <class V>
+struct is_vector {
+  enum { value = 0 };
+};
+
+template <class A, class B>
+struct is_vector<std::vector<A, B>> {
+  enum { value = 1 };
+};
+
 static std::string const string_to_sep_pair = "->";
-}
 
 template <class V>
 struct to_string_select<V, typename enable_if<is_pair<V>::value>::type> {
@@ -558,6 +563,7 @@ struct to_string_select<V, typename enable_if<is_pair<V>::value>::type> {
     graehl::string_to(std::string(b + p + string_to_sep_pair.size(), s.end()), v.second);
   }
 };
+
 
 template <class V>
 struct is_optional {
@@ -601,6 +607,47 @@ struct to_string_select<V, typename enable_if<is_shared_ptr<V>::value>::type> {
   template <class Str>
   static inline void string_to(Str const& s, V& v) {
     string_to_shared_ptr(s, v);
+  }
+};
+
+
+static char const nonstring_container_sep = ',';
+
+template <class V>
+struct to_string_select<V, typename enable_if<is_nonstring_container<V>::value>::type> {
+  static inline std::string to_string(V const& p, char sep = nonstring_container_sep) {
+    std::string r;
+    typename V::const_iterator i = p.begin(), e = p.end();
+    if (i != e) {
+      r.append(graehl::to_string(*i));
+      while (++i != e) {
+        r.push_back(sep);
+        r.append(graehl::to_string(*i));
+      }
+    }
+    return r;
+  }
+  template <class Str>
+  static inline void string_to(Str const& str, V& v) {
+    typename Str::size_type start = 0, end;
+    while ((end = str.find(nonstring_container_sep, start)) != Str::npos)
+      append(Str(str, start, end - start), v);
+    append(Str(str, start), v);
+  }
+
+ private:
+  template <class Str>
+  static inline void append(Str const& str, V& v) {
+#if GRAEHL_CPP17
+    graehl::string_to(str, v.emplace_back());
+#else
+#if GRAEHL_CPP11
+    v.emplace_back();
+#else
+    v.push_back(V());
+#endif
+    graehl::string_to(str, v.back());
+#endif
   }
 };
 
