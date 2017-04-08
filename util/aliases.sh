@@ -50,6 +50,17 @@ fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
+confpython36() {
+    sudo ln -svfn python-3.6.1 /usr/share/doc/python-3
+    sudo ln -svfn python-3.6.1 /usr/local/share/doc/python-3
+    (set -e
+     ./configure --disable-multiarch --enable-optimizations --prefix=/usr/local     --enable-shared   --with-system-expat             --with-system-ffi --with-ensurepip=yes --with-universal-archs=64-bit
+     make -j8
+     sudo make install
+     sudo chmod -v 755 /usr/local/lib/libpython3.6m.so
+     sudo chmod -v 755 /usr/local/lib/libpython3.so
+    )
+}
 syncmusic() {
     adb stop-server
     (set -e
@@ -1298,7 +1309,7 @@ gdbjam() {
     cgdb --args ./$1 $in - 1 ${3:-${verbose:-1}}
 }
 cjam() {
-    CFLAGS="--std=c++11 -Wno-deprecated -I ."
+    CFLAGS="-std=gnu++1z -Wno-deprecated -I ."
     if [[ $release ]]; then
         CFLAGS+=" -O3 -ffast-math -DNDEBUG"
         exesuf=.out
@@ -1307,23 +1318,46 @@ cjam() {
         exesuf=.dbg
     fi
     CFLAGS+=" -pthread"
+    usegcc
     (
         src=$1
         shift
         in=$1
-        exe=${src%.cc}$exesuf
+        shift
+        base=${src%.cc}
+        exe=$base$exesuf
         set -e
         cd ~/jam
+        echo src=$src
+        [[ -f $src ]]
+        if ! [[ -f $in ]] ; then
+            baselarge=$base
+            baselarge=${baselarge%-small}
+            baselarge=${baselarge%-large}
+            ls -rt ~/Downloads/$baselarge*.in
+            in=`ls -t ~/Downloads/$baselarge*.in | head -1`
+            cp $in .
+            in=`basename $in`
+            echo input $in
+            head -2 $in
+            echo ...
+            echo
+        fi
         [[ -f $in ]]
-        which g++
-        TERM=dumb g++ $MORECFLAGS $CFLAGS $src -o $exe
-        time ./$exe "$@"
-        set +x
-        out=${1%.in}.out
+        which $CXX
+        TERM=dumb $CXX $MORECFLAGS $CFLAGS $src -o $exe
+        time ./$exe "$in" "$@"
+        out=${in%.in}.out
         expected=$out.expected
-        if [[ -f $out ]] && [[ -f $expected ]] ; then
-            # head $out $expected
-            diff $out $expected | diffstat
+        if [[ -f $out ]] ; then
+            if [[ -f $expected ]] ; then
+                # head $out $expected
+                echo compared with expected $expected
+                diff $out $expected | diffstat
+            else
+                echo                 cp $out $expected
+                cp $out $expected
+            fi
         fi
     )
 }

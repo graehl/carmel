@@ -30,17 +30,27 @@
 #ifndef CODEJAM_JG_2015_03_29_HH
 #define CODEJAM_JG_2015_03_29_HH
 #pragma once
-#include <bits/stdc++.h>
+#include <algorithm>
+#include <cassert>
+#include <iostream>
+#include <list>
+#include <map>
+#include <memory>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+#include <errno.h>
+#include <limits.h>
+#include <math.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <time.h>
+#include <unistd.h>
+
 #ifndef MAXCASES
 #define MAXCASES 1000
 #endif
-
-#include <time.h>
-#include <pthread.h>
-#include <errno.h>
-#include <unistd.h>
-#include <semaphore.h>
-
 
 using namespace std;
 
@@ -61,14 +71,28 @@ int verbose = 1;
 #define CO3(m, a, b) IFVERBOSE(cerr << m << O(a) << O(b) << '\n');
 #define CO4(m, a, b, c) IFVERBOSE(cerr << m << O(a) << O(b) << O(c) << '\n');
 #define CO5(m, a, b, c, d) IFVERBOSE(cerr << m << O(a) << O(b) << O(c) << O(d) << '\n');
+#define CO6(m, a, b, c, d, e) IFVERBOSE(cerr << m << O(a) << O(b) << O(c) << O(d) << O(e) << '\n');
 /// enabled always, unlike assert(a == b)
 #define MUSTEQ(a, b) musteq(a, b, #a, #b)
 
 /*******  All Required define Pre-Processors and typedef Constants *******/
 #define GETINT(type) readInt<type>()
 #define GET0 getdigit()
-#define PUTU(x) printf("%u", x);
-#define PUTu64(x) printf("%llu", x);
+inline void putsp() {
+  putchar(' ');
+}
+inline void put0(char x) {
+  assert(x >= 0);
+  assert(x < 16);
+  putchar('0' + x);
+}
+#define PUTU(x) putU((U)x);
+#define PUTu64(x) putU((u64)x);
+#define PUTIMPOSSIBLE printf("IMPOSSIBLE");
+template <class U>
+inline void putU(U x) {
+  if (x == (U)-1) PUTIMPOSSIBLE else printf("%u", x);
+}
 #define GETI readInt<I>()
 #define GETU readInt<U>()
 #define GETu64 readInt<u64>()
@@ -80,9 +104,9 @@ int verbose = 1;
 #define MEMN(a, n, b) memset(a, (b), n * sizeof(a))
 #define FOR(i, j, k, in) for (int i = j; i < k; i += in)
 #define RFOR(i, j, k, in) for (int i = j; i >= k; i -= in)
-#define REP(i, n) FOR(i, 0, n, 1)
+#define REP(i, n) FOR (i, 0, n, 1)
 #define REPTO(i, n) for (int i = 0; i <= n; ++i)
-#define RREP(i, high) RFOR(i, high, 0, 1)
+#define RREP(i, high) RFOR (i, high, 0, 1)
 #define all(cont) cont.begin(), cont.end()
 #define rall(cont) cont.end(), cont.begin()
 #define FOREACH(it, l) for (auto it = l.begin(); it != l.end(); it++)
@@ -94,6 +118,11 @@ int verbose = 1;
 #define PI 3.1415926535897932384626433832795
 #define MOD 1000000007
 #define MUSTMOD(x) assert(x >= 0 && x < MOD)
+#ifdef NDEBUG
+typedef char i8;
+#else
+typedef short i8;
+#endif
 typedef unsigned char u8;
 typedef long int int32;
 typedef unsigned long int uint32;
@@ -112,6 +141,11 @@ typedef vector<PII> VII;
 #define uset unordered_set
 #define mumap unordered_multimap
 #define muset unordered_multiset
+
+template <class U>
+void setImpossible(U& x) {
+  x = (U)-1;
+}
 
 template <class Int>
 Int modplus(Int x, Int y) {
@@ -180,7 +214,6 @@ void yesno(bool x) {
   printf(x ? "YES" : "NO");
 }
 
-
 template <class A, class B>
 void musteq(A const& a, B const& b, char const* an, char const* bn) {
   IFVERBOSE(cerr << "Should agree: " << an << ":" << a << " ==? " << bn << ":" << b << '\n');
@@ -209,10 +242,16 @@ inline void write(T x) {
   } while (buf[i++] != '\n');
 }
 
+inline char getbyte() {
+  int c = getchar();
+  if (c == EOF) abort();
+  return c;
+}
+
 template <class T>
 inline T readInt() {
   T n = 0, s = 1;
-  char p = getchar();
+  int p = getchar();
   if (p == '-') s = -1;
   while ((p < '0' || p > '9') && p != EOF && p != '-') p = getchar();
   if (p == '-') s = -1, p = getchar();
@@ -317,7 +356,7 @@ int cases_main(Case* cases, int argc, char* argv[], int cores, bool verify_newli
     sem_init(&sem_done, 0, 0);
   }
 #endif
-  REP(k, ncases) {
+  REP (k, ncases) {
     cases[k].read();
     if (!k && verbose) {
       cerr << "Showing case #1: ";
@@ -345,9 +384,10 @@ int cases_main(Case* cases, int argc, char* argv[], int cores, bool verify_newli
   }
   expect_eof();
 #ifndef __APPLE__
-  if (!singlethread) REP(k, ncases) sem_wait(&sem_done);
+  if (!singlethread) REP (k, ncases)
+      sem_wait(&sem_done);
 #endif
-  REP(k, ncases) {
+  REP (k, ncases) {
     if (singlethread) cases[k].solve();
     casepre(k);
     cases[k].print();
@@ -368,7 +408,7 @@ struct CaseBase {
     else
       putchar(' ');
   }
-  void show1() { cerr << "[unimplemented:show1()]"; }
+  void show1() { cerr << "[unimplemented:showo()]"; }
   void solve() {
     CO2("must override", casei);
     abort();
@@ -386,6 +426,17 @@ inline char getC() {
     if (c == EOF) abort();
     if (c > ' ') return c;
   }
+}
+
+inline bool getbool(bool& to, char t = '1', char f = '0') {
+  char c = getbyte();
+  if (c == t)
+    to = true;
+  else if (c == f)
+    to = false;
+  else
+    return false;
+  return true;
 }
 
 inline U getdigit() {
