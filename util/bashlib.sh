@@ -2501,7 +2501,7 @@ workflowp=~/workflow
 homereal=`realpath ~`
 traperr
 getrealprog
-libg=$(echo ~graehl/u)
+libg=$(echo ~/u)
 if ! [[ -d $libg ]] || ! [[ -f $libg/libgraehl.pl ]] ; then
     warn missing libgraehl.pl
 fi

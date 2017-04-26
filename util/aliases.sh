@@ -1,4 +1,16 @@
-UTIL=${UTIL:-$(echo ~graehl/u)}
+touchconf() {
+    touch aclocal.m4 Makefile.in Makefile.am configure
+}
+bootstrap() {
+    ( set -e
+      autoreconf -f -i
+#      aclocal
+#      automake --add-missing
+#      autoconf
+#      libtoolize -i --recursive
+    )
+}
+UTIL=${UTIL:-$(echo ~/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
 . $UTIL/time.sh
@@ -50,6 +62,29 @@ fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
+dockrun() {
+sudo nvidia-docker run \
+  --rm --volume /:/host \
+  --workdir /host$PWD \
+  --env PYTHONUNBUFFERED=x \
+  --env CUDA_CACHE_PATH=/host/tmp/cuda-cache "$@"
+}
+nsmi() {
+    nvidia-smi "$@"
+}
+tensorcpu()  {
+    # ld doesn't work
+    export bazelflags="--config=opt"
+    export CC=
+    export CXX=
+    export bazelflags="--config=opt  --action_env PATH --action_env DYLD_LIBRARY_PATH --action_env LD_LIBRARY_PATH -k"
+    cd ~/tensorflow
+    [[ -f .tf_configure.bazelrc ]] ||  ./configure
+    make clean
+    bazel build $bazelflags //tensorflow/tools/pip_package:build_pip_package
+    tensorflow/tools/pip_package/build_pip_package.sh /tmp/tensorflow_pkg
+    pip install /tmp/tensorflow_pkg/*.whl
+}
 confpython36() {
     sudo ln -svfn python-3.6.1 /usr/share/doc/python-3
     sudo ln -svfn python-3.6.1 /usr/local/share/doc/python-3
@@ -60,6 +95,14 @@ confpython36() {
      sudo chmod -v 755 /usr/local/lib/libpython3.6m.so
      sudo chmod -v 755 /usr/local/lib/libpython3.so
     )
+}
+macopenssl() {
+    CFLAGS+=" -I/usr/local/opt/openssl/include"
+    LDFLAGS+=" -L/usr/local/opt/openssl/lib"
+    export CFLAGS LDFLAGS
+}
+macmdb() {
+    cd ~/src/mdb && make XFLAGS=-I/usr/local/Cellar/berkeley-db/6.2.23/include LDFLAGS+="-L/usr/local/Cellar/berkeley-db/6.2.23/lib"
 }
 syncmusic() {
     adb stop-server
@@ -1767,7 +1810,7 @@ guestread() {
     find . -exec chmod o+r {} \;
 }
 makedropcaches() {
-    sudo gcc ~graehl/u/dropcaches.c -o /usr/local/bin/dropcaches; sudo chmod 5755 /usr/local/bin/dropcaches
+    sudo gcc ~/u/dropcaches.c -o /usr/local/bin/dropcaches; sudo chmod 5755 /usr/local/bin/dropcaches
 }
 bdbreload() {
     (
@@ -3270,7 +3313,9 @@ ktest() {
 stun() {
     ssh -f -N tun
 }
-addpythonpath $xmtx/python $xmtextbase/Shared/python
+xmtpython() {
+    addpythonpath $xmtx/python $xmtextbase/Shared/python
+}
 c-c() {
     chost=c-graehl
 }
@@ -3763,7 +3808,7 @@ n-s() {
     local host=${nhost:-gitbuild1}
     local args="$host -l $nuser -i $nidentity"
     if [[ "$@" ]] ; then
-        ssh $args '. ~graehl/.e; export HOME=/home/nbuild;export PATH=/home/nbuild/local/bin:$PATH;export CCACHE_DIR=/local/nbuild/ccache;'" $*"
+        ssh $args '. ~/.e; export HOME=/home/nbuild;export PATH=/home/nbuild/local/bin:$PATH;export CCACHE_DIR=/local/nbuild/ccache;'" $*"
     else
         ssh $args
     fi
@@ -7006,7 +7051,12 @@ pandcrapall()
     done
 }
 texpath() {
-    export PATH=/usr/local/texlive/2014/bin/x86_64-darwin/:/usr/local/texlive/2014/bin/universal-darwin/:$PATH
+    for tld in `ls /usr/local/texlive/`; do
+        if [[ -d $tld/bin ]] ; then
+            export PATH=$tld/bin/x86_64-darwin/:$tld/bin/universal-darwin/:$PATH
+            return
+        fi
+    done
 }
 sshut() {
     local dnsarg=
@@ -9318,7 +9368,7 @@ tviz() {
 treevizn() {
     (
         set -e
-        local graehlbin=`echo ~graehl/bin`
+        local graehlbin=`echo ~/bin`
         export PATH=$BLOBS/forest-em/latest:$graehlbin:$PATH
         local n=$1
         shift
@@ -9794,15 +9844,6 @@ confws() {
     (
         cd $WSMT
         ./configure --with-srilm=`realpath ~/src/srilm` --prefix=$FIRST_PREFIX "$@"
-    )
-}
-
-bootstrap() {
-    ( set -e
-      aclocal
-      automake --add-missing
-      autoconf
-      libtoolize -i --recursive
     )
 }
 

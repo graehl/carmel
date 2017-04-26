@@ -355,7 +355,6 @@ def gitcredit(opt):
 if __name__ == '__main__':
     try:
         opt = options().parse_args()
-        verbose = opt.verbose
         gitcredit(opt)
     except KeyboardInterrupt:
         log("^C user interrupt")
