@@ -621,9 +621,6 @@ rmvariant() {
         fi
     done
 }
-cmakeinstall() {
-    make DESTDIR=${1} install
-}
 githeadref() {
     git show-ref -s HEAD
 }
@@ -8908,12 +8905,18 @@ psgn() {
 }
 openssl=/usr/local/ssl/bin/openssl
 certauth=/web/conf/ssl.crt/ca.crt
+unalias l
+unalias la
+unalias ld
+unalias lt
+unalias m
+unalias c
+unalias s
+unalias f
+unalias e
 m() {
     clear
     make "$@" 2>&1 | more
-}
-ll() {
-    /bin/ls -lA "$@"
 }
 lt() {
     /bin/ls -lrtA "$@"
