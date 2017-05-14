@@ -35,7 +35,7 @@ add_path()
     fi
 }
 
-function add_pypath
+add_pypath()
 {
     local f
     for f in "$@"; do
@@ -46,7 +46,7 @@ function add_pypath
         fi
     done
 }
-function prepend_path
+prepend_path()
 {
  if [ "$1" ] ; then
  local prefix=`echo $1`

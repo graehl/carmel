@@ -85,6 +85,38 @@ tensorcpu()  {
     tensorflow/tools/pip_package/build_pip_package.sh /tmp/tensorflow_pkg
     pip install /tmp/tensorflow_pkg/*.whl
 }
+gitsubup() {
+    git submodule update --remote --merge
+}
+tmuxs() {
+    tmux new -s "${tmuxname:-${1:-tmux}}" -n 0 "$@"
+}
+
+tensorpip() {
+${pip:-pip} install -I --upgrade setuptools
+${pip:-pip} install portpicker
+${pip:-pip} install mock
+${pip:-pip} install pep8
+${pip:-pip} install pylint
+${pip:-pip} install py-cpuinfo
+${pip:-pip} install pandas==0.18.1
+${pip:-pip} install wheel
+${pip:-pip} install --upgrade six==1.10.0
+${pip:-pip} install --upgrade werkzeug==0.11.10
+${pip:-pip} install --upgrade protobuf==3.0.0
+}
+juno() {
+    tmuxs jupyter notebook
+}
+junn() {
+    cd ~/nn
+    tmuxname=nn tmuxs jupyter notebook
+}
+tensorcpu() {
+    export flags="--config=opt  --action_env PATH --action_env DYLD_LIBRARY_PATH --action_env LD_LIBRARY_PATH -k"
+    bazel build $flags //tensorflow/tools/pip_package:build_pip_package
+    echo 'echo "startup --max_idle_secs=100000000" > ~/.bazelrc'
+}
 confpython36() {
     sudo ln -svfn python-3.6.1 /usr/share/doc/python-3
     sudo ln -svfn python-3.6.1 /usr/local/share/doc/python-3
@@ -1901,8 +1933,7 @@ linuxver() {
     fi
 }
 
-gitbranches()
-{
+gitbranches() {
     (
         for branch in ${1:-`git branch`}; do
             banner $branch
@@ -2302,6 +2333,7 @@ fireinstall() {
 firepull() {
     cd /tmp
     local d=/sdcard/android/data/org.xbmc.kodi/files/.xbmc/userdata
+    local d=/sdcard/android/data/com.semperpax.spmc16/files/.spmc/userdata
     adb pull $d/advancedsettings.xml
     edit advancedsettings.xml && adb push advancedsettings.xml $d
 }
@@ -6202,8 +6234,7 @@ diffg() {
         done
     )
 }
-commt()
-{
+commt() {
     (set -e
      overt
      compush "$@"
@@ -7038,8 +7069,7 @@ pandcrap() {
 pandall() {
     pdf=1 epub=1 panda "$@"
 }
-pandcrapall()
-{
+pandcrapall() {
     local o=`pandcrap html "$@"`
     pandcrap latex "$@"
     #pand epub "$@"
@@ -7818,14 +7848,12 @@ crac() {
 commx() {
     crac "$@"
 }
-svndifflines()
-{
+svndifflines() {
     diffcontext=0
     echo changed wc -l:
     svndiff | wc -l
 }
-svndiff()
-{
+svndiff() {
     local diffcontext=${diffcontext:-8}
     svn diff --diff-cmd diff --extensions "-U $diffcontext -b"
 }
@@ -7943,8 +7971,7 @@ splitcomma() {
     clines "$@"
 }
 
-getwt()
-{
+getwt() {
     local f="$1"
     shift
     clines "$@" | fgrep -- "$f"
@@ -7958,8 +7985,7 @@ imira() {
     cp -pR $b/* $hm/
     qmira
 }
-qmira()
-{
+qmira() {
     local hm=$HOME/hiero-mira
     local m=$HOME/mira
     for f in $m/{genhyps,log,trainer,sbmt_decoder}.py; do
@@ -8004,14 +8030,12 @@ backupsbmt() {
     #-lprt
     # cp -a $SBMT_TRUNK $dev/sbmt.bak
 }
-build_sbmt_variant()
-{
+build_sbmt_variant() {
     #target=check
     variant=debug boostsbmt "$@"
 }
 
-boostsbmt()
-{
+boostsbmt() {
     (
         set -e
         local h=${host:-$HOST}
@@ -8502,12 +8526,10 @@ split() {
 }
 
 
-cdr()
-{
+cdr() {
     cd $(realpath "$@")
 }
-cdw()
-{
+cdw() {
     cd $WFHOME/workflow/tune
 }
 
@@ -8718,7 +8740,7 @@ perlf() {
 
 alias gc=gnuclientw
 
-function callgrind() {
+callgrind() {
     local exe=${1:?callgrind program args. env cache=1 branch=1 cgf=outfilename}
     #dumpbefore dumpafter zerobefore = fn-name,or dumpevery=1000000
     local base=`basename $1`
@@ -8745,7 +8767,7 @@ function callgrind() {
     tail -2 $cgf
 }
 VGARGS="--num-callers=16 --leak-resolution=high --suppressions=$HOME/u/valgrind.supp"
-function vg() {
+vg() {
     local darg=
     local varg=
     local suparg=
@@ -8784,8 +8806,7 @@ gpp() {
     g++ -x c++ -E "$@"
 }
 
-function hrs
-{
+hrs() {
     if [ $# = 1 ] ; then
         from=$1
         to=.
@@ -8814,19 +8835,6 @@ qsd() {
     qsub -q default -I -l walltime=$JOBTIME,pmem=4000mb "$@"
 }
 
-
-function xt
-{
-    xterm -sb -ls -fn fixed "$@" &
-    disown
-}
-
-function rebin
-{
-    pdq ~/bin
-    for f in ../dev/tt/scripts/* ; do ln -s $f . ; done
-    popd
-}
 getattr() {
     attr=$1
     shift
@@ -8864,8 +8872,7 @@ tag_mini() {
 }
 
 
-lastbool()
-{
+lastbool() {
     echo $?
 }
 
@@ -8877,88 +8884,56 @@ greph() {
 export IGNOREEOF=10
 
 #alias hrssd="hrs ~/dev/syntax-decoder/src dev/syntax-decoder"
-rgrep()
-{
+rgrep() {
     a=$1
     shift
     find . \( -type d -and -name .svn -and -prune \) -o -exec egrep -n -H "$@" "$a" {} \; -print
 }
-frgrep()
-{
+frgrep() {
     a=$1
     shift
     find . \( -type d -and -name .svn -and -prune \) -o -exec fgrep -n -H "$@" "$a" {} \; -print
 }
-dos2unix()
-{
+dos2unix() {
     perl -p -i~ -e 'y/\r//d' "$@"
 }
-isdos()
-{
+isdos() {
     perl -e 'while (<>) { if (y/\r/\r/) { print $ARGV,"\n"; last; } }' "$@"
 }
-psgn1()
-{
+psgn1() {
     psgn $1 | head -1
 }
-psgn()
-{
+psgn() {
     psg $1 | awk ' {print $2}'
 }
 openssl=/usr/local/ssl/bin/openssl
 certauth=/web/conf/ssl.crt/ca.crt
-function sslverify()
-{
-    $openssl verify -CAfile $certauth "$@"
-}
-function sslx509()
-{
-    $openssl x509 -text -noout -in "$@"
-}
-function ssltelnet()
-{
-    $openssl s_client -connect "$@"
-}
-
-function m()
-{
+m() {
     clear
     make "$@" 2>&1 | more
 }
-function ll ()
-{
+ll() {
     /bin/ls -lA "$@"
 }
-function lt ()
-{
+lt() {
     /bin/ls -lrtA "$@"
 }
-function l ()
-{
-    /bin/ls -ls -A "$@"
-}
-function c ()
-{
+c() {
     cd "$@"
 }
-function s ()
-{
+s() {
     su - "$@"
 }
-function f ()
-{
+f() {
     find / -fstype local -name "$@"
 }
-function e ()
-{
+e() {
     emacs "$@"
 }
-function wgetr ()
-{
+wgetr() {
     wget -r -np -nH "$@"
 }
-function cleanr ()
-{
+cleanr() {
     find . -name '*~' -exec rm {} \;
 }
 alias perl1="perl -e 'require \"\$ENV{HOME}/u/libgraehl.pl\";\$\"=\" \";' -e "
@@ -8987,10 +8962,6 @@ cd $p
 "$@"
 EOF
     #"/bin/bash"' --login -c "'"$*"'"'
-}
-function homepwd
-{
-    perl -e '$_=`pwd`;s|^/cygdrive/z|~|;print'
 }
 tarxzf() {
     catz "$@" | tar xvf -
@@ -9066,8 +9037,7 @@ if [[ ${ONCYGWIN:=} ]] ; then
 fi
 
 
-function dvi2ps
-{
+dvi2ps() {
     papertype=${papertype:-letter}
     local b=${1%.dvi}
     local d=`dirname $1`
@@ -9078,14 +9048,12 @@ function dvi2ps
     popd
 }
 
-function latrm
-{
+latrm() {
     rm -f *-qtree.aux $1.aux $1.dvi $1.bbl $1.blg $1.log
 }
 cplatex=~/texmf/pst-qtree.tex
 [ -f $cplatex ] || cplatex=
-function latp
-{
+latp() {
     local d=`dirname $1`
     local b=`basename $1`
     pushd $d
@@ -9103,14 +9071,12 @@ function latp
     [ "$cplatex" -a -f "$cplatex" ] && rm $cplatex
     popd
 }
-function latq
-{
+latq() {
     local f=${1%.tex}
     latp $f && dvi2pdf $f
     latrm $f
 }
-function dvi2pdf
-{
+dvi2pdf() {
     local d=`dirname $1`
     local b=`basename $1`
     pushd $d
@@ -9119,17 +9085,14 @@ function dvi2pdf
     ps2pdf $b.ps $b.pdf || true
     popd
 }
-function lat2pdf
-{
+lat2pdf() {
     latq "$@"
 }
-function lat2pdf_landscape
-{
+lat2pdf_landscape() {
     papertype=landscape lat2pdf $1
 }
 
-function vizalign
-{
+vizalign() {
     echo2 vizalign "$@"
     local f=$1
     shift
@@ -9145,8 +9108,7 @@ function vizalign
     # fi
     quietly lat2pdf_landscape $f
 }
-function lat
-{
+lat() {
     papertype=${papertype:-letter}
     latp $1 && bibtex $1 && latex $1.tex && ((latex $1.tex && dvips -t $papertype -o $1.ps $1.dvi) 2>&1 | tee log.lat.$1)
     ps2pdf $1.ps $1.pdf
@@ -9199,13 +9161,11 @@ gsample() {
 }
 
 
-function conf
-{
+conf() {
     ./configure $CONFIG "$@"
 }
 
-function myconfig
-{
+myconfig() {
     local C=$CONFIGBOOST
     [ "$noboost" ] && C=$CONFIG
     showvars_required C BUILDDIR LD_LIBRARY_PATH
@@ -9219,13 +9179,11 @@ function myconfig
     popd
 }
 
-function doconfig
-{
+doconfig() {
     noboost=1 myconfig
 }
 
-function dobuild
-{
+dobuild() {
     if doconfig "$@" ; then
         pushd $BUILDIR && make && make install
         popd
@@ -9243,8 +9201,7 @@ set_i686_debug() {
     set_build i686 -O0
 }
 
-upt()
-{
+upt() {
     pushd ~/t
     svn update
     popd
@@ -9616,7 +9573,7 @@ sync2() {
 syncto() {
     sync2 "$@"
 }
-userfor () {
+userfor() {
     case $1 in
         login*) echo -n jgraehl ;;
         *) echo -n graehl ;;
@@ -9888,8 +9845,7 @@ getcert() {
         openssl s_client -connect ${REMHOST}:${REMPORT} 2>&1 |\
         sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'
 }
-showprompt()
-{
+showprompt() {
     echo $PS1 | less -E
     echo $PROMPT_COMMAND | less -E
 }
