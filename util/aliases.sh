@@ -8905,34 +8905,6 @@ psgn() {
 }
 openssl=/usr/local/ssl/bin/openssl
 certauth=/web/conf/ssl.crt/ca.crt
-unalias l
-unalias la
-unalias ld
-unalias lt
-unalias m
-unalias c
-unalias s
-unalias f
-unalias e
-m() {
-    clear
-    make "$@" 2>&1 | more
-}
-lt() {
-    /bin/ls -lrtA "$@"
-}
-c() {
-    cd "$@"
-}
-s() {
-    su - "$@"
-}
-f() {
-    find / -fstype local -name "$@"
-}
-e() {
-    emacs "$@"
-}
 wgetr() {
     wget -r -np -nH "$@"
 }
