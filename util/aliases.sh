@@ -63,11 +63,7 @@ if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
 dockrun() {
-sudo nvidia-docker run \
-  --rm --volume /:/host \
-  --workdir /host$PWD \
-  --env PYTHONUNBUFFERED=x \
-  --env CUDA_CACHE_PATH=/host/tmp/cuda-cache "$@"
+    sudo nvidia-docker run --rm --volume /:/host --workdir /host$PWD --env PYTHONUNBUFFERED=x --env CUDA_CACHE_PATH=/host/tmp/cuda-cache "$@"
 }
 nsmi() {
     nvidia-smi "$@"
@@ -192,8 +188,7 @@ buildclangformat() {
      rm -rf llvm-build
      mkdir llvm-build
      cd llvm-build
-     cmake -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Release \
-           -DLLVM_ENABLE_ASSERTIONS=NO -DLLVM_ENABLE_THREADS=NO ../llvm/
+     cmake -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Release   -DLLVM_ENABLE_ASSERTIONS=NO -DLLVM_ENABLE_THREADS=NO ../llvm/
      make -j8
     )
     local clf=llvm-build/bin/clang-format
@@ -1684,8 +1679,7 @@ oscom() {
         if [[ $mend ]] ;then
             mend
         else
-            git commit -a -m "$gitinfo_subject" -m "from SDL: $gitinfo_sha1" -m "$gitinfo_changeid" \
-                --author="$gitinfo_author"
+            git commit -a -m "$gitinfo_subject" -m "from SDL: $gitinfo_sha1" -m "$gitinfo_changeid"        --author="$gitinfo_author"
         fi
         git show --name-status
         echo $ostarball
@@ -2148,8 +2142,7 @@ ccpto() {
     )
 }
 find_srcs() {
-    find "$@" -name '*.java' -o -name '*.py' -o -name '*.md' -o -name '*.pl' -o -name '*.sh' -o -name '*.bat' \
-         -o -name '*.[chi]pp' -o -name '*.[ch]' -o -name '*.cc' -o -name '*.hh' -o -name '.gitignore'
+    find "$@" -name '*.java' -o -name '*.py' -o -name '*.md' -o -name '*.pl' -o -name '*.sh' -o -name '*.bat' -o -name '*.[chi]pp' -o -name '*.[ch]' -o -name '*.cc' -o -name '*.hh' -o -name '.gitignore'
 }
 gitdiffl() {
     git diff --stat mdbase | cut -d' ' -f2
@@ -5049,8 +5042,7 @@ gjen() {
     )
 }
 hgtrie() {
-    StatisticalTokenizerTrain --whitespace-tokens --start-greedy-ascii-weight '' \
-                              --unigram-addk=0 --addk=0 --unk-weight '' --xmt-block 0 --loop 0 "$@"
+    StatisticalTokenizerTrain --whitespace-tokens --start-greedy-ascii-weight ''                      --unigram-addk=0 --addk=0 --unk-weight '' --xmt-block 0 --loop 0 "$@"
 }
 hgbest() {
     xmt --input-type FHG --pipeline Best "$@"
@@ -5198,9 +5190,7 @@ cppch() {
     cppcheck_cmd="cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
         --template ' {file}: {line}: {severity},{id},{message}' \
         $includeargs $ignoreargs "$code_path" --error-exitcode=2"
-    cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
-             --template ' {file}: {line}: {severity},{id},{message}' \
-             $includeargs $ignoreargs "$code_path" --error-exitcode=2
+    cppcheck -j 3 --inconclusive --quiet --force --inline-suppr     --template ' {file}: {line}: {severity},{id},{message}'     $includeargs $ignoreargs "$code_path" --error-exitcode=2
 }
 coma() {
     git commit -a -m "$*"
@@ -6916,17 +6906,10 @@ showcpp() {
                 earg=-'+ -V201400L -I-'
             fi
             set -x
-            $CPP -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -I$xmtx/sdl -I$xmtx \
-                 -I$xmtlibshared/sparsehash-c11/include \
-                 -I$xmtlibshared/utf8 \
-                 -I$xmtlibshared/cryptopp-5.6.2/include \
-                 $earg -o "$o"  "$f" ; edit $o
+            $CPP -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -I$xmtx/sdl -I$xmtx         -I$xmtlibshared/sparsehash-c11/include         -I$xmtlibshared/utf8         -I$xmtlibshared/cryptopp-5.6.2/include         $earg -o "$o"  "$f" ; edit $o
             #-x c++ -std=c++11
             if false ; then
-                -I$xmtlibshared/zeromq-3.2.2.2-1/include -I$xmtlib/boost_1_${boostminor}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/sdl/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I.  \
-                                                         -I $xmtlib/db-5.3.15 \
-                                                         -I $xmtlib/yaml-cpp-0.3.0-newapi/include \
-                                                         -I$xmtlibshared/utf8 -I$xmtlibshared/openfst-1.2.10/src -I$xmtlibshared/tinyxmlcpp-2.5.4/include
+                -I$xmtlibshared/zeromq-3.2.2.2-1/include -I$xmtlib/boost_1_${boostminor}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/sdl/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I.                                                  -I $xmtlib/db-5.3.15                                                 -I $xmtlib/yaml-cpp-0.3.0-newapi/include                                                 -I$xmtlibshared/utf8 -I$xmtlibshared/openfst-1.2.10/src -I$xmtlibshared/tinyxmlcpp-2.5.4/include
             fi
             popd
         done
@@ -8247,8 +8230,7 @@ EOF
 
         for i in `seq 1 $npages`; do
             # echo '\newpage' >> $stamp
-            echo '\mbox {} \newpage' \
-                 >> $stamp
+            echo '\mbox {} \newpage'         >> $stamp
         done
 
         echo '\end {document}' >> $stamp
@@ -8439,9 +8421,7 @@ range() {
     local to=${2:-99999999}
     shift
     shift
-    perl -e 'require "$ENV{HOME}/u/libgraehl.pl";$"=" ";' \
-         -e '$F=shift;$T=shift;&argvz;$n=0;while (<>) { ++$n;;print if $n>=$F && $n<=$T }' \
-         $from $to "$@"
+    perl -e 'require "$ENV{HOME}/u/libgraehl.pl";$"=" ";' -e '$F=shift;$T=shift;&argvz;$n=0;while (<>) { ++$n;;print if $n>=$F && $n<=$T }' $from $to "$@"
     if false ; then
         if [ "$from" -lt 0 ] ; then
             tail $from "$@" | head -$to
