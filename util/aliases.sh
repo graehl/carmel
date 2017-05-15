@@ -5021,7 +5021,7 @@ jjen(){
     chost=$jhost linjen "$@"
 }
 djen() {
-    chost=c-mdreyer linjen "$@"
+    chost=deep linjen "$@"
 }
 mjen() {
     chost=c-mdreyer linjen "$@"
