@@ -3132,10 +3132,10 @@ c-make() {
             echo ASAN: $f
         fi
      if [[ "$*" ]] ; then
-         c-s ASAN=$ASAN BUILD=$f threads=16 makeh $tar
+         c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
          #'&&' "$@"
      else
-         c-s ASAN=$ASAN BUILD=$f threads=16 makeh $tar
+         c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
      fi
      )  2>&1 | filter-gcc-errors
      done
@@ -5706,7 +5706,7 @@ usegcc() {
     fi
     local ccache=${ccache:-$(echo ~/bin/ccache)}
     ccachepre=$ccache-
-    if [[ $noccache ]] ; then
+    if [[ $noccache ]] || ! [[ -x ${ccachepre}gcc ]] ; then
         ccachepre=
     fi
     echo2 GCC_SUFFIX $GCC_SUFFIX
