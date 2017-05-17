@@ -1576,6 +1576,7 @@ inplace() {
 a2c() {
     for f in aliases.sh; do
         scp ~/u/$f $chost:u/$f
+        scp ~/u/$f deep:u/$f
     done
 }
 all2c() {
@@ -3247,6 +3248,14 @@ j-make() {
 jr-make() {
     (jr-c;c-make "$@")
 }
+d-make() {
+    (d-c;c-make "$@")
+}
+dr-make() {
+    (dr-c;c-make "$@")
+    BUILD=Release chost=deep c-make "$@"
+}
+
 mr-make() {
     (mr-c;c-make "$@")
 }
@@ -3317,7 +3326,7 @@ ncpus() {
     else
         local actual=`countcpus`
         local r=$((actual*2))
-        if [[ `hostname` = c-mdreyer ]]; then
+        if [[ `hostname` = deep ]]; then
             r=$actual
         fi
         echo $r
@@ -3351,7 +3360,7 @@ j-c() {
     chost=$jhost
 }
 d-c() {
-    chost=c-mdreyer
+    chost=deep
 }
 tocabs() {
     tohost $chost "$@"
@@ -4928,9 +4937,11 @@ linjen() {
      GCCVERSION=${GCCVERSION:-6.1.0}
      gccprefix=$xmtextbase/FC12/libraries/gcc-$GCCVERSION
      #gccprefix=/local/gcc
-     c-s nohup=$nohup JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/ SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} NOPIPES=${NOPIPES:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
+     echo linjen:
+     c-s GCC_SUFFIX=$GCC_SUFFIX nohup=$nohup JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/ SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} NOPIPES=${NOPIPES:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
 }
 jen() {
+    echo jen:
     cd $xmtx
     local build=${1:-${BUILD:-Release}}
     if ! [[ $SDL_BUILD_TYPE ]] ; then
@@ -4941,11 +4952,6 @@ jen() {
         #SDL_BUILD_TYPE=Production
     fi
     shift
-    local pub2
-    if [[ ${1:-} ]] ; then
-        pub2=$1
-        shift
-    fi
     local log=$HOME/tmp/jen.log.${HOST:=`hostname`}.`timestamp`
     . xmtpath.sh
     usegcc
@@ -4982,7 +4988,7 @@ jen() {
     if [[ $nohup ]] ; then
         nohupcmd=nohup
     fi
-    cmake=${cmake:-} CC=$cc CXX=$cxx gccprefix=$gccprefix SDL_ETS_BUILD=$SDL_ETS_BUILD GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} NOPIPES=${NOPIPES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} $nohupcmd jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} CC=$cc CXX=$cxx GCC_SUFFIX=$GCC_SUFFIX gccprefix=$gccprefix SDL_ETS_BUILD=$SDL_ETS_BUILD GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} NOPIPES=${NOPIPES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} $nohupcmd jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -6651,7 +6657,7 @@ makejust() {
     norun=1 makerun "$@"
 }
 makeh() {
-    usegcc
+    gcc6=1 usegcc
     showvars_required CXX CC
     if [[ $1 = xmt ]] ; then
         makerun xmtShell --help
@@ -7795,7 +7801,7 @@ racb() {
     fi
     CMAKEARGS=${CMAKEARGS:- -DCMAKE_COLOR_MAKEFILE=OFF -DCMAKE_VERBOSE_MAKEFILE=OFF}
     cmarg+=" $CMAKEARGS"
-    if false ; then
+    if true ; then
         if [[ $CC ]] ; then
             cmarg+="  -DCMAKE_C_COMPILER=$CC"
         fi
