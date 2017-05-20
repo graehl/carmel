@@ -30,4 +30,4 @@ def relpath(p1, p2):
 if __name__ == '__main__':
     frompath = sys.argv[1]
     topath = sys.argv[2]
-    print relpath(os.path.abspath(frompath),os.path.abspath(topath))
+    print(relpath(os.path.abspath(frompath),os.path.abspath(topath)))

@@ -144,6 +144,21 @@ dockrun() {
 nsmi() {
     nvidia-smi "$@"
 }
+gpull() {
+    (set -e
+     cd ~/g
+     git commit -a -m "${*:-pull}" || echo no changes
+     git pull --rebase || rebasenext
+    )
+}
+gpush() {
+    (set -e
+     cd ~/g
+     gpull
+     git push origin master
+    )
+}
+
 tensorcpu() {
     # ld doesn't work
     export bazelflags="--config=opt"
