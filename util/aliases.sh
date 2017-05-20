@@ -137,7 +137,6 @@ mvtoln() {
     fi
 }
 
->>>>>>> aliases
 dockrun() {
     sudo nvidia-docker run --rm --volume /:/host --workdir /host$PWD
     --env PYTHONUNBUFFERED=x --env CUDA_CACHE_PATH=/host/tmp/cuda-cache "$@"
