@@ -768,13 +768,21 @@ gitdiffl() {
     git diff --stat "$@" | cut -d' ' -f2
 }
 linelens() {
-    awk '{print length()}' "$@"
+    if [[ $words ]] ; then
+        awk '{print NF}' "$@"
+    else
+        awk '{print length()}' "$@"
+    fi
 }
 longlines() {
     perl -e '$n=shift;while(<>) { print if scalar $_ > $n }' "$@"
 }
 lenhist() {
+    # histogram of line lengths
     linelens "$@" | sort -n | uniq -c
+}
+linehist() {
+    lenhist "$@"
 }
 bent() {
     (
@@ -6543,13 +6551,15 @@ gerrit() {
     echo git push $gerritorigin HEAD:refs/for/master
     [[ $dryrun ]] || git push $gerritorigin HEAD:refs/for/master
 }
-gerritfor () {
+gerritfor() {
     local gerritorigin=origin
     local rbranch=${1:-remote-branch}
     echo git push $gerritorigin HEAD:refs/for/$rbranch
     git push $gerritorigin HEAD:refs/for/$rbranch
 }
-
+gerrit2() {
+    gerritfor xmt-2.0
+}
 review() {
     git commit -a
     gerrit
