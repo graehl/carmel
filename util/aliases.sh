@@ -94,6 +94,50 @@ tmuxmax() {
 byobumax() {
     /usr/lib/byobu/include/tmux-detach-all-but-current-client
 }
+comm() {
+    git commit -a -m "$*"
+}
+cp2ln() {
+    (
+        set -x
+        set -e
+        ! [[ $3 ]]
+        [[ $2 ]]
+        [[ -e $1 ]]
+        abs1=`abspath $1`
+        to="$2"
+        if [[ ${to%/} != $to ]] ; then
+            mkdir -p $to
+            to="$to$(basename $1)"
+        fi
+        cp "$1" "$2"
+        ln -sf $(relpath "$1" "$2") "$1"
+    )
+}
+mvtoln() {
+    to="$1"
+    shift
+    if [[ -d $to ]] || [[ ${to%/} != $to ]] ; then
+        mkdir -p $to
+        for f in "$@"; do
+            if [[ -e $f ]] ; then
+                cp2ln "$f" "$to"
+            fi
+        done
+    elif [[ $2 ]] ; then
+        echo2 "error: too many args for a non-directory destination - use trailing / to force creation of dir"
+        return 1
+    elif [[ -e $to ]] ; then
+        echo2 "arg1 to=$to exists and is not a directory, or you didn't add a trailing / to it"
+        return 1
+    else
+        set -x
+        cp2ln "$1" "$to"
+        set +x
+    fi
+}
+
+>>>>>>> aliases
 dockrun() {
     sudo nvidia-docker run --rm --volume /:/host --workdir /host$PWD
     --env PYTHONUNBUFFERED=x --env CUDA_CACHE_PATH=/host/tmp/cuda-cache "$@"
