@@ -106,6 +106,9 @@ gizagrowdiagfinaland() {
 }
 justalign() {
     perl -i~ -pe 's/^.*\Q{##} \E//;'
+quitchrome() {
+    pkill -a -i "Google Chrome"
+    pkill -a -i "Signal"
 }
 tmuxmax() {
     local a1
@@ -141,6 +144,14 @@ byobumax() {
 }
 comm() {
     git commit -a -m "$*"
+}
+
+mvrm() {
+    (set -e
+     ! [[ $3 ]]
+     rm "$2" || echo2 no previous existing $2
+     mv "$1" "$2"
+    )
 }
 cp2ln() {
     (
@@ -199,7 +210,11 @@ gpull() {
 gpush() {
     (set -e
      cd ~/g
+<<<<<<< HEAD
      gpull
+=======
+     gpull || echo no pull
+>>>>>>> aliases
      git push origin master
     )
 }
@@ -10121,7 +10136,6 @@ if [[ -d $SDL_EXTERNALS_PATH ]] ; then
     export PATH=$SDL_EXTERNALS_PATH/../Shared/java/apache-maven-3.0.4/bin:$PATH
 fi
 
-[[ $INSIDE_EMACS ]] || INSIDE_EMACS=
 uselocalgccmac() {
     if [[ -d /local/gcc/bin ]] ; then
         export PATH=/local/gcc/bin:$PATH
