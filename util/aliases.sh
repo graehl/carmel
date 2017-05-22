@@ -106,6 +106,7 @@ gizagrowdiagfinaland() {
 }
 justalign() {
     perl -i~ -pe 's/^.*\Q{##} \E//;'
+}
 quitchrome() {
     pkill -a -i "Google Chrome"
     pkill -a -i "Signal"
