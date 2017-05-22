@@ -9379,13 +9379,6 @@ compare_length() {
     extract-field.pl -print -f text-length,foreign-length "$@" | summarize_num.pl
 }
 
-ogetbleu() {
-    local log=${log:-bleu.`filename_from $1`}
-    local nbest=${2:-1.NBEST.err}
-    opt-nbest.out -maxiter 0 -init $1 -nos 0 -inputfile $nbest -keepInitsZero 2>&1 | tee $log
-}
-
-
 hypfromdata() {
     perl -e '$whole=$ENV{whole};$ns=$ENV{nsents};$ns=999999999 unless defined $ns;while (<>) { if (/^(\d+) -1 \# \# (.*) \# \#/) { if ($l ne $1) { print ($whole ? $_ : "$2\n");last unless $n++ < $ns; $l=$1; } } } ' "$@"
 }

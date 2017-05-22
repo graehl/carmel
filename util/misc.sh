@@ -20,7 +20,9 @@ srctrgxml() {
 }
 bleuscore() {
     echo "bleu4: $*"
-    perl /c04_data/coretraining/test/manager/main/kraken/xeval/App/bin/bleu.pl --metric=bleu -n 4 -hyp "$@"
+    bleupl=/c04_data/coretraining/test/manager/main/kraken/xeval/App/bin/bleu.pl
+    [[ -f $bleupl ]] || bleupl=~/bin/bleu.pl
+    perl $bleupl --metric=bleu -n 4 -hyp "$@"
 }
 setoutdir() {
     outdir=${outdir:-`echo ~/projects/unkweight`}
