@@ -62,6 +62,51 @@ fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
+fairclean() {
+    find . -name 'state*epoch*th*' -exec rm {} \;
+    find . -name 'model*epoch*th*' -exec rm {} \;
+}
+giza2() {
+    s=$1
+    t=$2
+    cd `dirname $s`
+    s=`basename $s`
+    t=`basename $t`
+    if [[ -f $s && -f $t ]] ; then
+        export PATH=/home/graehl/giza:$PATH
+
+        plain2snt $s $t
+        st=${s}_$t.snt
+        plain2snt $t $s
+        ts=${t}_$s.snt
+if ! [[ $nonorm ]] ; then
+        mkcls -p$s -V$s.vcb.classes
+        mkcls -p$t -V$t.vcb.classes
+        snt2cooc $st.cooc $s.vcb $t.vcb $st
+        mgiza -s $s.vcb -t $t.vcb -c $st -CoocurrenceFile $st.cooc &
+fi
+if ! [[ $noinvers ]] ; then
+        snt2cooc $ts.cooc $t.vcb $s.vcb $ts
+        mgiza -s $t.vcb -t $s.vcb -c $ts -CoocurrenceFile $ts.cooc
+fi
+        wait
+    else
+        echo `pwd`/$s and $t no found
+    fi
+}
+gizaunion() {
+    #giza2bal.pl from mosesdecoder
+    giza2bal.pl -d $1 -i $2 | symal -alignment=union -diagonal=no -final=no -both=no
+}
+gizagrowdiagfinal() {
+    giza2bal.pl -d $1 -i $2 | symal -alignment=grow -diagonal=yes -final=yes -both=no
+}
+gizagrowdiagfinaland() {
+    giza2bal.pl -d $1 -i $2 | symal -alignment=grow -diagonal=yes -final=yes -both=yes
+}
+justalign() {
+    perl -i~ -pe 's/^.*\Q{##} \E//;'
+}
 tmuxmax() {
     local a1
     local a2
@@ -6360,11 +6405,24 @@ rebasec() {
     git add "$@"
     git ${rebasecmd:-rebase} --continue
 }
+oncommit() {
+    refb=${1:-@{u}}
+    refa=${2:-HEAD}
+    reva=$(git rev-parse $refa)
+    revb=$(git rev-parse $refb)
+    echo2 "oncommit $refb $refa iff $reva = $revb"
+    [[ $reva = $revb ]]
+}
+onupstreamcommit() {
+    oncommit origin/master
+}
 mend() {
     (
         if [[ -x $xmtx/.git/rebase-apply ]] ; then
             echo2 mid-rebase already
             git rebase --continue
+        elif oncommit; then
+            git commit -a -m 'mend'
         else
             git commit --allow-empty -a -C HEAD --amend "$@"
         fi
