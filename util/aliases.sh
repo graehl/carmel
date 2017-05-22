@@ -210,11 +210,7 @@ gpull() {
 gpush() {
     (set -e
      cd ~/g
-<<<<<<< HEAD
-     gpull
-=======
      gpull || echo no pull
->>>>>>> aliases
      git push origin master
     )
 }
