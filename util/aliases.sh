@@ -62,9 +62,29 @@ fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
+fmake() {
+    (cd ~/fairseq;./make.sh)
+}
+ghpull() {
+    mine=${1:-origin}
+    upstream=${2:-upstream}
+    branchmine=${3:-master}
+    branchupstream=${4:-master}
+    (set -e
+     set -x
+    git fetch $mine
+    git fetch $upstream
+    working=merge.$mine.$upstream
+    killbranch $working || true
+    git checkout -b $working $mine/$branchmine
+    git merge $upstream/$branchupstream
+    git push $mine HEAD:$branchmine
+    )
+}
 fairclean() {
     find . -name 'state*epoch*th*' -exec rm {} \;
     find . -name 'model*epoch*th*' -exec rm {} \;
+    find . -name 'optmodel*th*' -exec rm {} \;
 }
 giza2() {
     s=$1
@@ -79,16 +99,16 @@ giza2() {
         st=${s}_$t.snt
         plain2snt $t $s
         ts=${t}_$s.snt
-if ! [[ $nonorm ]] ; then
-        mkcls -p$s -V$s.vcb.classes
-        mkcls -p$t -V$t.vcb.classes
-        snt2cooc $st.cooc $s.vcb $t.vcb $st
-        mgiza -s $s.vcb -t $t.vcb -c $st -CoocurrenceFile $st.cooc &
-fi
-if ! [[ $noinvers ]] ; then
-        snt2cooc $ts.cooc $t.vcb $s.vcb $ts
-        mgiza -s $t.vcb -t $s.vcb -c $ts -CoocurrenceFile $ts.cooc
-fi
+        if ! [[ $nonorm ]] ; then
+            mkcls -p$s -V$s.vcb.classes
+            mkcls -p$t -V$t.vcb.classes
+            snt2cooc $st.cooc $s.vcb $t.vcb $st
+            mgiza -s $s.vcb -t $t.vcb -c $st -CoocurrenceFile $st.cooc &
+        fi
+        if ! [[ $noinvers ]] ; then
+            snt2cooc $ts.cooc $t.vcb $s.vcb $ts
+            mgiza -s $t.vcb -t $s.vcb -c $ts -CoocurrenceFile $ts.cooc
+        fi
         wait
     else
         echo `pwd`/$s and $t no found
@@ -106,6 +126,38 @@ gizagrowdiagfinaland() {
 }
 justalign() {
     perl -i~ -pe 's/^.*\Q{##} \E//;'
+}
+multevalabs() {
+    local hyp=$1
+    shift
+    multevalhome=${multevalhome:-~/multeval}
+    (
+        cd $multevalhome
+        ./multeval.sh eval --refs "$@" --hyps-baseline $hyp --meteor.language ${trglang:-en}
+    )
+}
+multeval() {
+    local fs=
+    for f in "$@"; do
+        fs+=" "$(abspath "$f")
+    done
+    multevalabs $fs
+}
+toH() {
+    perl -e 'while(<>) {print "H-$.\t0\t$_"}' "$@"
+}
+toT() {
+    perl -e 'while(<>) {print "T-$.\t$_"}' "$@"
+}
+unbpe() {
+    sed 's/@@ //g;s/__LW_SW__ //g;'
+}
+toHT() {
+    toH "$1"
+    shift
+    for f in "$@"; do
+        toT "$f"
+    done
 }
 quitchrome() {
     pkill -a -i "Google Chrome"
@@ -197,6 +249,12 @@ mvtoln() {
 dockrun() {
     sudo nvidia-docker run --rm --volume /:/host --workdir /host$PWD
     --env PYTHONUNBUFFERED=x --env CUDA_CACHE_PATH=/host/tmp/cuda-cache "$@"
+}
+ntop() {
+    while true; do
+        nsmi
+        sleep 1
+    done
 }
 nsmi() {
     nvidia-smi "$@"
@@ -3731,7 +3789,7 @@ pushc() {
             echo no changes
         else
             echo changes ... amending first
-            mend
+            git commit --allow-empty -a -C HEAD --amend
         fi
         local b=${1:-`git_branch`}
 
@@ -6441,7 +6499,10 @@ mend() {
     )
 }
 mendthis() {
-    git commit -a --amend "$@"
+    git commit -a --amend
+}
+mendq() {
+    git commit --allow-empty -a -C HEAD --amend "$@"
 }
 xmend() {
     (
@@ -6452,7 +6513,7 @@ xmend() {
         else
             (
                 pushd $gd
-                git commit -a --amend
+                git commit --allow-empty -a -C HEAD --amend "$@"
                 popd
             )
         fi
