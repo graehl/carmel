@@ -128,23 +128,7 @@ struct word_spacer_c {
   }
 };
 
-template <char sep = ' '>
-struct spacesep {
-  bool squelch;
-  spacesep() : squelch(true) {}
-  template <class O>
-  void print(O& o) {
-    if (squelch)
-      squelch = false;
-    else
-      o << sep;
-  }
-  template <class C, class T>
-  friend inline std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T>& o, spacesep<sep>& me) {
-    me.print(o);
-    return o;
-  }
-};
+typedef word_spacer_c<' '> spacer;
 
 struct sep {
   char const* s;
