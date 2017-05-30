@@ -8,7 +8,8 @@ alignment a is pairs (s t)* where s 0-based indexes e, t 0-based indexes f. indi
 import argparse
 import sys
 
-parser=argparse.ArgumentParser(description='translate (utf8) input file lines to C header files (without include guards or namespaces)')
+parser=argparse.ArgumentParser(description=usage)
+infiles=[]
 
 def aword(i, a, w):
     return '{%d:%s}%s' % (i, ' '.join(map(str, a)), w)
@@ -16,9 +17,15 @@ def aword(i, a, w):
 def awords(a, w):
     return ' '.join(aword(i, a[i], w[i]) for i in range(len(w)))
 
-for line in sys.stdin:
-    fields = line.split('\t')
-    if len(fields) < 3: continue
+
+def forfiles(infiles):
+    for f in infiles:
+        for line in f:
+            forline(line)
+
+def forline(line):
+    fields = line.split(b'\t')
+    if len(fields) < 3: return
     S, T, A = fields[-3:]
     S = S.split()
     T = T.split()
@@ -33,3 +40,8 @@ for line in sys.stdin:
             t2s[t].append(s)
     print(awords(s2t, S))
     print(awords(t2s, T))
+
+def main(infiles):
+    forfiles([open(x, 'br') for x in infiles] if len(infiles) else [sys.stdin])
+
+main(sys.argv)
