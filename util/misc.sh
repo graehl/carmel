@@ -1,4 +1,47 @@
 ghost=c-graehl
+
+difflineset() {
+    echo2 difflineset "$@"
+    local t1=`mktemp`
+    local t2=`mktemp`
+    sort -u "$1" > $t1
+    sort -u "$2" > $t2
+    diff $t1 $t2
+}
+pairlines() {
+    perl -pe 'if ($. % 2) { chomp; $n = 1; } else { print "\t"; $n = 0; } END { print "\n" if $n; }' "$@"
+}
+subsetdiffline() {
+    echo2 subsetdiffline "$@"
+    local t1=`mktemp`
+    local t2=`mktemp`
+    local f1=$1
+    local f2=$2
+    shift
+    shift
+    (set -e
+     set -x
+    egrep "$@" < $f1 > $t1
+    egrep "$@" < $f2 > $t2
+    difflineset $t1 $t2
+    )
+}
+subsetdiffpairline() {
+    echo2 subsetdiffline "$@"
+    local t1=`mktemp`
+    local t2=`mktemp`
+    local f1=$1
+    local f2=$2
+    shift
+    shift
+    (set -e
+     set -x
+    egrep "$@" < $f1 | pairlines > $t1
+    egrep "$@" < $f2 | pairlines > $t2
+    difflineset $t1 $t2
+    )
+}
+
 nchanged() {
     grep 'file changed' "$@"
     grep -c 'file changed' "$@"
