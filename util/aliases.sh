@@ -6491,7 +6491,8 @@ mend() {
         if [[ -x $xmtx/.git/rebase-apply ]] ; then
             echo2 mid-rebase already
             git rebase --continue
-        elif oncommit; then
+        elif onupstreamcommit; then
+            echo "you are on origin/master commit already. adding new commit"
             git commit -a -m 'mend'
         else
             git commit --allow-empty -a -C HEAD --amend "$@"
