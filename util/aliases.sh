@@ -19,6 +19,11 @@ set -b
 shopt -s checkwinsize
 shopt -s cdspell
 export VISUAL=emacsclient
+if [[ $TERM = dumb && ! $INSIDE_EMACS ]] ; then
+    export EDITOR=vi
+else
+    export EDITOR=emacs
+fi
 export GCCVERSION=6.1.0
 xmtc=$(echo ~/c)
 xmtx=$(echo ~/x)
@@ -62,6 +67,53 @@ fi
 if [[ -r $libasanlocal ]] ; then
     libasan=$libasanlocal
 fi
+modelbest=model_best.th7
+optmodelbest=opt$modelbest
+checkpoints() {
+    perl -ne '$c=$1 if /^\| checkpoint (\d+)/ && $c < $1; END { print ($c+0) }' "$@"
+}
+mvlame() {
+    mkdir -p lame/
+    for f in "$@"; do
+        echo "checkpoints: $(checkpoints $f/log)"
+        mv "$f" lame/
+    done
+}
+findunfinished() {
+    for f in ${1:-trainings.jp-en.2}/*; do
+        if [[ -d $f && ! -s $f/$modelbest && ! -s $f/$optmodelbest ]] ; then
+            echo $f
+        fi
+    done
+}
+sortresults() {
+    local results=$1
+    sort -r -n -k 5 -k 8 "$results" > ${2:-$results.sorted}
+}
+agloss() {
+    ag --literal '| '"$1" | perl -ne 'print "$1  $_" if m#\| '"$1"'\s+(\S+)#' | sort -n
+}
+trainloss() {
+    agloss trainloss
+}
+validloss() {
+    agloss validloss
+}
+testloss() {
+    agloss testloss
+}
+grepmultbleu() {
+    #n=1            BLEU (s_sel/s_opt/p)   METEOR (s_sel/s_opt/p) TER (s_sel/s_opt/p)    Length (s_sel/s_opt/p)
+    #baseline       19.7 (0.6/*/-)         23.8 (0.3/*/-)         71.6 (0.7/*/-)         89.3 (1.2/*/-)
+    perl -e '$r="[0-9]+[.][0-9+]"; $s="($r)".q{\s+\([^/]+/[^/]+/[^/]+\)}; print STDERR "BLEU\tMETEOR\tTER \tLength\n";while(<>) { print "$1\t$2\t$3\t$4\n" if m{^\S+\s+$s\s+$s\s+$s\s+$s\s*$} }' "$@"
+}
+grepbleu() {
+    #eval.test.best.12.lp8.cov0.sw0.sys.detok.lc	 BLEUr1n4[%] 21.4 brevityPenalty: 0.9257 lengthRatio: 0.9283  95%-conf.: 20.3 - 22.51 delta: 1.1
+    perl -ne 'BEGIN{print STDERR "BLEU\tLR\n"}; print "$1\t",sprintf("%.2f",$2),"\n" if /\QBLEUr1n4[%]\E ([0-9.]+) .* lengthRatio: ([0-9.]+) /' "$@"
+}
+echotab() {
+    echo -e '\t'
+}
 fmake() {
     (cd ~/fairseq;./make.sh)
 }
@@ -84,7 +136,7 @@ ghpull() {
 fairclean() {
     find . -name 'state*epoch*th*' -exec rm {} \;
     find . -name 'model*epoch*th*' -exec rm {} \;
-    find . -name 'optmodel*th*' -exec rm {} \;
+    #find . -name 'optmodel*th*' -exec rm {} \;
 }
 giza2() {
     s=$1
