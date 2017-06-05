@@ -1,3 +1,96 @@
+cherryfrom() {
+    local REV=$1
+    git show $REV -- "$@" | git apply -3 -
+    if [[ $commit ]] ; then
+        git commit -a -c $REV
+    fi
+}
+branchpart() {
+    (
+        to=$1
+        shift
+        from=`gitbranch`
+        killbranch $to || true
+        set -e
+        set -x
+        parent=$from^1
+        git co $parent -b $to
+        for f in "$@"; do
+            git co $from "$f"
+        done
+        if [[ $mend ]] ; then
+            mend
+        else
+            git commit -a -m "just $*"
+        fi
+        git co $from
+        for f in "$@"; do
+            git co $parent "$f"
+        done
+    )
+}
+wcpiece() {
+    perl -ne '@s = /__LW_SW__/g; $j += scalar @s; @l=split; $n += scalar @l; END { $w = $n - $j; $nw = $n / $w; print "$j subword joins\n$n subword units\n$w whole words\nsubwords/wholes $nw\n"}' "$@"
+}
+learnrebpe1() {
+    local t=$1
+    local c=$2
+    local n=${3:-30000}
+    local sw=$HOME/subword-nmt
+    (set -e
+     set -x
+    if [[ -f $c ]] ; then
+        mv $c $c.prevbpe
+    fi
+    unbpe <$t>$t.unbpe
+    mv $t $t.prevbpe
+    $sw/learn_bpe.py --input $t.unbpe -s $n -o $c
+    $sw/apply_bpe.py -s __LW_SW__ -c $c $vocab < $t.unbpe > $t
+    )
+}
+rebpe1() {
+    local t=$1
+    local c=$2
+    local vocab=${vocab:-$3}
+    if [[ $vocab ]] ; then
+        vocab="--vocabulary $vocab --vocabulary-threshold ${subword_unk:-40}"
+    fi
+    local sw=$HOME/subword-nmt
+    (set -e
+     set -x
+     if [[ ! -s $t.unbpe ]] ; then
+    unbpe<$t>$t.unbpe
+    mv $t $t.prevbpe
+     fi
+    $sw/apply_bpe.py -s __LW_SW__ -c $c $vocab < $t.unbpe > $t
+    )
+}
+
+unbpe() {
+    sed 's/@@ //g;s/__LW_SW__ //g;'
+}
+renamerm() {
+    perl -e '$rm=shift;$_=shift;$was=$_;print STDERR "rm $rm from $_\n";if (s/\Q$rm\E//){print STDERR "mv $was $_\n"; system "mv",$was,$_; }' "$@"
+}
+rmo0m0() {
+    local what=$1
+    shift
+    for f in "$@"; do
+        renamerm ".o0x2048.m0x1024" "$f"
+    done
+}
+lsrenamerm() {
+    if [[ *"$1"* ]] ; then
+        echo found $1
+        for f in *"$1"*; do
+            if [[ -f "$f" || -d "$f" ]] ; then
+                echo $f
+                renamerm "$1" "$f"
+            fi
+        done
+    fi
+}
+
 touchconf() {
     touch aclocal.m4 Makefile.in Makefile.am configure
 }
@@ -69,6 +162,16 @@ if [[ -r $libasanlocal ]] ; then
 fi
 modelbest=model_best.th7
 optmodelbest=opt$modelbest
+mvseries() {
+    local i=${start:-1}
+    for f in `ls -rt "$@"`; do
+        if [[ -f "$f" ]] ; then
+            mv "$f" "$i.$f"
+            ls -l "$i.$f"
+            (( i++ ))
+        fi
+    done
+}
 checkpoints() {
     perl -ne '$c=$1 if /^\| checkpoint (\d+)/ && $c < $1; END { print ($c+0) }' "$@"
 }
@@ -200,9 +303,6 @@ toH() {
 }
 toT() {
     perl -e 'while(<>) {print "T-$.\t$_"}' "$@"
-}
-unbpe() {
-    sed 's/@@ //g;s/__LW_SW__ //g;'
 }
 toHT() {
     toH "$1"
@@ -1461,7 +1561,7 @@ gitundosoft() {
     git reset --soft HEAD~1
 }
 difflines() {
-    diff -C 0 "$@" | grep '^[-+] '
+    /usr/bin/diff -C 0 "$@" | grep '^[-+] '
     echo2 "$@"
 }
 hymac() {
@@ -5201,10 +5301,14 @@ linjen() {
      log=$tmp/linjen.`csuf`.$branch.$BUILD
      mv $log ${log}2 || true
      GCCVERSION=${GCCVERSION:-6.1.0}
-     gccprefix=$xmtextbase/FC12/libraries/gcc-$GCCVERSION
+     if [[ $chost = deep ]] ; then
+         gccprefix=
+     else
+         gccprefix=$xmtextbase/FC12/libraries/gcc-$GCCVERSION
+     fi
      #gccprefix=/local/gcc
      echo linjen:
-     c-s GCC_SUFFIX=$GCC_SUFFIX nohup=$nohup JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/ SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} NOPIPES=${NOPIPES:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
+     c-s GCC_SUFFIX=$GCC_SUFFIX nohup=$nohup JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/ SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} NOPIPES=${NOPIPES:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
 }
 jen() {
     echo jen:
@@ -5240,21 +5344,20 @@ jen() {
     fi
     local threads=${MAKEPROC:-`ncpus`}
     set -x
-    if [[ $HOST = pwn ]] ; then
-        UPDATE=0
-    fi
+    UPDATE=${UPDATE:-0}
     local ccargs=
-    local cc
-    local cxx
-    if [[ -d $gccprefix ]] ; then
-        cc=$gccprefix/bin/gcc
-        cxx=$gccprefix/bin/g++
+    if [[ $HOST = deep ]] ; then
+        gccprefix=
+    fi
+    if [[  -d $gccprefix ]] ; then
+        CC=$gccprefix/bin/gcc
+        CXX=$gccprefix/bin/g++
     fi
     nohupcmd=
     if [[ $nohup ]] ; then
         nohupcmd=nohup
     fi
-    cmake=${cmake:-} CC=$cc CXX=$cxx GCC_SUFFIX=$GCC_SUFFIX gccprefix=$gccprefix SDL_ETS_BUILD=$SDL_ETS_BUILD GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} NOPIPES=${NOPIPES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} $nohupcmd jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} CC=$CC CXX=$CXX GCC_SUFFIX=$GCC_SUFFIX gccprefix=$gccprefix SDL_ETS_BUILD=$SDL_ETS_BUILD GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} NOPIPES=${NOPIPES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} $nohupcmd jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -6543,7 +6646,7 @@ mend() {
         if [[ -x $xmtx/.git/rebase-apply ]] ; then
             echo2 mid-rebase already
             git rebase --continue
-        elif onupstreamcommit; then
+        elif false && onupstreamcommit; then
             echo "you are on origin/master commit already. adding new commit"
             git commit -a -m 'mend'
         else
