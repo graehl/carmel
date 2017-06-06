@@ -1,3 +1,4 @@
+<<<<<<< origin/master
 cherryfrom() {
     local REV=$1
     git show $REV -- "$@" | git apply -3 -
@@ -91,6 +92,31 @@ lsrenamerm() {
     fi
 }
 
+||||||| merged common ancestors
+=======
+renamerm() {
+    perl -e '$rm=shift;$_=shift;$was=$_;print STDERR "rm $rm from $_\n";if (s/\Q$rm\E//){print STDERR "mv $was $_\n"; system "mv",$was,$_; }' "$@"
+}
+rmo0m0() {
+    local what=$1
+    shift
+    for f in "$@"; do
+        renamerm ".o0x2048.m0x1024" "$f"
+    done
+}
+lsrenamerm() {
+    if [[ *"$1"* ]] ; then
+        echo found $1
+        for f in *"$1"*; do
+            if [[ -f "$f" || -d "$f" ]] ; then
+                echo $f
+                renamerm "$1" "$f"
+            fi
+        done
+    fi
+}
+
+>>>>>>> HEAD~0
 touchconf() {
     touch aclocal.m4 Makefile.in Makefile.am configure
 }
