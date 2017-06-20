@@ -1,3 +1,253 @@
+agcodes() {
+    (
+        c=$1
+        shift
+        len=${#c}
+        i=1
+        ags=''
+    while((i<$len)); do
+        ags+="${c:0:$i} ${c:$i:$((len-i))}|"
+        i=$((i+1))
+    done
+    ag "${ags%|}</w>" "$@"
+    )
+}
+rmext() {
+    perl -e 'for (@ARGV) { $was=$_; if (s/\.[^.]+$// && length($_) > 1) {die if -f $_;rename $was,$_; print "mv $was $_\n"; } }' "$@"
+}
+findbleus() {
+    tail -n 1 `find . -name '*lcBLEU' | grep -v b1. | grep -v valid | grep -v lp0`  | tee  bleus.txt
+}
+rmth7() {
+    d=$1
+    [[ -d $d ]] || d=`dirname $d`
+    if [[ -d $d ]] ; then
+        ls -l $1/*.th7 && rm $1/*.th7
+    fi
+}
+detoklwat() {
+    perl -pe 's/ ?(?:__LW_AT__|\Q_-#-_\E) ?//go' "$@"
+}
+execpairs() {
+    (
+    set -e
+    cmd=$1
+    shift
+    args1=
+    args2=
+    while (($#)) ; do
+        args1+=" $1"
+        args2+=" ${2?execpairs odd number of args after $1}"
+        shift
+        shift
+    done
+    $cmd $args1 &
+    $cmd $args2
+    wait
+    )
+}
+heads() {
+    n=$1
+    shift
+    for f in "$@"; do
+        head -n $n < $f > $f.h$n
+    done
+}
+pstarted() {
+    ps kstart_time -ef | head -n -2
+}
+stepmax=0
+stepbarrier() {
+    if [[ $step -gt $stepmax ]] ; then
+        stepmax=$step
+        wait
+    fi
+}
+step() {
+    local step=$1
+    shift
+    if [[ $step -ge ${step0:-0} ]] ; then
+        stepbarrier $step
+        echo2 "#$step $*"
+    else
+        echo2 "#skipped $step < step0=$step0"
+    fi
+}
+stepout() {
+    local step=$1
+    local out=$2
+    set -e
+    [[ $out ]]
+    shift
+    shift
+    set -x
+    if [[ $step -ge ${step0:-0} ]] ; then
+        stepbarrier $step
+        echo2 "#$step $* > $out"
+        ("$@" > $out.tmp && mv $out.tmp $out) &
+    else
+        echo2 "#$step < step0=$step0"
+    fi
+}
+partlines() {
+    perl -e '$p = shift; $n = 0;$k = 1;
+while(<>){++$n;if ($k/$n < $p) { print STDERR $_; ++$k; } else { print $_; } }
+' "$@"
+}
+perlutf8() {
+    local enutf8=${enutf8:-en_US.UTF-8}
+    LC_ALL=$enutf8 perl "$@"
+}
+fromlwat() {
+    LC_ALL=C perl -pe 's/__LW_AT__/_-#-_/og' "$@"
+}
+tolwat() {
+    LC_ALL=C perl -pe 's/\Q_-#-_/__LW_AT__/og' "$@"
+}
+modalcase() {
+perlutf8 -e '
+sub debug {
+    print STDERR join(" ", @_),"\n";
+}
+$f=shift;
+open F, "<","$f" or die;
+while(<F>) {
+    ($lc,$mixed,$nlc,$nmixed)=split;
+    $repl{$lc} = $mixed if ($nmixed >= $nlc && !exists($repl{$lc}));
+}
+while(<>) {
+    $lc = lc($_);
+    $fromlwat = scalar s/__LW_AT__/_-#-_/og;
+    if ($_ eq $lc || $_ eq uc($_)) {
+        $_=$lc;
+        s/(\w+)/exists $repl{$1} ? $repl{$1} : $1/ge;
+        s/(\w)/\u$1/;
+        #&debug($_);
+    }
+    s/_-#-_/__LW_AT__/og if ($fromlwat);
+    print;
+}
+
+' "$@"
+}
+nonlcs() {
+    perlutf8 -e '
+while(<>) {
+    s/__LW_AT__/_-#-_/og;
+    $u = uc($_);
+    if ($_ ne $u) {
+        $i = 0;
+        while (/(\w+)/g) {
+            $w = $1;
+            if ($i++) {
+                $lc = lc($w);
+                ++$total{$lc};
+                if ($w ne $lc) {
+                    ++$mixed{$w};
+                } else {
+                    ++$lcs{$w};
+                }
+            }
+        }
+    }
+}
+$sep=" ";
+for (sort {$mixed{$b} <=> $mixed{$a} or $a cmp $b} keys %mixed) {
+    $lc = lc($_);
+    print $lc,$sep,$_,$sep,($lcs{$lc} or 0),$sep,$mixed{$_},$sep,$total{$lc},"\n";
+}
+
+' "$@"
+}
+ucfirst() {
+    perlutf8 -pe 's/(\w)/\u$1/' "$@"
+}
+lcfirst() {
+    perlutf8 -pe 's/(\w)/\l$1/' "$@"
+}
+lcutf8() {
+    perlutf8 -pe '$_=lc($_)' "$@"
+}
+makelc() {
+    for f in "$@"; do
+        lcutf8 $f > $f.lc
+        wc $f $f.lc
+    done
+}
+tcfirst() {
+    perlutf8 -pe 's/(\w+)/$1 eq uc($1) ? $1 : lc($1)/e' "$@"
+}
+moses=${moses:-~/mosesdecoder}
+mosesdetokdir=$moses/scripts/tokenizer
+mosesdetokpl=$mosesdetokdir/detokenizer.pl
+mosesdetok=$mosesdetokdir/detokenizer.perl
+detok() {
+    (set -e
+    [[ -s $mosesdetok ]]
+    cat "$@" | PERL5LIB=$mosesdetokdir perl $mosesdetok -l ${lang:-en}
+    )
+}
+unallcaps() {
+    perlutf8 -ne 'my @l = split;$_=join(" ",@l); $u = uc($_); if ($_ eq $u) { $_ = lc($_); s/(\w)/\u$1/; } print $_,"\n"' "$@"
+}
+cleanen1() {
+    unallcaps < "$1" | lang=${langen:-en} detok > "$1.clean"
+}
+cleanen() {
+    for f in "$@"; do
+        cleanen1 "$f"
+    done
+}
+getvocabs() {
+    (
+        outs=
+        for f in "$@"; do
+            out=$f.vocab
+            get_vocab.py < $f > $out
+            outs+=" $out"
+        done
+        wc -l $outs
+    )
+}
+langpar() {
+    ~/bin/langid -v ${verbose:-0} -p -L -${logprob:-.5} -d -e ${lang:-en} -i $2 -o $2.langid -j $1.langid.reject < $1 > $1.langid
+}
+enlangpar() {
+    lang=en langpar "$@"
+}
+unlwat() {
+    perl -pe 's/ __LW_AT__|__LW_AT__ //g' "$@"
+}
+nonenlines() {
+    cat "$@" | unlwat | langid -l | grep -v -n "^${lang:-en}" | cut -d: -f1
+}
+nonen() {
+    for f in `nonenlines "$@"`; do
+        getline $f $1
+    done
+}
+mv3() {
+    (set -e
+     [[ -f $1 ]]
+     [[ -f $2 ]]
+     f=$3
+     [[ $f ]]  || f=$2.old
+     rm -f $f
+     mv $2 $f
+     mv $1 $2
+     echo $1
+     ls -l $2 $f
+    )
+}
+showdups() {
+    sort "$@" | uniq -c | sort -rn | head
+}
+samemd5() {
+    md5sum $1 > $1.md5sum
+    md5sum $2 > $2.md5sum
+    diff $1.md5sum $2.md5sum
+    rm $1.md5sum $2.md5sum
+}
 cherryfrom() {
     local REV=$1
     git show $REV -- "$@" | git apply -3 -
@@ -9,24 +259,22 @@ branchpart() {
     (
         to=$1
         shift
+        gitroot
         from=`gitbranch`
         killbranch $to || true
         set -e
+        require_files "$@"
         set -x
         parent=$from^1
         git co $parent -b $to
-        for f in "$@"; do
-            git co $from "$f"
-        done
+        git co $from -- "$@"
         if [[ $mend ]] ; then
-            mend
+            mendq
         else
             git commit -a -m "just $*"
         fi
         git co $from
-        for f in "$@"; do
-            git co $parent "$f"
-        done
+        git co $parent -- "$@"
     )
 }
 wcpiece() {
@@ -39,13 +287,13 @@ learnrebpe1() {
     local sw=$HOME/subword-nmt
     (set -e
      set -x
-    if [[ -f $c ]] ; then
-        mv $c $c.prevbpe
-    fi
-    unbpe <$t>$t.unbpe
-    mv $t $t.prevbpe
-    $sw/learn_bpe.py --input $t.unbpe -s $n -o $c
-    $sw/apply_bpe.py -s __LW_SW__ -c $c $vocab < $t.unbpe > $t
+     if [[ -f $c ]] ; then
+         mv $c $c.prevbpe
+     fi
+     unbpe <$t>$t.unbpe
+     mv $t $t.prevbpe
+     $sw/learn_bpe.py --input $t.unbpe -s $n -o $c
+     $sw/apply_bpe.py -s __LW_SW__ -c $c $vocab < $t.unbpe > $t
     )
 }
 rebpe1() {
@@ -59,10 +307,10 @@ rebpe1() {
     (set -e
      set -x
      if [[ ! -s $t.unbpe ]] ; then
-    unbpe<$t>$t.unbpe
-    mv $t $t.prevbpe
+         unbpe<$t>$t.unbpe
+         mv $t $t.prevbpe
      fi
-    $sw/apply_bpe.py -s __LW_SW__ -c $c $vocab < $t.unbpe > $t
+     $sw/apply_bpe.py -s __LW_SW__ -c $c $vocab < $t.unbpe > $t
     )
 }
 
@@ -97,10 +345,10 @@ touchconf() {
 bootstrap() {
     ( set -e
       autoreconf -f -i
-#      aclocal
-#      automake --add-missing
-#      autoconf
-#      libtoolize -i --recursive
+      #      aclocal
+      #      automake --add-missing
+      #      autoconf
+      #      libtoolize -i --recursive
     )
 }
 UTIL=${UTIL:-$(echo ~/u)}
@@ -194,7 +442,7 @@ sortresults() {
     sort -r -n -k 5 -k 8 "$results" > ${2:-$results.sorted}
 }
 agloss() {
-    ag --literal '| '"$1" | perl -ne 'print "$1  $_" if m#\| '"$1"'\s+(\S+)#' | sort -n
+    ag --literal '| '"$1" | perl -ne 'print "$1 $_" if m#\| '"$1"'\s+(\S+)#' | sort -n
 }
 trainloss() {
     agloss trainloss
@@ -206,19 +454,19 @@ testloss() {
     agloss testloss
 }
 grepmultbleu() {
-    #n=1            BLEU (s_sel/s_opt/p)   METEOR (s_sel/s_opt/p) TER (s_sel/s_opt/p)    Length (s_sel/s_opt/p)
-    #baseline       19.7 (0.6/*/-)         23.8 (0.3/*/-)         71.6 (0.7/*/-)         89.3 (1.2/*/-)
+    #n=1 BLEU (s_sel/s_opt/p)   METEOR (s_sel/s_opt/p) TER (s_sel/s_opt/p)    Length (s_sel/s_opt/p)
+    #baseline 19.7 (0.6/*/-)         23.8 (0.3/*/-)         71.6 (0.7/*/-)         89.3 (1.2/*/-)
     perl -e '$r="[0-9]+[.][0-9+]"; $s="($r)".q{\s+\([^/]+/[^/]+/[^/]+\)}; print STDERR "BLEU\tMETEOR\tTER \tLength\n";while(<>) { print "$1\t$2\t$3\t$4\n" if m{^\S+\s+$s\s+$s\s+$s\s+$s\s*$} }' "$@"
 }
 grepbleu() {
-    #eval.test.best.12.lp8.cov0.sw0.sys.detok.lc	 BLEUr1n4[%] 21.4 brevityPenalty: 0.9257 lengthRatio: 0.9283  95%-conf.: 20.3 - 22.51 delta: 1.1
+    #eval.test.best.12.lp8.cov0.sw0.sys.detok.lc BLEUr1n4[%] 21.4 brevityPenalty: 0.9257 lengthRatio: 0.9283 95%-conf.: 20.3 - 22.51 delta: 1.1
     perl -ne 'BEGIN{print STDERR "BLEU\tLR\n"}; print "$1\t",sprintf("%.2f",$2),"\n" if /\QBLEUr1n4[%]\E ([0-9.]+) .* lengthRatio: ([0-9.]+) /' "$@"
 }
 echotab() {
     echo -e '\t'
 }
 fmake() {
-    (cd ~/fairseq;./make.sh)
+    (cd ~/fairseq;scripts/make.sh)
 }
 ghpull() {
     mine=${1:-origin}
@@ -227,13 +475,13 @@ ghpull() {
     branchupstream=${4:-master}
     (set -e
      set -x
-    git fetch $mine
-    git fetch $upstream
-    working=merge.$mine.$upstream
-    killbranch $working || true
-    git checkout -b $working $mine/$branchmine
-    git merge $upstream/$branchupstream
-    git push $mine HEAD:$branchmine
+     git fetch $mine
+     git fetch $upstream
+     working=merge.$mine.$upstream
+     killbranch $working || true
+     git checkout -b $working $mine/$branchmine
+     git merge $upstream/$branchupstream
+     git push $mine HEAD:$branchmine
     )
 }
 fairclean() {
@@ -282,13 +530,46 @@ gizagrowdiagfinaland() {
 justalign() {
     perl -i~ -pe 's/^.*\Q{##} \E//;'
 }
-multevalabs() {
-    local hyp=$1
+allnonempty() {
+    for f in "$@"; do
+        if ! [[ -s $f ]] ; then
+            ls -l $f
+            return 1
+        fi
+    done
+}
+
+multeval12() {
+    (
+        [[ -s srctrglang.sh ]] && . srctrglang.sh
+        ref=${3:-$TESTDETOKLC}
+        set -e
+        set -x
+        [[ -s $ref ]]
+        a=$1
+        [[ $a ]]
+        b=$2
+        [[ $b ]]
+        suf=${4:-16.lp15.cov0.sw0.sys.detok.lc}
+        as=$a*/*$suf
+        bs=$b*/*$suf
+        allnonempty $as
+        allnonempty $bs
+        echo as: $as
+        echo bs: $bs
+        multeval --refs "$ref" --hyps-baseline $as --hyps-sys1 $bs 2>&1 | tee multeval.`basename $a`.`basename $b`.log
+    )
+}
+multeval1ref() {
+    local ref=$1
     shift
+    multeval --refs "$ref" --hyps-baseline "$@"
+}
+multevalabs() {
     multevalhome=${multevalhome:-~/multeval}
     (
         cd $multevalhome
-        ./multeval.sh eval --refs "$@" --hyps-baseline $hyp --meteor.language ${trglang:-en}
+        ./multeval.sh eval "$@" --meteor.language ${trglang:-en}
     )
 }
 multevalabs() {
@@ -303,10 +584,14 @@ multevalabs() {
 multeval() {
     local fs=
     for f in "$@"; do
-        fs+=" "$(abspath "$f")
+        if [[ -s "$f" && `dirname $f` != . ]] ; then
+            f=$(abspath "$f")
+        fi
+        fs+=" $f"
     done
     multevalabs $fs
 }
+
 toH() {
     perl -e 'while(<>) {print "H-$.\t0\t$_"}' "$@"
 }
@@ -440,7 +725,7 @@ tensorcpu() {
     export bazelflags="--config=opt"
     export CC=
     export CXX=
-    export bazelflags="--config=opt  --action_env PATH --action_env DYLD_LIBRARY_PATH --action_env LD_LIBRARY_PATH -k"
+    export bazelflags="--config=opt --action_env PATH --action_env DYLD_LIBRARY_PATH --action_env LD_LIBRARY_PATH -k"
     cd ~/tensorflow
     [[ -f .tf_configure.bazelrc ]] ||  ./configure
     make clean
@@ -456,17 +741,17 @@ tmuxs() {
 }
 
 tensorpip() {
-${pip:-pip} install -I --upgrade setuptools
-${pip:-pip} install portpicker
-${pip:-pip} install mock
-${pip:-pip} install pep8
-${pip:-pip} install pylint
-${pip:-pip} install py-cpuinfo
-${pip:-pip} install pandas==0.18.1
-${pip:-pip} install wheel
-${pip:-pip} install --upgrade six==1.10.0
-${pip:-pip} install --upgrade werkzeug==0.11.10
-${pip:-pip} install --upgrade protobuf==3.0.0
+    ${pip:-pip} install -I --upgrade setuptools
+    ${pip:-pip} install portpicker
+    ${pip:-pip} install mock
+    ${pip:-pip} install pep8
+    ${pip:-pip} install pylint
+    ${pip:-pip} install py-cpuinfo
+    ${pip:-pip} install pandas==0.18.1
+    ${pip:-pip} install wheel
+    ${pip:-pip} install --upgrade six==1.10.0
+    ${pip:-pip} install --upgrade werkzeug==0.11.10
+    ${pip:-pip} install --upgrade protobuf==3.0.0
 }
 juno() {
     tmuxs jupyter notebook
@@ -476,7 +761,7 @@ junn() {
     tmuxname=nn tmuxs jupyter notebook
 }
 tensorcpu() {
-    export flags="--config=opt  --action_env PATH --action_env DYLD_LIBRARY_PATH --action_env LD_LIBRARY_PATH -k"
+    export flags="--config=opt --action_env PATH --action_env DYLD_LIBRARY_PATH --action_env LD_LIBRARY_PATH -k"
     bazel build $flags //tensorflow/tools/pip_package:build_pip_package
     echo 'echo "startup --max_idle_secs=100000000" > ~/.bazelrc'
 }
@@ -484,7 +769,7 @@ confpython36() {
     sudo ln -svfn python-3.6.1 /usr/share/doc/python-3
     sudo ln -svfn python-3.6.1 /usr/local/share/doc/python-3
     (set -e
-     ./configure --disable-multiarch --enable-optimizations --prefix=/usr/local     --enable-shared   --with-system-expat             --with-system-ffi --with-ensurepip=yes --with-universal-archs=64-bit
+     ./configure --disable-multiarch --enable-optimizations --prefix=/usr/local --enable-shared --with-system-expat --with-system-ffi --with-ensurepip=yes --with-universal-archs=64-bit
      make -j8
      sudo make install
      sudo chmod -v 755 /usr/local/lib/libpython3.6m.so
@@ -503,12 +788,12 @@ syncmusic() {
     adb stop-server
     (set -e
      set -x
-    adb start-server
-    adb devices
-    cd ~/dropbox
-    adb-sync music /sdcard/music
-    cd ~/music
-    adb-sync local /sdcard/music
+     adb start-server
+     adb devices
+     cd ~/dropbox
+     adb-sync music /sdcard/music
+     cd ~/music
+     adb-sync local /sdcard/music
     )
 }
 tarun() {
@@ -528,11 +813,11 @@ tarx() {
     shift
     (
         echo $user $a
-    d=~/$user/$a
-    mkdir -p $d
-    set -x
-    cd $d
-    tarun $user -x -f "$a" "$@"
+        d=~/$user/$a
+        mkdir -p $d
+        set -x
+        cd $d
+        tarun $user -x -f "$a" "$@"
     )
 }
 tarls() {
@@ -545,22 +830,22 @@ buildclangformat() {
      CLANG_REV=295516
      if [[ $force ]] || ! [[ -d llvm ]] ; then
          (
-     rm -rf llvm
-     mkdir llvm
-     svn co http://llvm.org/svn/llvm-project/llvm/trunk@$CLANG_REV llvm
-     cd llvm/tools
-     svn co http://llvm.org/svn/llvm-project/cfe/trunk@$CLANG_REV clang
-     )
+             rm -rf llvm
+             mkdir llvm
+             svn co http://llvm.org/svn/llvm-project/llvm/trunk@$CLANG_REV llvm
+             cd llvm/tools
+             svn co http://llvm.org/svn/llvm-project/cfe/trunk@$CLANG_REV clang
+         )
      fi
      rm -rf llvm-build
      mkdir llvm-build
      cd llvm-build
-     cmake -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Release   -DLLVM_ENABLE_ASSERTIONS=NO -DLLVM_ENABLE_THREADS=NO ../llvm/
+     cmake -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=NO -DLLVM_ENABLE_THREADS=NO ../llvm/
      make -j8
     )
     local clf=llvm-build/bin/clang-format
     ls -l $clf
-     strip $clf
+    strip $clf
     ls -l $clf
 }
 
@@ -570,7 +855,7 @@ tolower() {
 fstshow() {
     for f in "$@"; do
         fstdraw --isymbols=${isymbols:-ascii.syms} --osymbols=${osymbols:-wotw.syms} -portrait $f | dot -Tjpg >$f.jpg; open $f.jpg
-        done
+    done
 }
 fstcompinv() {
     for f in "$@"; do
@@ -589,9 +874,9 @@ gitchangedls() {
 xmtnull=' -o /dev/null --log-config=/home/graehl/warn.xml'
 timenmtchs() {
     for k in -1 10 0; do
-    for f in "$@"; do
-        khyps=$k xmt=~/pub/$f/xmt timenmtch
-    done
+        for f in "$@"; do
+            khyps=$k xmt=~/pub/$f/xmt timenmtch
+        done
     done
 }
 timenmtch() {
@@ -612,12 +897,12 @@ pie() {
 pies() {
     if [[ $2 ]] ; then
         (
-        set -x
-        perl -i~ -e '$from=shift;$to=shift; while(<>){s/\Q$from\E/$to/og; print}' "$@"
-        shift
-        if [[ $2 ]] ; then
-            ag --literal "$@"
-        fi
+            set -x
+            perl -i~ -e '$from=shift;$to=shift; while(<>){s/\Q$from\E/$to/og; print}' "$@"
+            shift
+            if [[ $2 ]] ; then
+                ag --literal "$@"
+            fi
         )
     fi
 }
@@ -650,16 +935,16 @@ ctpath() {
 }
 renamepre() {
     if [[ $1 ]] ; then
-    if [[ $2 ]] ; then
-        for f in $1*; do
-            suf=${f#$1}
-            mv $f $2$suf
-        done
-        for f in $(ag -l --literal "$1" $2.apex); do
-            perl -i~ -pe "s#\Q$1\E#$2#g" $f
-        done
-        ls $2*
-    fi
+        if [[ $2 ]] ; then
+            for f in $1*; do
+                suf=${f#$1}
+                mv $f $2$suf
+            done
+            for f in $(ag -l --literal "$1" $2.apex); do
+                perl -i~ -pe "s#\Q$1\E#$2#g" $f
+            done
+            ls $2*
+        fi
     fi
 }
 prewpm() {
@@ -697,7 +982,7 @@ wpm1() {
                     printf '%36s \t' "${b%.re}"
                     ((cd eval_slot;aglines 'Words/Minute|MaxVM' | $UTIL/summarize_num.pl)  2>/dev/null
                      grep Avg evalresults_avg/test-results.txt evalresults_avg/test-results.txt.lcBLEU
-                     ) | wpmbleu
+                    ) | wpmbleu
                 )
             elif [[ -d $d ]] ; then
                 echo2 "  no evalresults for $d"
@@ -756,12 +1041,12 @@ nnexpanded() {
 nmtsum() {
     (
         cd ~/p/nmt/
-        rm  *.derivs *.perf
+        rm *.derivs *.perf
         for f in *.log; do
             echo $f
             g=${f%.log}
             d=$g.derivs
-            fgrep 'INFO  sdl.xmt.Derivation - ' $f > $d || rm $d
+            fgrep 'INFO sdl.xmt.Derivation - ' $f > $d || rm $d
             p=$g.perf
             fgrep ' - Total: processed' $f | egrep 'rescore|decode|segment' > $p
             fgrep 'avg: {rescore-lattice:' $f >> $p
@@ -783,15 +1068,15 @@ envtr() {
 }
 runtr() {
     (
-    envtr $1
-    filter=untr out=~/bugs/nmt/test.$branch.log c12 ./$bin
+        envtr $1
+        filter=untr out=~/bugs/nmt/test.$branch.log c12 ./$bin
     )
 }
 cptr() {
     (
         envtr $1
-    c-s cp x/Debug/Hypergraph/TestRescoreLattice $bin
-    runtr $branch
+        c-s cp x/Debug/Hypergraph/TestRescoreLattice $bin
+        runtr $branch
     )
 }
 gitresetco() {
@@ -799,9 +1084,9 @@ gitresetco() {
     shift
     (set -e
      git ls-files $rev -- "$@"
-    bakthis pre.reset.`basename $rev`
-    git reset $rev -- "$@"
-    git checkout $rev -- "$@"
+     bakthis pre.reset.`basename $rev`
+     git reset $rev -- "$@"
+     git checkout $rev -- "$@"
     )
 }
 testpipes() {
@@ -833,14 +1118,14 @@ safefilename() {
 }
 cutmp4() {
     (set -x
-     ffmpeg -i "$1" -ss $2 -to $3 -async 1  -c copy "${1%.mp4}.$(safefilename $2-$3).mp4"
-     )
+     ffmpeg -i "$1" -ss $2 -to $3 -async 1 -c copy "${1%.mp4}.$(safefilename $2-$3).mp4"
+    )
 }
 nbest() {
     hyp best -a feature -n "$@"
 }
 determinize() {
-    hyp determinize   --log-config=/home/graehl/debug.xml -a feature "$@"
+    hyp determinize --log-config=/home/graehl/debug.xml -a feature "$@"
 }
 nbeststr() {
     hyp best -a feature --weight=false --quote=unquoted --nbest-index=0 "$@"
@@ -874,7 +1159,7 @@ linelengths() {
 killbranchr() {
     (set -x
      git push origin --delete "$1"
-     )
+    )
 }
 #export SDL_LD_PRELOAD=$libasan
 xmtlibshared=$xmtextbase/Shared/cpp
@@ -945,10 +1230,10 @@ rmsub() {
 }
 mvrmsub() {
     ag -g "$1" |
-    while read f; do
-        g=$(rmsub "$1" "$f")
-        mv "$f" "$g"
-    done
+        while read f; do
+            g=$(rmsub "$1" "$f")
+            mv "$f" "$g"
+        done
 }
 smallest() {
     ls -rS "$@" | head -1
@@ -968,20 +1253,20 @@ rmsmallvariant() {
     t="trash$1"
     mkdir -p "$t"
     ag -g "$1" |
-    while read f; do
-        rmsmallest "$f" $(rmsub "$1" "$f")
-    done
+        while read f; do
+            rmsmallest "$f" $(rmsub "$1" "$f")
+        done
 }
 rmvariant() {
     t="trash$1"
     mkdir -p "$t"
     ag -g "$1" |
-    while read f; do
-        g=$(rmsub "$1" "$f")
-        if [[ -f "$g" ]] ; then
-            mv "$f" "$t/"
-        fi
-    done
+        while read f; do
+            g=$(rmsub "$1" "$f")
+            if [[ -f "$g" ]] ; then
+                mv "$f" "$t/"
+            fi
+        done
 }
 githeadref() {
     git show-ref -s HEAD
@@ -989,14 +1274,14 @@ githeadref() {
 gitrmhistory() {
     (set -e
      set -x
-    [[ -d .git ]]
-    #githeadref > .git/shallow
-    find .git/refs -type f | xargs cat | grep -v 'ref:' | sort -u > .git/shallow
-    git describe --always
-    git reflog expire --expire=now --all
-    git reflog expire --expire=0
-    git prune
-    git prune-packed
+     [[ -d .git ]]
+     #githeadref > .git/shallow
+     find .git/refs -type f | xargs cat | grep -v 'ref:' | sort -u > .git/shallow
+     git describe --always
+     git reflog expire --expire=now --all
+     git reflog expire --expire=0
+     git prune
+     git prune-packed
     )
 }
 cedit() {
@@ -1051,8 +1336,60 @@ linelens() {
     fi
 }
 longlines() {
-    perl -e '$n=shift;while(<>) { print if scalar $_ > $n }' "$@"
+    perl -e '$over=shift;while(<>) { print if length($_) - 1 > $over }' "$@"
 }
+longlinesn() {
+    perl -e '$over=shift;while(<>) { ++$n; $len = length($_) - 1; print $n,"\t",$len,"\t",$_ if $len > $over }' "$@"
+}
+longlineswn() {
+    perl -e '$over=shift;while(<>) { ++$n; $len = scalar(split); print $n,"\t",$len,"\t",$_ if $len > $over }' "$@"
+}
+shortenpar() {
+    perl -e '
+sub openz {
+    my ($file)=@_;
+    my $fh;
+    die "no input file specified" unless $file;
+    if ($file =~ /\.gz$/) {
+        open $fh,"-|","gunzip","-f","-c",$file or die "gunzip -c $file: $!";
+    } elsif ( $file =~ /\.bz2$/) {
+        open $fh,"-|","bunzip2","-c",$file or die "bunzip2 -c $file: $!";
+    } else {
+        open $fh,$file or die "read $file: $!";
+    }
+    $fh;
+}
+my $maxlen=shift;
+my @f = map {&openz($_) }@ARGV;
+my @o = map {my $fh;
+             open $fh,">","$_.$maxlen" or die "open for output: $_.$maxlen: $!";
+             $fh } @ARGV;
+sub max {
+    my $max=shift;
+    $max < $_ and $max = $_ for @_;
+    return $max;
+}
+my $n = 0;
+for(;;) {
+    ++$n;
+    my @l = map { scalar <$_> } @f;
+    last if !defined($l[0]);
+    for (@l) { die unless defined $_; }
+    die unless scalar @l;
+    my @lens = map { scalar(split) } @l;
+    my $len = max(@lens);
+    if ($len <= $maxlen) {
+        for (0..$#o) {
+            my $fh = $o[$_];
+            print $fh $l[$_];
+        }
+    } else {
+        print STDERR $n,"\t",join " ",@lens,"\n";
+    }
+}
+' "$@"
+}
+
 lenhist() {
     # histogram of line lengths
     linelens "$@" | sort -n | uniq -c
@@ -1078,7 +1415,7 @@ bent() {
         CC=gcc$gccsuf CXX=g++$gccsuf BUILD_TYPE=Debug cmakemac ../ent -DGCC_ASAN=1 "$@"
         set -x
         [[ $notest ]]  || make test
-            \cd entscripttests && echo | $vgcmd ./entscripttests $vgscript
+        \cd entscripttests && echo | $vgcmd ./entscripttests $vgscript
     )
 }
 scanbent() {
@@ -1527,23 +1864,23 @@ linken() {
 }
 scpg() {
     (
-     cd
-     o=`dirname $1`
-     c-s `mkdir -p $o`
-     for f in `ls "$1"`; do
-         if [[ -f $f ]] ; then
-             echo "$f => :$o"
-             scp "$f" c-graehl:"$o/"
-         fi
-     done
+        cd
+        o=`dirname $1`
+        c-s `mkdir -p $o`
+        for f in `ls "$1"`; do
+            if [[ -f $f ]] ; then
+                echo "$f => :$o"
+                scp "$f" c-graehl:"$o/"
+            fi
+        done
     )
 }
 scpgr() {
     (
-     cd
-     local d=$1
-     shift
-     scpx "$d" "c-graehl:`dirname $d`" "$@"
+        cd
+        local d=$1
+        shift
+        scpx "$d" "c-graehl:`dirname $d`" "$@"
     )
 }
 scpx() {
@@ -1797,7 +2134,7 @@ cjam() {
                 echo compared with expected $expected
                 diff $out $expected | diffstat
             else
-                echo                 cp $out $expected
+                echo cp $out $expected
                 cp $out $expected
             fi
         fi
@@ -2270,17 +2607,17 @@ gitcat() {
 }
 gitcatm() {
     (
-            set -x
-            for f in "$@"; do
-                echo2 $f
-        gitcat ${rev:-origin/master}:$f
+        set -x
+        for f in "$@"; do
+            echo2 $f
+            gitcat ${rev:-origin/master}:$f
         done
     )
 }
 gitdiffm() {
     (set -x
      git diff ${rev:-origin/master} HEAD -- "$@"
-     )
+    )
 }
 linuxver() {
     if [ -f /etc/redhat-release ]; then
@@ -3212,6 +3549,7 @@ xmtgithash() {
 ext2pub12() {
     require_dir $2
     (
+        set +e
         from=$1/libraries
         ken=KenLM-5.3.0/5-gram
         libs=$ken
@@ -3231,6 +3569,7 @@ ext2pub12() {
         done
         cp -a $from/$ken/bin/* $dest/
         cp -a $from/gcc-${GCCVERSION:-6.1.0}/lib64/*.so* $dest/
+        true
     )
 }
 ext2pub() {
@@ -3274,14 +3613,14 @@ bakxmt() {
       for f in $xmtbins xmt/lib/*.so TrainableCapitalizer/libsdl-TrainableCapitalizer-shared.so CrfDemo/libsdl-CrfDemo-shared.so TrainableCapitalizer/libsdl-TrainableCapitalizer_debug.so CrfDemo/libsdl-CrfDemo_debug.so; do
           local b=`basename $f`
           if [[ -f $f ]] ; then
-          ls -l $f
-          local bin=$bindir/$b
-          cp -af $f $bindir/$b
-          chrpath -r '$ORIGIN:'"$pub/lib" $bindir/$b
-          if [[ ${f%.so} = $f ]] ; then
-              (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
-              chmod +x $bin.sh
-          fi
+              ls -l $f
+              local bin=$bindir/$b
+              cp -af $f $bindir/$b
+              chrpath -r '$ORIGIN:'"$pub/lib" $bindir/$b
+              if [[ ${f%.so} = $f ]] ; then
+                  (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
+                  chmod +x $bin.sh
+              fi
           fi
       done
       grep "export LD_LIBRARY_PATH" $bindir/xmt.sh > $bindir/env.sh
@@ -3502,17 +3841,17 @@ c-make() {
      fi
      for f in $builds; do
          (
-        if [[ $ASAN ]] ; then
-            f=${f%Asan}Asan
-            echo ASAN: $f
-        fi
-     if [[ "$*" ]] ; then
-         c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
-         #'&&' "$@"
-     else
-         c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
-     fi
-     )  2>&1 | filter-gcc-errors
+             if [[ $ASAN ]] ; then
+                 f=${f%Asan}Asan
+                 echo ASAN: $f
+             fi
+             if [[ "$*" ]] ; then
+                 c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
+                 #'&&' "$@"
+             else
+                 c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
+             fi
+         )  2>&1 | filter-gcc-errors
      done
     )
 }
@@ -3950,7 +4289,7 @@ pushc() {
             echo no changes
         else
             echo changes ... amending first
-            git commit --allow-empty -a -C HEAD --amend
+            mendq
         fi
         local b=${1:-`git_branch`}
 
@@ -4016,10 +4355,10 @@ c-test() {
     (
         set -x
         set -e
-    norun=1 ASAN=$ASAN c-make Test$test $uarg "$@"
-    c-s ASAN=$ASAN Test$test$rel $uarg "$@"
-    #norun= ASAN=$ASAN c-make Test${test:-} Test$test$rel $uarg "$@"
-    #c-s BUILD=${BUILD:-Debug} Test$test$rel $uarg "$@"
+        norun=1 ASAN=$ASAN c-make Test$test $uarg "$@"
+        c-s ASAN=$ASAN Test$test$rel $uarg "$@"
+        #norun= ASAN=$ASAN c-make Test${test:-} Test$test$rel $uarg "$@"
+        #c-s BUILD=${BUILD:-Debug} Test$test$rel $uarg "$@"
     )
 }
 jr-test() {
@@ -5036,6 +5375,14 @@ gdbargs() {
     shift
     gdb --fullname -ex "set args $*; r" $prog
 }
+editadd() {
+    (gitroot;
+     set -x
+     for f in "$@"; do
+         $VISUAL "$f" && git add "$f"
+     done
+    )
+}
 rebaseadds() {
     local adds=`git ${rebasecmd:-rebase} --continue 2>&1 | perl -ne 'if (/^(.*): needs update/) { print $1," " }'`
     echo adds=$adds
@@ -5575,7 +5922,7 @@ cppch() {
     cppcheck_cmd="cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
         --template ' {file}: {line}: {severity},{id},{message}' \
         $includeargs $ignoreargs "$code_path" --error-exitcode=2"
-    cppcheck -j 3 --inconclusive --quiet --force --inline-suppr     --template ' {file}: {line}: {severity},{id},{message}'     $includeargs $ignoreargs "$code_path" --error-exitcode=2
+    cppcheck -j 3 --inconclusive --quiet --force --inline-suppr --template ' {file}: {line}: {severity},{id},{message}'     $includeargs $ignoreargs "$code_path" --error-exitcode=2
 }
 coma() {
     git commit -a -m "$*"
@@ -5811,7 +6158,7 @@ panpdf() {
         if [[ $fonts ]] ; then
             fontarg="-V mainfont=${mainfont:-Constantia} -V sansfont=${sansfont:-Corbel} -V monofont=${monofont:-Consolas}"
         fi
-        pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+line_blocks -t latex -w latex -o $out --template ~/u/xetex.template --listings $fontarg  -V fontsize=${fontsize:-10pt} -V documentclass=${documentclass:-article}  $in
+        pandoc --webtex --latex-engine=xelatex --self-contained -r markdown+line_blocks -t latex -w latex -o $out --template ~/u/xetex.template --listings $fontarg -V fontsize=${fontsize:-10pt} -V documentclass=${documentclass:-article}  $in
         if [[ $open ]] ; then
             open $out
         fi
@@ -6564,7 +6911,7 @@ rebasecmdce() {
         for f in "$@"; do
             edit $f
         done
-         rebasec "$@"
+        rebasec "$@"
     )
 }
 rebasece() {
@@ -6593,8 +6940,8 @@ overt() {
         rm -f $gsh/$f
         cp $f $gsh/$f
     done
-#    cp $xmtx/scripts/gitcredit ~/c/gitcredit/
-#    cp ~/c/mdb/libraries/liblmdb/mdb_from_db.{c,1} $gsh
+    #    cp $xmtx/scripts/gitcredit ~/c/gitcredit/
+    #    cp ~/c/mdb/libraries/liblmdb/mdb_from_db.{c,1} $gsh
     pushd ~/g
 }
 diffg() {
@@ -7310,10 +7657,10 @@ showcpp() {
                 earg=-'+ -V201400L -I-'
             fi
             set -x
-            $CPP -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -I$xmtx/sdl -I$xmtx         -I$xmtlibshared/sparsehash-c11/include         -I$xmtlibshared/utf8         -I$xmtlibshared/cryptopp-5.6.2/include         $earg -o "$o"  "$f" ; edit $o
+            $CPP -DGRAEHL_G1_MAIN -DHAVE_CXX_STDHEADERS -DBOOST_ALL_NO_LIB -DBOOST_LEXICAL_CAST_ASSUME_C_LOCALE -DBOOST_TEST_DYN_LINK -DCMPH_NOISY_LM -DHAVE_CRYPTOPP -DHAVE_CXX_STDHEADERS -DHAVE_HADDOP -DHAVE_ICU -DHAVE_KENLM -DHAVE_LIBLINEAR -DHAVE_OPENFST -DHAVE_SRILM -DHAVE_SVMTOOL -DHAVE_ZLIB -DHAVE_ZMQ -DMAX_LMS=4 -DTIXML_USE_TICPP -DUINT64_DIFFERENT_FROM_SIZE_T=1 -DU_HAVE_STD_STRING=1 -DXMT_64=1 -DXMT_ASSERT_THREAD_SPECIFIC=1 -DXMT_FLOAT=32 -DXMT_MAX_NGRAM_ORDER=5 -DXMT_MEMSTATS=1 -DXMT_OBJECT_COUNT=1 -DXMT_VALGRIND=1 -DYAML_CPP_0_5 -I$xmtx/sdl -I$xmtx -I$xmtlibshared/sparsehash-c11/include -I$xmtlibshared/utf8 -I$xmtlibshared/cryptopp-5.6.2/include $earg -o "$o"  "$f" ; edit $o
             #-x c++ -std=c++11
             if false ; then
-                -I$xmtlibshared/zeromq-3.2.2.2-1/include -I$xmtlib/boost_1_${boostminor}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/sdl/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I.                                                  -I $xmtlib/db-5.3.15                                                 -I $xmtlib/yaml-cpp-0.3.0-newapi/include                                                 -I$xmtlibshared/utf8 -I$xmtlibshared/openfst-1.2.10/src -I$xmtlibshared/tinyxmlcpp-2.5.4/include
+                -I$xmtlibshared/zeromq-3.2.2.2-1/include -I$xmtlib/boost_1_${boostminor}_0/include -I$xmtlib/ -I$xmtlib/lexertl-2012-07-26 -I$xmtlib/log4cxx-0.10.0/include -I$xmtlib/icu-4.8/include -I/Users/graehl/x/sdl/.. -I$xmtlib/BerkeleyDB.4.3/include -I/usr/local/include -I$xmtlib/openfst-1.2.10/src -I$xmtlib/openfst-1.2.10/src/include -I.                                                  -I $xmtlib/db-5.3.15 -I $xmtlib/yaml-cpp-0.3.0-newapi/include -I$xmtlibshared/utf8 -I$xmtlibshared/openfst-1.2.10/src -I$xmtlibshared/tinyxmlcpp-2.5.4/include
             fi
             popd
         done
@@ -7526,7 +7873,7 @@ replacegrep() {
         echo2 "$from = $to in $*"
         local subs=`mktemp subs.XXXXXX`
         cat > $subs <<EOF
-$from	$to
+$from $to
 EOF
         substigrep $subs --literal "$from" "$@"
         rm $subs
@@ -8939,15 +9286,15 @@ srescue() {
 }
 drescue() {
     (
-    for f in `srescue "$@"`; do
-        g=${f%.rescue001}
-        g=${g%.rescue}
-        echo $f
-        if [[ $f != $g ]] ; then
-            banner diff -u "$g" "$f"
-            diff -u "$g" "$f"
-        fi
-    done
+        for f in `srescue "$@"`; do
+            g=${f%.rescue001}
+            g=${g%.rescue}
+            echo $f
+            if [[ $f != $g ]] ; then
+                banner diff -u "$g" "$f"
+                diff -u "$g" "$f"
+            fi
+        done
     )
 }
 rmrescue() {
@@ -9775,7 +10122,14 @@ clonecar() {
     #--no-metadata
 }
 
-
+forpar() {
+    local call=$1
+    shift
+    for f in "$@"; do
+        $call $f &
+    done
+    wait
+}
 par() {
     local npar=${npar:-20}
     local parargs=${parargs:-"-p 9g -j $npar"}
@@ -10581,4 +10935,16 @@ checkclangs() {
         rm -rf $rclangformatdir
         exit $ERR
     )
+}
+rmtorch() {
+    # Removing folders
+    sudo rm -rf /usr/local/lib/{luarocks/,lua/,torch/,torchrocks/}
+    sudo rm -rf /usr/local/share/{torch,cmake/torch/,lua}
+    sudo rm -rf /usr/local/etc/{luarocks/,torchrocks/}
+    sudo rm -rf /usr/local/include/{torch,TH,THC,lauxlib.h,lua.h,lua.hpp,luaT.h,luaconf.h,luajit.h,lualib.h,qtlua}
+    sudo rm -rf ~/.luarocks
+    sudo rm -rf ~/.cache/luarocks*
+    # Removing files
+    sudo rm -f  /usr/local/bin/{torch,th,qlua,json2lua,lua2json,torch-lua,torch-qlua,torch-rocks,torch-rocks-admin,luajit,luarocks,mdcat,qlua}
+    sudo rm -f  /usr/local/lib/{*lua*,*TH*}
 }
