@@ -1,3 +1,19 @@
+#require 'pl.pretty'.dump(set)
+lvmaxsize() {
+    # parted -a optimal
+    # vgextend deep-vg /dev/sdc2
+    lvresize -r -l+100%FREE /dev/mapper/deep--vg-root
+}
+rmt7() {
+    find . -name '*.t7' -exec rm {} \;
+}
+headall() {
+    perl -e '$n = shift; $n = shift if $n eq "-n"; $n = $n || 40; $n = -$n if $n < 0;while(<>) { if (++$l >= n) { $|=1;print "";$|=0;print "";while(<>) {} } else { print; } } ' "$@"
+}
+splitallcaps() {
+    #STDERR: allcaps lines (where uc = same but lc doesn't). STDOUT: lower, mixed, no-case lines
+    perlutf8 -ne 'my @l = split;$_=join(" ",@l); $u = uc($_); if ($_ eq $u) { $_ = lc($_); if ($_ eq $u) { print; } else { s/(\w)/\u$1/; print STDERR $_; } else { print $_,"\n"; } ' "$@"
+}
 agcodes() {
     (
         c=$1
@@ -799,25 +815,40 @@ syncmusic() {
 tarun() {
     local user=${1:-$USER}
     shift
-    tarsnap --keyfile "$HOME/$user.tarsnap.key" "$@"
+    $dryrun tarsnap --keyfile "$HOME/$user.tarsnap.key" "$@"
 }
-tarx() {
-    local user=${1?tarx user archive or tarx user-...}
-    local a=$2
+taruser() {
+    user=${1?tarx user archive or tarx user-...}
+    a=$2
     if [[ $a ]] ; then
         shift
     else
         a=$1
         user=`perl -e '$_=shift;print "$1" if /([a-z]+)-/;' "$a"`
     fi
+    echo $user $a
+}
+tarx() {
+    local user
+    local a
+    taruser "$@"
     shift
     (
-        echo $user $a
         d=~/$user/$a
         mkdir -p $d
         set -x
         cd $d
         tarun $user -x -f "$a" "$@"
+        open -R $user/$a/Users/$user/Documents
+    )
+}
+tarrm() {
+    local user
+    local a
+    taruser "$@"
+    shift
+    (
+        tarun $user -d -f "$a" "$@"
     )
 }
 tarls() {
@@ -1107,7 +1138,7 @@ jremert() {
     j-s 'cd c/ct; mend'
 }
 crontest() {
-    ( set -e; set -x; name="mert-update2"; export LW_SHERPADIR=rename; export LW_RUNONEMACHINE=1; export CT=$HOME/c/ct; ( cd $CT/main; set -x; nohup perl Shared/Test/bin/CronTest.pl $CT -name "$name" -steps tests -tests kraken -parallel 10 ) &>crontest.$name.log; echo `pwd`/crontest.$name.log ) &
+    ( set -e; set -x; name="mert-update2"; export HADOOP_CLUSTER=lochcdh; export LW_SHERPADIR=rename; export LW_RUNONEMACHINE=1; export CT=$HOME/c/ct; ( cd $CT/main; set -x; nohup perl Shared/Test/bin/CronTest.pl $CT -name "$name" -steps tests -tests kraken -parallel 10 ) &>crontest.$name.log; echo `pwd`/crontest.$name.log ) &
     echo "https://condor-web.languageweaver.com/CronTest_graehl/www/index.cgi?"
 }
 reflog() {
@@ -1343,6 +1374,15 @@ longlinesn() {
 }
 longlineswn() {
     perl -e '$over=shift;while(<>) { ++$n; $len = scalar(split); print $n,"\t",$len,"\t",$_ if $len > $over }' "$@"
+}
+limitlines() {
+    perl -e '$over=shift;print STDERR "<=$over chars\n"; while(<>) { print if length($_) - 1 <= $over }' "$@"
+}
+limitlinesn() {
+    perl -e '$over=shift;while(<>) { ++$n; $len = length($_) - 1; print $n,"\t",$len,"\t",$_ if $len <= $over }' "$@"
+}
+limitlineswn() {
+    perl -e '$over=shift;while(<>) { ++$n; $len = scalar(split); print $n,"\t",$len,"\t",$_ if $len <= $over }' "$@"
 }
 shortenpar() {
     perl -e '
@@ -8227,6 +8267,9 @@ pids() {
 }
 gituntrack() {
     git update-index --assume-unchanged "$@"
+}
+aglog() {
+    ag -G '.*\.log' "$@"
 }
 svntaglog() {
     local proj=${1:-carmel}
