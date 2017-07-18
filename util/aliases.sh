@@ -1,4 +1,45 @@
 #require 'pl.pretty'.dump(set)
+rscp() {
+    rsync -avz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress "$@"
+}
+wordsvoc() {
+    cat "$@" | words_vocab.py | tee $1.vocab
+}
+charsvoc() {
+    cat "$@" | chars_vocab.py | tee $1.charsvoc
+}
+agyml() {
+    ag -G '.*\.ya?ml' "$@"
+}
+agsh() {
+    ag -G '.*\.sh' "$@"
+}
+chmodls() {
+    chmod "$@"
+    shift
+    ls -ld "$@"
+}
+chx() {
+    if [[ $# ]] ; then
+        chmodls +x "$@"
+    else
+        chmodls +x *.sh *.py *.pl
+    fi
+}
+grepemphf() {
+egrep -n '_[^_]*_' "$@" | sort -t: -k2
+}
+grepemph() {
+    if [[ $# ]] ; then
+        grepemphf "$@"
+    else
+        local extarg
+        if [[ $ext ]] ; then
+            extarg="-name *$ext"
+        fi
+        grepemphf `find . $extarg`
+    fi
+}
 lvmaxsize() {
     # parted -a optimal
     # vgextend deep-vg /dev/sdc2
