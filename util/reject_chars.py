@@ -1,10 +1,17 @@
 #! /usr/bin/env python
+# -*- coding: utf-8 -*-
 from __future__ import print_function
+#from __future__ import unicode_literals
 # hack for python2/3 compatibility
 import argparse, sys
-from io import open
-argparse.open = open
+reload(sys)
+sys.setdefaultencoding('utf-8')
 import codecs
+from io import open
+def openutf8(f):
+    return codecs.open(f.name, encoding='utf-8')
+
+argparse.open = open
 # python 2/3 compatibility
 if sys.version_info < (3, 0):
     sys.stderr = codecs.getwriter('UTF-8')(sys.stderr)
@@ -44,7 +51,7 @@ def read_chars(a):
     topk = a.atleast_topk
     if topk > 0:
         topcounts = sorted(counts.values(), reverse=True)
-        topkneed = topcounts[topk] if topk < len(topcounts) else topcounts[-1]
+        topkneed = topcounts[topk] if topk < len(topcounts) else topcounts[-1] if len(topcounts) else 0
         log('topkneed: %s'%topkneed)
         if need > topkneed: need = topkneed
         log('need: %s'%need)
@@ -84,7 +91,7 @@ def create_parser():
     p.add_argument('--min-freq', '-m', type=int, default=1, help="minimum count of char to keep (or min-prob whichever is higher)")
     p.add_argument('--min-prob', '-p', type=float, default=.0001, help="minimum unigram probability of char to keep (or min-freq whichever is higher)")
     p.add_argument('--no-replace', '-R', action="store_true", help="neither delete nor replace low freq chars (but do filter lines)")
-    p.add_argument('--replacement-char', '-r', type=str, default="�", help="replace low-count chars with this")
+    p.add_argument('--replacement-char', '-r', type=str, default=unichr(0xfdea).encode('utf-8'), help="replace low-count chars with this - default = U+FDEA, a private noncharacter (use -d if you don't want them in output at all)")
     p.add_argument('--runs', '-u', action="store_true", help="when >1 replacement-char in a row, output more than one. by default they're collapsed to a single output")
     p.add_argument('--delete', '-d', action="store_true", help="don't use replacement-char - remove rare char")
     p.add_argument('--atleast-topk', '-a', type=int, default=0, help="keep at least this many char types even if below min-freq or min-prob")
@@ -124,7 +131,7 @@ if __name__ == '__main__':
         for line in a.drop_lineno:
             fields = line.split()
             drops.add(int(fields[0]))
-    log('drops[10]=%s'%sorted(drops)[0:10])
+    log('#drops=%s drops[0:10]=%s'%(len(drops), sorted(drops)[0:10]))
     for line in a.input:
         lineno += 1
         line = line.rstrip("\r\n")
@@ -132,8 +139,8 @@ if __name__ == '__main__':
             print(replaced(line, a, c), file=a.output)
         else:
             if a.out_drop_lineno:
-                print(str(lineno), file=a.out_drop_lineno)
+                print(u'%s'%lineno, file=a.out_drop_lineno)
             if a.rejected_lines is not None:
-                print("%s\t%s"%(lineno, line), file=a.rejected_lines)
+                print(u"%s\t%s"%(lineno, line), file=a.rejected_lines)
             if a.replaced_rejected_lines is not None:
                 print(replaced(line, a, c), file=a.replaced_rejected_lines)

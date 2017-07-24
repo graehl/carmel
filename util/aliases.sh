@@ -1,4 +1,54 @@
 #require 'pl.pretty'.dump(set)
+sum() {
+    perl -ne '$i=shift or 0;@f=split;$sum+=$f[$i];END{print "$sum\n"}' "$@"
+}
+pgrep0() {
+    perl -e '$pkeep=shift;
+@f=map {my $fh; open $fh,"<",$_ or die "open $_"; $fh} @ARGV;
+$n=0;
+for(;;) {
+    ++$n; @l = map { scalar <$_> } @f; last if !defined($l[0]);
+    next unless $l[0] =~ /$pkeep/o; print "$n\n"; print $_ for (@l);
+}
+' "$@" | tee pgrep0.log
+}
+psidebyside() {
+    perl -e '$pkeep=shift;
+@f=map {my $fh; open $fh,"<",$_ or die "open $_"; $fh} @ARGV;
+$n=0;
+for(;;) {
+    ++$n; @l = map { scalar <$_> } @f; last if !defined($l[0]);
+    next unless rand() < $pkeep; print "$n\n"; print $_ for (@l);
+}
+' "$@"
+}
+cnewreplacementchar() {
+    LC_ALL=C perl -pe 's/\xef\xbf\xfd/\xef\xb7\xaa/og' "$@"
+}
+cfixnewreplacementchar() {
+    LC_ALL=C perl -pe 's/\xfd\xea/\xef\xb7\xaa/og' "$@"
+}
+nonempty() {
+    shortenpar.pl -o nonempty -lr .3 -min 1 -max 999 "$@"
+}
+nonemptyc() {
+    shortenpar.pl -chars -o nonempty -lr .3 -min 1 -max 999 "$@"
+}
+
+debugbpe() {
+    verbose=1 apply_bpe.py -v 2 -c "$@"
+}
+agbpei() {
+    perl -e '$p=shift;$l=0;while(<>) {++$l;$line=$_;chomp;s/(?:__LW_SW__)? //;s|\Q</w>\E$||;print "$l\t",$line if $_ =~ /$p/io}' "$@"
+}
+nfkci1() {
+    Utf8Normalize.sh -k -i "$1" -o "$1.nfkd" && mv "$1.nfkd" "$1"
+}
+nfkci() {
+    for f in "$@"; do
+        nfkci1 "$f"
+    done
+}
 rscp() {
     rsync -avz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress "$@"
 }
@@ -1407,6 +1457,15 @@ linelens() {
         awk '{print length()}' "$@"
     fi
 }
+shortlines() {
+    perl -e '$over=shift;while(<>) { print if length($_) - 1 < $over }' "$@"
+}
+shortlinesn() {
+    perl -e '$over=shift;while(<>) { ++$n; $len = length($_) - 1; print $n,"\t",$len,"\t",$_ if $len < $over }' "$@"
+}
+shortlineswn() {
+    perl -e '$over=shift;while(<>) { ++$n; $len = scalar(split); print $n,"\t",$len,"\t",$_ if $len < $over }' "$@"
+}
 longlines() {
     perl -e '$over=shift;while(<>) { print if length($_) - 1 > $over }' "$@"
 }
@@ -1417,13 +1476,13 @@ longlineswn() {
     perl -e '$over=shift;while(<>) { ++$n; $len = scalar(split); print $n,"\t",$len,"\t",$_ if $len > $over }' "$@"
 }
 limitlines() {
-    perl -e '$over=shift;print STDERR "<=$over chars\n"; while(<>) { print if length($_) - 1 <= $over }' "$@"
+    perl -e '$over=shift;$under=shift;print STDERR "<=$over chars\n"; while(<>) { print if length($_) - 1 <= $over && (!defined($under) || $len >= $under) }' "$@"
 }
 limitlinesn() {
-    perl -e '$over=shift;while(<>) { ++$n; $len = length($_) - 1; print $n,"\t",$len,"\t",$_ if $len <= $over }' "$@"
+    perl -e '$over=shift;$under=shift;while(<>) { ++$n; $len = length($_) - 1; print $n,"\t",$len,"\t",$_ if $len <= $over && (!defined($under) || $len >= $under); }' "$@"
 }
 limitlineswn() {
-    perl -e '$over=shift;while(<>) { ++$n; $len = scalar(split); print $n,"\t",$len,"\t",$_ if $len <= $over }' "$@"
+    perl -e '$over=shift;$under=shift;while(<>) { ++$n; $len = scalar(split); print $n,"\t",$len,"\t",$_ if $len <= $over && (!defined($under) || $len >= $under); }' "$@"
 }
 shortenpar() {
     perl -e '
