@@ -1,3 +1,4 @@
+#!/bin/bash
 name=`basename $0`
 d=`dirname $0`
 if [[ $d != . ]] ; then

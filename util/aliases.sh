@@ -11110,3 +11110,8 @@ rmtorch() {
     sudo rm -f  /usr/local/bin/{torch,th,qlua,json2lua,lua2json,torch-lua,torch-qlua,torch-rocks,torch-rocks-admin,luajit,luarocks,mdcat,qlua}
     sudo rm -f  /usr/local/lib/{*lua*,*TH*}
 }
+# added by Anaconda3 4.4.0 installer
+export PYTHONPATH=
+if [[ -d /home/graehl/anaconda3/bin ]] ; then
+    export PATH="/home/graehl/anaconda3/bin:$PATH"
+fi
