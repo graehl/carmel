@@ -67,6 +67,9 @@ bleuscore() {
     [[ -f $bleupl ]] || bleupl=~/bin/bleu.pl
     perl $bleupl --metric=bleu -n 4 -hyp "$@"
 }
+swapargs() {
+    "$1" "$3" "$2"
+}
 setoutdir() {
     outdir=${outdir:-`echo ~/projects/unkweight`}
     mkdir -p $outdir

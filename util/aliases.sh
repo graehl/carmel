@@ -1,4 +1,14 @@
 #require 'pl.pretty'.dump(set)
+sidebysidesuf() {
+    sidebyside $1$3 $2$3
+}
+mvls() {
+    ls -d "$@"
+    mv "$@"
+}
+md5s() {
+    md5sum "$@" | sort | perl -pe '($m,$r)=split;print "\n" if $mlast and $m ne $mlast;$mlast=$m'
+}
 sum() {
     perl -ne '$i=shift or 0;@f=split;$sum+=$f[$i];END{print "$sum\n"}' "$@"
 }
@@ -21,6 +31,9 @@ for(;;) {
     next unless rand() < $pkeep; print "$n\n"; print $_ for (@l);
 }
 ' "$@"
+}
+sidebyside() {
+    psidebyside 1 "$@"
 }
 cnewreplacementchar() {
     LC_ALL=C perl -pe 's/\xef\xbf\xfd/\xef\xb7\xaa/og' "$@"
@@ -551,14 +564,17 @@ sortresults() {
 agloss() {
     ag --literal '| '"$1" | perl -ne 'print "$1 $_" if m#\| '"$1"'\s+(\S+)#' | sort -n
 }
+sortloss() {
+    sort -g -t ' ' -k 4 -g
+}
 trainloss() {
-    agloss trainloss
+    agloss trainloss | sortloss
 }
 validloss() {
-    agloss validloss
+    agloss validloss | sortloss
 }
 testloss() {
-    agloss testloss
+    agloss testloss | sortloss
 }
 grepmultbleu() {
     #n=1 BLEU (s_sel/s_opt/p)   METEOR (s_sel/s_opt/p) TER (s_sel/s_opt/p)    Length (s_sel/s_opt/p)

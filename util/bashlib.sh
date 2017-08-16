@@ -1720,7 +1720,7 @@ interleave() {
     paste -d'\n' "$@" /dev/null
 }
 
-sidebyside() {
+tsidebyside() {
     local files=''
     local desc='#'
     local f
