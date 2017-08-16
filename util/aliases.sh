@@ -9,6 +9,9 @@ mvls() {
 md5s() {
     md5sum "$@" | sort | perl -pe '($m,$r)=split;print "\n" if $mlast and $m ne $mlast;$mlast=$m'
 }
+trgraehli() {
+    perl -i~ -pe 's{(?:/\.auto)?(/Users/graehl|/home/graehl|\~)}{/Users/graehl}g' -- "$@"
+}
 sum() {
     perl -ne '$i=shift or 0;@f=split;$sum+=$f[$i];END{print "$sum\n"}' "$@"
 }
@@ -5821,7 +5824,7 @@ linjen() {
      fi
      #gccprefix=/local/gcc
      echo linjen:
-     c-s GCC_SUFFIX=$GCC_SUFFIX nohup=$nohup JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/ SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} NOPIPES=${NOPIPES:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
+     c-s PROFILE=$PROFILE GCC_SUFFIX=$GCC_SUFFIX nohup=$nohup JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/ SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} NOPIPES=${NOPIPES:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
 }
 jen() {
     echo jen:
