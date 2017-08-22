@@ -6795,6 +6795,9 @@ forpaste() {
 yregr() {
     BUILD=Release yreg "$@"
 }
+yregrp() {
+    BUILD=RelWithDebInfo yreg "$@"
+}
 yrega() {
     BUILD=DebugAsan yreg "$@"
 }
