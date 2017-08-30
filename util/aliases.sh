@@ -1270,11 +1270,12 @@ freshenv() {
 crontestclean() {
     (cd $HOME/c/ct;
      rm -rf main/*/Test/TestCases/*/*/sherpa*
+     find . -name '*.pyc' -exec rm -rf {} \;
+     git clean -fd
      if false ; then
      find . -name 'sherpa' -exec rm -rf {} \;
      find . -name 'sherpa.*' -exec rm -rf {} \;
      find . -name 'sherpa2.*' -exec rm -rf {} \;
-     find . -name '*.pyc' -exec rm -rf {} \;
      for f in `find . -name TestCases`; do
          echo $f
      done
@@ -1292,15 +1293,18 @@ crontest() {
       crontestclean
       # 1machine: not for testing hadoop stuff
       set -x
-      export LW_RUNONEMACHINE=1
-      export LW_SHERPADIR=remove
-      export HADOOP_CLUSTER=
+      export LW_RUNONEMACHINE=
+      export LW_SHERPADIR=rename
+      export HADOOP_CLUSTER=bog
       export CT=$HOME/c/ct/main
       cd $CT
       J=10
       echo `pwd`/crontest.$name.log &
       echo "https://condor-web.languageweaver.com/CronTest_graehl/www/index.cgi?"
       set +e
+      if [[ $LW_RUNONEMACHINE ]] ; then
+          name+=".onemachine"
+      fi
       freshenv /usr/bin/perl Shared/Test/bin/CronTest.pl $(cd ..;pwd) -name "$name" -steps tests -tests kraken -threads $J -parallel $J
       echo "https://condor-web.languageweaver.com/CronTest_graehl/www/index.cgi?"
       )
@@ -11180,4 +11184,21 @@ condor_rmall() {
         echo $f
         condor_rm $f
     done
+}
+errors() {
+    egrep -i 'fatal|error|fail|exit code' "$@"
+}
+previews() {
+    for f in "$@"; do
+        if [[ -f $f ]] ; then
+            preview $f
+        fi
+    done
+    local errors=
+    for f in "$@"; do
+        if errors -l $f  ; then
+            errors+=" $f"
+        fi
+    done
+    echo errors: $errors
 }
