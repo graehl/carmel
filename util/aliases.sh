@@ -1247,9 +1247,63 @@ jremert() {
     j-s cp x/Release/mert/mert2 c/ct/main/LW/CME/mert2
     j-s 'cd c/ct; mend'
 }
+unsetpaths() {
+      unset HADOOP_CLUSTER
+      unset LD_LIBRARY_PATH
+      unset LD_RUN_PATH
+      unset PATH
+      unset PERL5LIB
+      unset PYTHONPATH
+      unset LANG
+      unset UNSUPPORTED
+      export PATH=/usr/bin:/bin
+}
+freshenv() {
+    (
+        unsetpaths
+        "$@"
+    )
+}
+freshenv() {
+    env -i HADOOP_CLUSTER="$HADOOP_CLUSTER" LW_RUNONEMACHINE="$LW_RUNONEMACHINE" LW_SHERPADIR="$LW_SHERPADIR" HOME="$HOME" USER="$USER" LC_CTYPE=C PATH="/usr/bin:/bin" CT=$HOME/c/ct "$@"
+}
+crontestclean() {
+    (cd $HOME/c/ct;
+     rm -rf main/*/Test/TestCases/*/*/sherpa*
+     if false ; then
+     find . -name 'sherpa' -exec rm -rf {} \;
+     find . -name 'sherpa.*' -exec rm -rf {} \;
+     find . -name 'sherpa2.*' -exec rm -rf {} \;
+     find . -name '*.pyc' -exec rm -rf {} \;
+     for f in `find . -name TestCases`; do
+         echo $f
+     done
+     git clean -fdx
+     fi
+    )
+}
+crontestkill() {
+    pgrepkill perl; pgrepkill sherpa; pgrepkill java
+}
 crontest() {
-    ( set -e; set -x; name="mert-update2"; export HADOOP_CLUSTER=lochcdh; export LW_SHERPADIR=rename; export LW_RUNONEMACHINE=1; export CT=$HOME/c/ct; ( cd $CT/main; set -x; nohup perl Shared/Test/bin/CronTest.pl $CT -name "$name" -steps tests -tests kraken -parallel 10 ) &>crontest.$name.log; echo `pwd`/crontest.$name.log ) &
-    echo "https://condor-web.languageweaver.com/CronTest_graehl/www/index.cgi?"
+    ( set -e
+      name=${1:-mr2}
+      unsetpaths
+      crontestclean
+      # 1machine: not for testing hadoop stuff
+      set -x
+      export LW_RUNONEMACHINE=1
+      export LW_SHERPADIR=remove
+      export HADOOP_CLUSTER=
+      export CT=$HOME/c/ct/main
+      cd $CT
+      J=10
+      echo `pwd`/crontest.$name.log &
+      echo "https://condor-web.languageweaver.com/CronTest_graehl/www/index.cgi?"
+      set +e
+      freshenv /usr/bin/perl Shared/Test/bin/CronTest.pl $(cd ..;pwd) -name "$name" -steps tests -tests kraken -threads $J -parallel $J
+      echo "https://condor-web.languageweaver.com/CronTest_graehl/www/index.cgi?"
+      )
 }
 reflog() {
     git reflog --format='%C(auto)%h %<|(17)%gd %C(blue)%ci%C(reset) %s' | head -${1:-99}
@@ -4459,6 +4513,9 @@ pushc() {
         fi
         git push ${chost:-c-graehl} +$b
     )
+}
+pushct() {
+    xmtx=/.auto/home/graehl/c/ct pushc
 }
 lincoxs() {
     for xmtx in $xmtx $xmtextbase; do
@@ -11118,3 +11175,9 @@ export PYTHONPATH=
 if [[ -d /home/graehl/anaconda3/bin ]] ; then
     export PATH="/home/graehl/anaconda3/bin:$PATH"
 fi
+condor_rmall() {
+    for f in `condor_q | perl -ne 'print "$1\n" if m{^([0-9.]+)\s+graehl}'`; do
+        echo $f
+        condor_rm $f
+    done
+}
