@@ -74,10 +74,6 @@ gccall() {
      gccinstall
     )
 }
-uselocalgcc() {
-    export PATH=/local/gcc/bin:$PATH
-    export LD_LIBRARY_PATH=/local/gcc/lib64:$LD_LIBRARY_PATH
-}
 vgall() {
     (set -e
      cd /local/graehl/src
