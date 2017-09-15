@@ -51,12 +51,12 @@ DisableFormat:   false
 ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH, FOR, RFOR, REP, REPTO, RREP, FOREACH ]
 # matched against the filename of an include (including the <> or "") in order. The value belonging to the first matching regular expression is assigned and #includes are sorted first according to increasing category number and then alphabetically within each category:
 IncludeCategories:
-  - Regex:           '^<graehl/'
+  - Regex:           '^"'
     Priority:        1
+  - Regex:           '^<graehl/'
+    Priority:        2
   - Regex:           '^<boost/'
     Priority:        4
-  - Regex:           '^"'
-    Priority:        100
   - Regex:           /
     Priority:        5
   - Regex:           '\.h$'
