@@ -3774,32 +3774,7 @@ guesstbbver() {
 xmtgithash() {
     ${1:-xmt} -v -D | perl -ne 'print $1 if /^Git SHA1: (\S+)/'
 }
-ext2pub12() {
-    require_dir $2
-    (
-        set +e
-        from=$1/libraries
-        ken=KenLM-5.3.0/5-gram
-        libs=$ken
-        #libs="$ken nplm nplm01 liblbfgs-1.10 tbb-4.4.0 lmdb apr-1.4.2 apr-util-1.3.10 zeromq-4.0.4 cmph-0.6 hadoop-hdp2.1 openssl-1.0.1e svmtool++ liblinear-1.94 protobuf-2.6.1 turboparser-2.3.1 boost_1_61_0 tinycdb-0.77 icu-55.1 db-5.3.15 zlib-1.2.8 OpenBLAS-0.2.14 bzip2 log4cxx-0.10.0 jemalloc"
-        libs+=" OpenBLAS-0.2.14 ad3-1a08a9 apr-1.4.2 apr-util-1.3.10 boost_1_60_0 caffe-rc3 cmph-0.6 cryptopp-5.6.2 db-5.3.15 gflags-2.2 glog-0.3.5 hadoop-0.20.2-cdh3u3 hdf5-1.8.15-patch1 icu-55.1 jemalloc kytea-0.4.7 liblinear-1.94 lmdb-0.9.14 log4cxx-0.10.0 nplm nplm01 openssl-1.0.1e svmtool++ tbb-4.4.0 tinycdb-0.78 tinyxmlcpp-2.5.4 turboparser-2.3.1 zeromq-4.0.4 zlib-1.2.8 cnpy arrayfire-3.4.0"
-        local dest=$2/lib
-        mkdir -p $dest
-        for d in $libs; do
-            d=$from/$d/lib
-            if [[ -d $d ]] ; then
-                if cp -a $d/*so* $dest/; then
-                    echo $d
-                else
-                    echo nothing for $d
-                fi
-            fi
-        done
-        cp -a $from/$ken/bin/* $dest/
-        cp -a $from/gcc-${GCCVERSION:-6.1.0}/lib64/*.so* $dest/
-        true
-    )
-}
+
 ext2pub() {
     ext2pub12 $xmtext $xmtpub
 }
@@ -3814,21 +3789,56 @@ rpathorigin() {
         fi
     done
 }
+
+
+ext2pub12() {
+    (
+        set +e
+        from=$1/libraries
+        ken=KenLM-5.3.0/5-gram
+        mdb=lmdb-0.9.14
+        # no need to add these - they have only .a:
+        libs=$ken
+        statics="ad3-1a08a9 cryptopp-5.6.2 kytea-0.4.7 tinycdb-0.78 pcre2-10.10 yaml-cpp-0.5.3"
+        libs+=" $mdb"
+        libs+="  apr-1.4.2 apr-util-1.3.10 boost_1_60_0 caffe-rc3 OpenBLAS-0.2.14 cmph-0.6  db-5.3.15 gflags-2.2 glog-0.3.5 hadoop-hdp2.1 hdf5-1.8.15-patch1 icu-55.1  liblinear-1.94 log4cxx-0.10.0 nplm nplm01 openssl-1.0.1e svmtool++ tbb-4.4.0 o tinyxmlcpp-2.5.4 turboparser-2.3.1 zeromq-4.0.4 zlib-1.2.8 cnpy arrayfire-3.4.2-no-gl"
+        local dest=$2/lib
+        mkdir -p $dest
+        for d in $libs; do
+            d=$from/$d/lib
+            if [[ -d $d ]] ; then
+                if cp -a $d/*so* $dest/ 2>/dev/null; then
+                    echo $d
+                else
+                    echo nothing for $d
+                fi
+            fi
+        done
+        if [[ $PUBLISHUTIL ]] ; then
+            cp -a $from/$ken/bin/* $dest/
+            cp -a $from/$mdb/bin/* $dest/
+        fi
+        cp -a $from/gcc-${GCCVERSION:-6.1.0}/lib64/*.so* $dest/
+        true
+    )
+}
 bakxmt() {
-    ( set -e
+    ( set -e;
       echo ${BUILD:=Release}
-      cd $xmtx/$BUILD
-      local change=`changeid`
       local hash
-      local pub=${pub:-$xmtpub}
-      hash=`xmtgithash xmt/xmt`
-      if ! [[ $hash ]] ; then
-          hash=`githash`
+      local change=`changeid`
+      local pub=${pub:-${xmtpub:-$(echo ~/pub)}}
+      mkdir -p $pub
+      cd ${xmtx:=$WORKSPACE}
+      hash=`githash`
+      cd $BUILD
+      if [[ $hash = '' ]] ; then
+          hash=`xmtgithash $xmtx/$BUILD/xmt/xmt`
       fi
       mkdir -p $pub/lib
-      ext2pub12 $xmtext $pub
+      ext2pub12 ${xmtext:-$SDL_EXTERNALS_PATH} $pub
       echo $pub/$1
-      local bindir=$pub/$BUILD/$HOST/$hash
+      local bindir=$pub/$HOST/$hash
       echo $bindir
       mkdir -p $bindir
       git log -n 1 > $bindir/README
@@ -3838,32 +3848,23 @@ bakxmt() {
       forcelink $pub/$change $pub/latest-changeid
       cp -af $xmtx/RegressionTests/launch_server.py $bindir/
       echo xmtbins: $xmtbins
-      for f in $xmtbins xmt/lib/*.so TrainableCapitalizer/libsdl-TrainableCapitalizer-shared.so CrfDemo/libsdl-CrfDemo-shared.so TrainableCapitalizer/libsdl-TrainableCapitalizer_debug.so CrfDemo/libsdl-CrfDemo_debug.so; do
+      for f in $xmtbins xmt/lib/*.so TrainableCapitalizer/libTrainableCapitalizer-shared.so CrfDemo/libCrfDemo-shared.so; do
           local b=`basename $f`
-          if [[ -f $f ]] ; then
-              ls -l $f
-              local bin=$bindir/$b
-              cp -af $f $bindir/$b
-              chrpath -r '$ORIGIN:'"$pub/lib" $bindir/$b
-              if [[ ${f%.so} = $f ]] ; then
-                  (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
-                  chmod +x $bin.sh
-              fi
+          ls -l $f
+          local bin=$bindir/$b
+          rpathorigin $bin
+          cp -af $f $bindir/$b
+          chrpath -r '$ORIGIN:'"$pub/lib" $bindir/$b
+          if [[ ${f%.so} = $f ]] ; then
+              (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
+              chmod +x $bin.sh
           fi
       done
       grep "export LD_LIBRARY_PATH" $bindir/xmt.sh > $bindir/env.sh
-      #rmrpath $bindir || true
-      #rmrpath $pub/lib
+      ln -sf $pub/lib $bindir/
       rpathorigin $pub/lib
       cat $bindir/README
-      local pub2=~/bugs/leak
-      if [[ $1 ]] ; then
-          forcelink $bindir $pub/$1 && ls -l $pub/$1
-          if [[ -d $pub2 ]] ; then
-              forcelink $pub/$1 $pub2/$1
-          fi
-      fi
-      $bindir/xmt.sh --help 2>&1
+      $bindir/xmt.sh --help 2>&1 | head -3
     )
 }
 
