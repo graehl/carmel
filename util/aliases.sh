@@ -3771,26 +3771,22 @@ guesstbbver() {
         tbbver=42oss
     fi
 }
-xmtgithash() {
-    ${1:-xmt} -v -D | perl -ne 'print $1 if /^Git SHA1: (\S+)/'
-}
-
 ext2pub() {
     ext2pub12 $xmtext $xmtpub
 }
+
+xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Utf8Normalize/Utf8Normalize Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper Util/EditDistance Hypergraph/hyp"
 rpathorigin() {
     for f in "$@"; do
         if [[ -f $f ]] ; then
             echo $f
-            chrpath -r '$ORIGIN/lib:$ORIGIN' $f || true
+            chrpath -r '$ORIGIN/lib:$ORIGIN' $f
         fi
         if [[ -d $f ]] ; then
             rpathorigin `ls $f/*.so*`
         fi
     done
 }
-
-
 ext2pub12() {
     (
         set +e
@@ -3799,9 +3795,9 @@ ext2pub12() {
         mdb=lmdb-0.9.14
         # no need to add these - they have only .a:
         libs=$ken
-        statics="ad3-1a08a9 cryptopp-5.6.2 kytea-0.4.7 tinycdb-0.78 pcre2-10.10 yaml-cpp-0.5.3"
+        statics="ad3-1a08a9 cryptopp-5.6.2 kytea-0.4.7 tinycdb-0.78 pcre2-10.10 yaml-cpp-0.5.3 tinyxmlcpp-2.5.4"
         libs+=" $mdb"
-        libs+="  apr-1.4.2 apr-util-1.3.10 boost_1_60_0 caffe-rc3 OpenBLAS-0.2.14 cmph-0.6  db-5.3.15 gflags-2.2 glog-0.3.5 hadoop-hdp2.1 hdf5-1.8.15-patch1 icu-55.1  liblinear-1.94 log4cxx-0.10.0 nplm nplm01 openssl-1.0.1e svmtool++ tbb-4.4.0 o tinyxmlcpp-2.5.4 turboparser-2.3.1 zeromq-4.0.4 zlib-1.2.8 cnpy arrayfire-3.4.2-no-gl"
+        libs+="  apr-1.4.2 apr-util-1.3.10 boost_1_60_0 caffe-rc3 OpenBLAS-0.2.14 cmph-0.6  db-5.3.15 gflags-2.2 glog-0.3.5 hadoop-hdp2.1 hdf5-1.8.15-patch1 icu-55.1  liblinear-1.94 log4cxx-0.10.0 nplm nplm01 openssl-1.0.1e svmtool++ tbb-4.4.0 o turboparser-2.3.1 zeromq-4.0.4 zlib-1.2.8 cnpy arrayfire-3.4.2-no-gl"
         local dest=$2/lib
         mkdir -p $dest
         for d in $libs; do
@@ -3852,9 +3848,9 @@ bakxmt() {
           local b=`basename $f`
           ls -l $f
           local bin=$bindir/$b
+          cp -af $f $bin
           rpathorigin $bin
-          cp -af $f $bindir/$b
-          chrpath -r '$ORIGIN:'"$pub/lib" $bindir/$b
+          chrpath -r '$ORIGIN:'"$pub/lib" $bin
           if [[ ${f%.so} = $f ]] ; then
               (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
               chmod +x $bin.sh
@@ -3867,6 +3863,10 @@ bakxmt() {
       $bindir/xmt.sh --help 2>&1 | head -3
     )
 }
+xmtgithash() {
+    ${1:-xmt} -v -D | perl -ne 'print $1 if /^Git SHA1: (\S+)/'
+}
+
 
 cleantmp() {
     (
