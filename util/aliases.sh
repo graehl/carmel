@@ -7591,6 +7591,7 @@ makejust() {
     norun=1 makerun "$@"
 }
 makeh() {
+    export CLANGTIDYERR=0
     gcc6=1 usegcc
     showvars_required CXX CC
     if [[ $1 = xmt ]] ; then
