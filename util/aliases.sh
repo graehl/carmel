@@ -3788,6 +3788,20 @@ rpathorigin() {
         fi
     done
 }
+
+
+xmtbins="xmt/xmt xmt/XMTStandaloneClient xmt/XMTStandaloneServer Utf8Normalize/Utf8Normalize Optimization/Optimize RuleSerializer/RuleSerializer RuleDumper/RuleDumper Util/EditDistance Hypergraph/hyp"
+rpathorigin() {
+    for f in "$@"; do
+        if [[ -f $f ]] ; then
+            echo $f
+            chrpath -r '$ORIGIN/lib:$ORIGIN' $f
+        fi
+        if [[ -d $f ]] ; then
+            rpathorigin `ls $f/*.so*`
+        fi
+    done
+}
 ext2pub12() {
     (
         set +e
@@ -3819,6 +3833,60 @@ ext2pub12() {
         true
     )
 }
+bakxmt() {
+    ( set -e;
+      echo ${BUILD:=Release}
+      local hash
+      local change=`changeid`
+      local pub=${pub:-${xmtpub:-$(echo ~/pub)}}
+      mkdir -p $pub
+      cd ${xmtx:=$WORKSPACE}
+      hash=`githash`
+      cd $BUILD
+      if [[ $hash = '' ]] ; then
+          hash=`xmtgithash $xmtx/$BUILD/xmt/xmt`
+      fi
+      mkdir -p $pub/lib
+      ext2pub12 ${xmtext:-$SDL_EXTERNALS_PATH} $pub
+      echo $pub/$1
+      local bdir=$hash
+      if [[ $HOST ]] ; then
+          bdir=$HOST/$bdir
+      fi
+      local bindir=$pub/$bdir
+      echo $bindir
+      mkdir -p $bindir
+      git log -n 1 > $bindir/README
+      mkdir -p $pub/$change
+      rmfreadlink $pub/$change r
+      forcelink $bdir $pub/latest
+      forcelink $bdir $pub/$change
+      forcelink $change $pub/latest-changeid
+      cp -af $xmtx/RegressionTests/launch_server.py $bindir/
+      echo xmtbins: $xmtbins
+      for f in $xmtbins xmt/lib/*.so TrainableCapitalizer/libsdl-TrainableCapitalizer-shared.so CrfDemo/libsdl-CrfDemo-shared.so; do
+          local b=`basename $f`
+          ls -l $f
+          local bin=$bindir/$b
+          cp -af $f $bin
+          rpathorigin $bin
+          chrpath -r '$ORIGIN:'"$pub/lib" $bin
+          if [[ ${f%.so} = $f ]] ; then
+              (echo '#!/bin/bash';echo "export LD_LIBRARY_PATH=$bindir:$pub/lib"; echo "exec \$prexmtsh $bin "'"$@"') > $bin.sh
+              chmod +x $bin.sh
+          fi
+      done
+      grep "export LD_LIBRARY_PATH" $bindir/xmt.sh > $bindir/env.sh
+      ln -sf $pub/lib $bindir/
+      rpathorigin $pub/lib
+      cat $bindir/README
+      $bindir/xmt.sh --help 2>&1 | head -3
+    )
+}
+xmtgithash() {
+    ${1:-xmt} -v -D | perl -ne 'print $1 if /^Git SHA1: (\S+)/'
+}
+
 
 cleantmp() {
     (
@@ -11142,8 +11210,8 @@ rmtorch() {
     sudo rm -f  /usr/local/lib/{*lua*,*TH*}
 }
 # added by Anaconda3 4.4.0 installer
-export PYTHONPATH=
-if [[ -d /home/graehl/anaconda3/bin ]] ; then
+# export PYTHONPATH=
+if false && [[ -d /home/graehl/anaconda3/bin ]] ; then
     export PATH="/home/graehl/anaconda3/bin:$PATH"
 fi
 condor_rmall() {
