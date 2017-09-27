@@ -63,7 +63,7 @@ def mkdir_parent(file):
 
 import gzip
 
-def is_terminal_fname(fname):
+def is_terminal_filename(fname):
     "return if fname is '-' or '' or none - for stdin or stdout"
     return (fname is None) or fname=='-' or fname==''
 
@@ -79,7 +79,7 @@ def open_in(filename, openflags='b'):
     return (gzip.open if filename.endswith('.gz') else open)(filename,'r'+openflags)
 
 
-def open_out(filename, append=False, mkdir=False, openflags='b', encoding=None):
+def open_out(filename, append=False, mkdir=False, openflags='', encoding=None):
     """if filename is '-' or '' or none, return sys.stdout, else return open(filename,'w').
       not sure if it's ok to close stdout, so let GC close file please."""
     if not filename: raise Exception("no output filename provided (sdllabs.io.open_out)")
@@ -2012,7 +2012,6 @@ def writelines(path, lines, newline='\n'):
             if newline is not None and len(line) > 0 and line[-1] != newline:
                 line += newline
             outfile.write(line)
-
 
 
 def addarg(argparser, shortname, typeclass, dest, help=None, action=None, *L, **M):
