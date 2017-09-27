@@ -20,12 +20,9 @@ coforce() {
     to=${2?to}
     set -x
     git fetch $from
-    git co $to || true
-    killbranch coforce.temp || true
-    branchthis coforce.temp
+    git checkout $from/$to
     killbranch $to || true
     git co $from/$to -b $to
-    killbranch coforce.temp
     )
 }
 sidebysidesuf() {
