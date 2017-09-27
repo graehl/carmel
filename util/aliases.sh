@@ -19,10 +19,12 @@ coforce() {
     from=${1?from}
     to=${2?to}
     set -x
-    git fetch --all
-    git branch coforce.temp
+    git fetch $from
+    git co $to || true
+    killbranch coforce.temp || true
+    branchthis coforce.temp
     killbranch $to || true
-    git co $from -b $to
+    git co $from/$to -b $to
     killbranch coforce.temp
     )
 }
