@@ -4107,10 +4107,10 @@ c-make() {
                  echo ASAN: $f
              fi
              if [[ "$*" ]] ; then
-                 c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
+                 c-s CLANGTIDYSKIP=$CLANGTIDYSKIP ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
                  #'&&' "$@"
              else
-                 c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
+                 c-s CLANGTIDYSKIP=$CLANGTIDYSKIP ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
              fi
          )  2>&1 | filter-gcc-errors
      done
@@ -10971,7 +10971,7 @@ if ! [[ $MAKEPROC ]] ; then
     if [[ $lwarch = Apple ]] ; then
         MAKEPROC=2
     elif [[ $HOST = c-graehl ]] ; then
-        MAKEPROC=13
+        MAKEPROC=19
     else
         MAKEPROC=7
     fi
