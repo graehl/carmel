@@ -13,6 +13,19 @@ else
     export EDITOR=emacs
 fi
 #require 'pl.pretty'.dump(set)
+coforce() {
+    (
+        set -e
+    from=${1?from}
+    to=${2?to}
+    set -x
+    git fetch --all
+    git branch coforce.temp
+    killbranch $to || true
+    git co $from -b $to
+    killbranch coforce.temp
+    )
+}
 sidebysidesuf() {
     sidebyside $1$3 $2$3
 }
