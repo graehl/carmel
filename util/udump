@@ -1,0 +1,94 @@
+#!/usr/bin/env perl
+#
+# This is like a Unicode mode for hexdump.
+#
+# Usage: $0 [options] fn [fn [..]]
+# Or:	 $0 [options]
+#
+use v5.10.1;
+use strict;
+use open qw(:encoding(utf8) :std); # make stdio permissive UTF-8
+use Getopt::Long qw(:config bundling no_ignore_case);
+
+use constant ANSI_BOLD_RED => "\033[31;1m";
+use constant ANSI_BOLD_BLACK => "\033[30;1m";
+use constant ANSI_RESET => "\033[0m";
+use constant ANSI_BLUE => "\033[34m";
+
+sub usage {
+    print << "EOF";
+Usage:\t$0 [options] fn [fn [..]]
+Or:\t$0 [options]
+
+Optional arguments:
+ -h|--help     print this help and exit.
+ -n|--newline  remove line terminators before output.
+ -t|--tty      force tty markup for suspicious code points.
+ -m|--mark     colorize all whitespace matching [\\s\\p{Z}]
+ -a|--ascii    colorize all non-ascii matching [^\\x00-\\x7F]
+ -i|--input e  assume encoding 'e' for all inputs, default "utf8".
+ -H|--head n   only show the first 'n' lines from each input.
+
+EOF
+    exit 1;
+}
+
+# same as Unicode::Regex::Set::parse('[\p{C} - \s]')
+my $re = qr{[\x00-\x08\x0E-\x1F\x7F-\x9F\p{Cf}\p{Cs}\p{Co}\p{Cn}]}u;
+
+sub markup {
+    my $s = sprintf("U+%04X", $_);
+    if ($main::tty) {
+	if (chr($_) =~ $re) {
+	    ANSI_BOLD_RED . $s . ANSI_RESET;
+	} elsif ($main::mark && chr($_) =~ /[\s\p{Z}]/u) {
+	    ANSI_BLUE . $s . ANSI_RESET;
+	} elsif ($main::ascii && ! ($_ >= 0 && $_ <= 128)) {
+            ANSI_BOLD_BLACK . $s . ANSI_RESET;
+        } else {
+	    $s;
+	}
+    } else {
+	$s;
+    }
+}
+
+# set personal favs in env variable UDUMP
+unshift(@ARGV, (split/\s+/,$ENV{'UDUMP_OPTIONS'}))
+    if $ENV{'UDUMP_OPTIONS'};
+
+my $remove_eoln = 0;
+$main::tty = -t STDOUT;
+$main::mark = 0;
+$main::ascii = 0;
+my $encoding = 'utf8'; # permissive mode!
+my $head;
+GetOptions( 'help|h' => \&usage
+	  , 'newline|n!' => \$remove_eoln
+	  , 'mark|m!' => \$main::mark
+          , 'tty|t!' => \$main::tty
+	  , 'ascii|a!' => \$main::ascii
+	  , 'input|i=s' => \$encoding
+	  , 'head|H=o' => \$head
+          ) || usage;
+usage if (defined $head && $head <= 0);
+
+push(@ARGV, '-') unless @ARGV; # read from stdin
+foreach my $fn ( @ARGV ) {
+    my ($fh);
+    if ($fn eq '-') {
+	binmode(($fh = \*STDIN), ":encoding($encoding)") //
+	    die "FATAL: binmode $encoding: $!\n";
+    } else {
+	open($fh, "<:encoding($encoding)", $fn) //
+	    die "FATAL: open $fn: $!\n";
+    }
+
+    while ( <$fh> ) {
+	s/[\r\n]+$// if $remove_eoln;
+	my @x = unpack("U*",$_);
+	print join(' ',map(markup,@x)), "\n";
+	last if (defined $head && $head <= $.);
+    }
+    close $fh unless $fn eq '-';
+}
