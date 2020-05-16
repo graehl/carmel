@@ -12,7 +12,16 @@ if [[ $TERM = dumb && ! $INSIDE_EMACS ]] ; then
 else
     export EDITOR=emacs
 fi
+s2p() {
+    scp ~/summary/phrases.py c-graehl:summary/
+}
+cols() {
+    paste -d'|' "$@" | column -t
+}
 #require 'pl.pretty'.dump(set)
+setdiff() {
+    perl -e 'for (1..$#ARGV) { $f=$ARGV[$_];open F,$f or die;while(defined($_=<F>)) { chomp; $s{$_}++ } } open F,$ARGV[0] or die; while(defined($_=<F>)) { chomp; print "$_\n" unless $s{$_} }'  "$@"
+}
 coforce() {
     (
         set -e
@@ -507,6 +516,7 @@ racer=$(echo $xmtx)
 xmtxs=$xmtx/sdl
 GRAEHL_INCLUDE=$xmtxs
 xmtextbase=$(echo ~/c/xmt-externals)
+tmpextbase=$(echo ~/c/xmt-externals-tmp)
 xmtexts=$xmtextbase/Shared
 xmtextc=$xmtexts/cpp
 SDL_SHARED_EXTERNALS_PATH=$xmtexts
@@ -523,8 +533,10 @@ case $(uname) in
         lwarch=Windows ;;
 esac
 xmtext=$xmtextbase/$lwarch
+tmpext=$tmpextbase/$lwarch
 xmtextsrc=$HOME/c/xmt-externals-source
 export SDL_EXTERNALS_PATH=$xmtext
+export SDL_EXTERNALS_TMP_PATH=$tmpext
 export HADOOP_DIR=$SDL_EXTERNALS_PATH/../Shared/java/hadoop-2.7.3
 export JAVA_HOME=$SDL_EXTERNALS_PATH/libraries/jdk1.8.0_66
 py=$(echo $xmtx/python)
@@ -1346,6 +1358,27 @@ cutmp4() {
      ffmpeg -i "$1" -ss $2 -to $3 -async 1 -c copy "${1%.mp4}.$(safefilename $2-$3).mp4"
     )
 }
+headmp4() {
+    (set -x
+     ffmpeg -i "$1" -to "$2" -async 1 -c copy "${1%.mp4}.$(safefilename $2).mp4"
+    )
+}
+startmp4() {
+    (set -x
+     ffmpeg -i "$1" -ss "$2" -async 1 -c copy "${1%.mp4}.$(safefilename $2)-.mp4"
+    )
+}
+shrinkmp4() {
+    (set -x;
+     crf=${2:-19}
+     scale=${3:--1:432}
+     scalen=`perl -e '$_=shift;s/:?-1:?//;s/:/./g;print' -- "$scale"`
+     out="${1%.mp4}.$scalen.q$crf.mp4"
+     ffmpeg -i "$1" -crf "$crf" -c:a copy -c:v libx264 -r 30 -vf scale="$scale" -preset veryslow "$out"
+     open "$out"
+     ls -l "$out"
+ )
+}
 nbest() {
     hyp best -a feature -n "$@"
 }
@@ -1552,6 +1585,16 @@ gitignorerm() {
 }
 gitdiffl() {
     git diff --stat "$@" | cut -d' ' -f2
+}
+gitdifflb() {
+    (
+        from=`gitbranch`
+        set -e
+        upre
+        mkdir -p ~/diffl
+        gitdiffl origin/master | head -n -1 > ~/diffl/$from.txt
+        preview ~/diffl/$from.txt
+    )
 }
 linelens() {
     if [[ $words ]] ; then
@@ -7011,9 +7054,9 @@ while (<>) {
 }
 vocab() {
     perl -ne 'chomp;for (split) {
-push @w,$_ unless ($v {$_}++);
+push @w,$_ unless ($v{$_}++);
 }
-END { print "$v {$_} $_\n" for (@w) }
+END { print "$v{$_} $_\n" for (@w) }
 ' "$@"
 }
 xmtspeed() {
@@ -11351,4 +11394,7 @@ untidyclang() {
 }
 ctexec() {
     env -i PATH=PATH=/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/App:/usr/bin:/bin:/.auto/home/graehl/c/coretraining/main/3rdParty/git:. LD_LIBRARY_PATH=/.auto/home/graehl/c/coretraining/main/lib:/.auto/home/graehl/c/coretraining/main/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/tbb2.1/ia32/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/sh81smp/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/boost-1_33_1/lib;PATH=/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/App:/usr/bin:/bin:/.auto/home/graehl/c/coretraining/main/3rdParty/git:. PERL5LIB=/.auto/home/graehl/c/coretraining/main/kraken/xlearnnnlm/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib:/.auto/home/graehl/c/coretraining/main/3rdParty/perl_libs:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib/TroyPerlLib:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib:/.auto/home/graehl/c/coretraining/main/3rdParty/perl_libs:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib/TroyPerlLib "$@"
+}
+curlj() {
+    curl -H 'Content-Type: application/json' "$@"
 }

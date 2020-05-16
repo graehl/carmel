@@ -73,7 +73,7 @@ def open_in(filename, openflags='b'):
     (or if filename ends in .gz, gzip.open it)
 
     """
-    if not filename: raise Exception("no input filename provided (sdllabs.io.open_in)")
+    if not filename: raise Exception("no input filename provided (open_in)")
     if is_terminal_filename(filename):
         return sys.stdin
     return (gzip.open if filename.endswith('.gz') else open)(filename,'r'+openflags)
@@ -82,7 +82,7 @@ def open_in(filename, openflags='b'):
 def open_out(filename, append=False, mkdir=False, openflags='', encoding=None):
     """if filename is '-' or '' or none, return sys.stdout, else return open(filename,'w').
       not sure if it's ok to close stdout, so let GC close file please."""
-    if not filename: raise Exception("no output filename provided (sdllabs.io.open_out)")
+    if not filename: raise Exception("no output filename provided (open_out)")
     if is_terminal_filename(filename):
         return sys.stdout
     if mkdir:

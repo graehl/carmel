@@ -28,7 +28,7 @@ def relpath(p1, p2):
     return os.path.join( *p )
 
 def test(p1,p2):
-    print "from", p1, "to", p2, " -> ", relpath(p1, p2)
+    print("from", p1, "to", p2, " -> ", relpath(p1, p2))
 
 if __name__ == '__main__':
     frompath = sys.argv[1]
@@ -39,6 +39,6 @@ if __name__ == '__main__':
     (cd,_,_)=commonpath(home,d)
     (cfull,_,_)=commonpath(home,full)
     if len(cfull)>len(cd):
-        print relpath(home,full)
+        print(relpath(home,full))
     else:
-        print os.path.join(relpath(home,d),b)
+        print(os.path.join(relpath(home,d),b))
