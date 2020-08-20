@@ -1,3 +1,7 @@
+export LC_ALL=C
+unset LC_ALL
+#export LC_ALL="en_US.UTF-8"
+export LC_CTYPE="en_US.UTF-8"
 UTIL=${UTIL:-$(echo ~/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
@@ -524,16 +528,20 @@ graehlmac=mbp
 case $(uname) in
     Darwin)
         lwarch=Apple
+        sdlarch=Apple
         ;;
     Linux)
         lwarch=FC12
+        sdlarch=Linux
         shopt -s globstar || true
         ;;
     *)
-        lwarch=Windows ;;
+        lwarch=Windows
+        sdlarch=Windows
+        ;;
 esac
 xmtext=$xmtextbase/$lwarch
-tmpext=$tmpextbase/$lwarch
+tmpext=$tmpextbase/$sdlarch
 xmtextsrc=$HOME/c/xmt-externals-source
 export SDL_EXTERNALS_PATH=$xmtext
 export SDL_EXTERNALS_TMP_PATH=$tmpext
@@ -547,7 +555,7 @@ xmtlib=$xmtext/libraries
 libasan=$xmtlib/gcc-6.1.0/lib64/libasan.so
 libasanlocal=/local/gcc/lib64/libasan.so
 SDL_EXTERNALS_JAVA=$xmtext/libraries/jdk1.8.0_66
-export OMP_NUM_THREADS=1
+#export OMP_NUM_THREADS=1
 export SDL_EXTERNALS_JAVA
 if [[ -d $SDL_EXTERNALS_JAVA ]] ; then
     export JAVA_HOME=$SDL_EXTERNALS_JAVA
@@ -4249,7 +4257,17 @@ cr-makes() {
     (cr-c;BUILD=all c-make "$@")
 }
 cr-make() {
-    (cr-c;c-make "$@")
+    (cr-c;
+     c-with "cd ~/x/$BUILD; make -j7 $1; yreg $2"
+     #c-make "$@"
+    )
+}
+cd-make() {
+    (c-c
+     b-d
+     c-with "cd ~/x/$BUILD; make -j7 $1; yreg $2"
+     #c-make "$@"
+    )
 }
 cw-make() {
     (cw-c;c-make "$@")
@@ -4650,7 +4668,7 @@ c-test() {
     if [[ $BUILD = Release ]] ; then
         rel=Release
     fi
-    if [[ $ASAN ]] ; then
+    if false && [[ $ASAN ]] ; then
         rel=Asan
     fi
     local uarg
@@ -5444,7 +5462,7 @@ cto() {
     )
 }
 gerrit2local() {
-    perl -e '$_=shift;s{C:/jenkins/workspace/XMT-Release-Windows}{/local/graehl/xmt}g;s{/local2/}{/local/}g;print' "$@"
+    perl -e '$_=shift;s{C:/jenkins/workspace/XMT-Release-Windows}{/local/graehl/xmt}g;s{/local2/}{/local/}g;s{^/local/graehl/xmt}{'$HOME'/x};print' "$@"
 }
 nblanklines() {
     if grep -c -q ^$ "$@"; then
@@ -5546,10 +5564,10 @@ csave() {
     save12 ~/tmp/c-s.`filename_from $1 $2` c-s "$@"
 }
 creg() {
-    save12 ~/tmp/creg.`filename_from "$@"` cwith yreg "$@"
+    save12 ~/tmp/creg.`filename_from "$@"` c-with yreg "$@"
 }
 cregr() {
-    save12 ~/tmp/cregr.`filename_from "$@"` cwith yregr "$@"
+    save12 ~/tmp/cregr.`filename_from "$@"` c-with yregr "$@"
 }
 treg() {
     save12 /tmp/reg yreg "$@"
@@ -5811,7 +5829,9 @@ yreg() {
      export PYTHONPATH=${PYTHONPATH%:}
      export TMPDIR=${TMPDIR:-/var/tmp}
      bdir=${bdir:-$xmtx/${BUILD:=Debug}}
-     export LD_LIBRARY_PATH=$bdir/xmt/lib:/local/gcc/lib64:$HOME/pub/lib:$LD_LIBRARY_PATH
+     . ~/x/xmtpath.sh
+     export LD_LIBRARY_PATH=$bdir/xmt/lib:$LD_LIBRARY_PATH
+     #export LD_LIBRARY_PATH=$bdir/xmt/lib:/local/gcc/lib64:$HOME/pub/lib:$LD_LIBRARY_PATH
      local logfile=/tmp/yreg.`filename_from "$@" ${BUILD:=Debug}`
      cd $xmtx/RegressionTests
      THREADS=${MAKEPROC:-`ncpus`}
@@ -5979,6 +5999,9 @@ jen() {
     echo jen:
     cd $xmtx
     local build=${1:-${BUILD:-Release}}
+    if [[ $1 ]] ; then
+        shift
+    fi
     if ! [[ $SDL_BUILD_TYPE ]] ; then
         SDL_BUILD_TYPE=Development
         if [[ $build = Release ]] ; then
@@ -6986,7 +7009,7 @@ filterblock() {
     if [[ ${blockline:-} ]] ; then
         grep -v "$blockline" --line-buffered
     else
-        cat
+        cat -u
     fi
 }
 save12() {
@@ -8759,8 +8782,8 @@ s2c() {
     (cd ~
      set -e
      c-sync u .gitconfig
-     c-to x/run.sh
-     c-to x/xmtpath.sh
+     #c-to x/run.sh
+     #c-to x/xmtpath.sh
      #chost=ceto c-sync u g script bugs .gitconfig
     )
 }

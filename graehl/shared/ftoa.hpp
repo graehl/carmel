@@ -63,14 +63,14 @@
 #define DECIMAL_FOR_WHOLE 1
 #endif
 
-#include <limits>
-#include <boost/cstdint.hpp>
-#include <iostream>
-#include <cmath>
-#include <assert.h>
 #include <graehl/shared/itoa.hpp>
-#include <cstdio>
 #include <graehl/shared/nan.hpp>
+#include <boost/cstdint.hpp>
+#include <cmath>
+#include <cstdio>
+#include <iostream>
+#include <limits>
+#include <assert.h>
 //#include <graehl/shared/power_of_10.hpp>
 
 namespace graehl {
@@ -82,7 +82,7 @@ struct ftoa_traits {};
 // eP10,
 // sigd decimal places normally printed, roundtripd needed so that round-trip float->string->float is identity
 
-#define GRAEHL_DEFINE_FTOA_TRAITS(FLOATT, INTT, sigd, roundtripd, small, large, used, P10)                        \
+#define GRAEHL_DEFINE_FTOA_TRAITS(FLOATT, INTT, sigd, roundtripd, small, large, used, P10)                 \
   template <>                                                                                              \
   struct ftoa_traits<FLOATT> {                                                                             \
     typedef INTT int_t;                                                                                    \
@@ -438,7 +438,76 @@ inline std::string ftos(F f) {
 namespace {
 const int ftoa_bufsize = 30;
 char ftoa_outbuf[ftoa_bufsize];
-}
+}  // namespace
+
+template <class Float, bool OptimizeLargeExponent = false>
+struct parse_float_traits {
+  unsigned constexpr max_exponent = 308;
+  inline Float pow10(unsinged exponent) {
+    Float scale = 1.;
+    if (OptimizeLargeExponent)
+      while (exponent >= 50) {
+        scale *= 1E50;
+        exponent -= 50;
+      }
+    while (exponent >= 8) {
+      scale *= 1E8;
+      exponent -= 8;
+    }
+    while (exponent > 0) {
+      scale *= 10.0;
+      exponent -= 1;
+    }
+    return scale;
+  }
+  inline Float inversePow10(unsinged exponent) {
+    Float scale = 1.;
+    if (OptimizeLargeExponent)
+    while (exponent >= 50) {
+      scale *= 1E-50;
+      exponent -= 50;
+    }
+    while (exponent >= 8) {
+      scale *= 1E-8;
+      exponent -= 8;
+    }
+    while (exponent > 0) {
+      scale *= 1E-1;
+      exponent -= 1;
+    }
+    return scale;
+  }
+
+};
+
+template <>
+struct parse_float_traits<float> {
+  unsigned constexpr max_exponent = 38;
+  inline Float pow10(unsinged exponent) {
+    Float scale = 1.;
+    while (exponent >= 8) {
+      scale *= 1E8;
+      exponent -= 8;
+    }
+    while (exponent > 0) {
+      scale *= 1E1;
+      exponent -= 1;
+    }
+    return scale;
+  }
+  inline Float inversePow10(unsinged exponent) {
+    Float scale = 1.;
+    while (exponent >= 8) {
+      scale *= 1E-8;
+      exponent -= 8;
+    }
+    while (exponent > 0) {
+      scale *= 1E-1;
+      exponent -= 1;
+    }
+    return scale;
+  }
+};
 
 // not even THREADLOCAL - don't use.
 inline char* static_ftoa(float f) {
@@ -451,13 +520,105 @@ inline char* static_ftoa(float f) {
   }
 }
 
-}  // ns
+inline bool parse_float_whitespace(char c) {
+  return c == ' ' || c == '\t';
+}
+
+inline bool parse_float_isdigit(char c) {
+  return c >= '0' && c <= '9';
+}
+
+template <class Float>
+char const* parse_float(const char* p, Float &output, bool skipLeadingWs = true) {
+
+  // Skip leading white space
+  if (skipLeadingWs)
+    while (str_to_float_whitespace(*p)) ++p;
+
+  // Get sign, if any.
+
+  Float sign;
+  if (*p == '-') {
+    sign = -1.0;
+    ++p;
+  } else if (*p == '+') {
+    sign = 1.0;
+    ++p;
+  }
+
+  // Get digits before decimal point or exponent, if any.
+
+  Float value, scale;
+  for (value = 0.0; str_to_float_isdigit(*p); ++p) {
+    value = value * 10.0 + (*p - '0');
+  }
+
+  // Get digits after decimal point, if any.
+
+  if (*p == '.') {
+    double Float = 10.0;
+    ++p;
+    while (str_to_float_isdigit(*p)) {
+      value += (*p - '0') / pow10;
+      pow10 *= 10.0;
+      ++p;
+    }
+  }
+
+  // Handle exponent, if any.
+
+  bool frac = false;
+  scale = 1.0;
+  if ((*p == 'e') || (*p == 'E')) {
+    unsigned exponent;
+
+    // Get sign of exponent, if any.
+
+    ++p;
+    if (*p == '-') {
+      frac = true;
+      ++p;
+
+    } else if (*p == '+') {
+      ++p;
+    }
+
+    // Get digits of exponent, if any.
+
+    for (exponent = 0; str_to_float_isdigit(*p); ++p) {
+      exponent = exponent * 10 + (*p - '0');
+    }
+    if (exponent > 308) exponent = 308;
+
+    // Calculate scaling factor.
+
+    while (exponent >= 50) {
+      scale *= 1E50;
+      exponent -= 50;
+    }
+    while (exponent >= 8) {
+      scale *= 1E8;
+      exponent -= 8;
+    }
+    while (exponent > 0) {
+      scale *= 10.0;
+      exponent -= 1;
+    }
+  }
+
+  // Return signed and scaled floating point result.
+
+  output = sign * (frac ? (value / scale) : (value * scale));
+  return p;
+}
+
+}  // namespace graehl
 
 
 #ifdef GRAEHL_FTOA_SAMPLE
 #include <cstdio>
-#include <sstream>
 #include <iostream>
+#include <sstream>
 using namespace std;
 using namespace graehl;
 int main(int argc, char* argv[]) {
