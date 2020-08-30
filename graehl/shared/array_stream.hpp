@@ -201,7 +201,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
   /**
      this buffer can't be (automatically) grown. so once you write too much, you're dead. TODO: test
   */
-  int_type overflow(int_type c) {
+  int_type overflow(int_type c) override {
     if (out_avail() == 0 && !traits::eq_int_type(c, traits::eof())) {
       eof_ = true;
       return traits::eof();  // FAIL
@@ -233,8 +233,8 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
   /**
      supports stream seekp seekg operations. (and streambuf::pubseekoff). TODO: test
   */
-  virtual pos_type seekoff(off_type offset, std::ios_base::seekdir dir,
-                           std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) {
+  pos_type seekoff(off_type offset, std::ios_base::seekdir dir,
+                   std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) override {
     pos_type pos = offset;
     if (dir == std::ios_base::cur)
       pos += ((which & std::ios_base::out) ? pptr() : gptr()) - buf;
@@ -243,7 +243,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
     // else ios_base::beg
     return seekpos(pos, which);
   }
-  virtual pos_type seekpos(pos_type pos, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) {
+  pos_type seekpos(pos_type pos, std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) override {
     if (which & std::ios_base::out) set_ppos(pos);
     if (which & std::ios_base::in) set_gpos(pos);
     return pos;
@@ -288,6 +288,9 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
   }
   bool eof_;
 
+  basic_array_streambuf(basic_array_streambuf const&) = delete;
+  basic_array_streambuf& operator=(basic_array_streambuf const&) = delete;
+
  private:
   using base::pptr;
   using base::pbump;
@@ -295,11 +298,9 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
   using base::gptr;
   using base::egptr;
   using base::gbump;
-  basic_array_streambuf(basic_array_streambuf const&);
-  basic_array_streambuf& operator=(basic_array_streambuf const&);
 
  protected:
-  virtual self_type* setbuf(char_type* p, size_type n) {
+  self_type* setbuf(char_type* p, size_type n) override {
     set_array(p, n);
     return this;
   }
@@ -480,6 +481,8 @@ BOOST_AUTO_TEST_CASE(TEST_array_stream) {
   array_stream o2(buf, N);
   TEST_check_memory_stream(o2, buf2, N);
 }
+
+
 }
 
 }  // ns

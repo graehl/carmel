@@ -75,14 +75,14 @@ struct band_matrix {
 #if GRAEHL_CPP11
   /// move
   band_matrix(band_matrix&& o) noexcept {
-    std::memcpy(this, &o, sizeof(band_matrix));
+    std::memcpy(this, &o, sizeof(band_matrix));  // NOLINT
     o.clear();
   }
   /// move
   band_matrix& operator=(band_matrix&& o) noexcept {
     assert(&o != this);  // std::vector doesn't check for self-move so why should we?
     free();
-    std::memcpy(this, &o, sizeof(band_matrix));
+    std::memcpy(this, &o, sizeof(band_matrix));  // NOLINT
     o.clear();
     return *this;
   }

@@ -23,7 +23,6 @@
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 #include <graehl/shared/print_read.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <sstream>
 #include <string>
 
@@ -36,7 +35,7 @@ namespace graehl {
 struct word_spacer {
   bool first;
   char space_string[2];
-  word_spacer(char space = ' ') : first(true) {
+  word_spacer(char space = ' ') : first(true) { // NOLINT
     space_string[0] = space;
     space_string[1] = 0;
   }
@@ -76,7 +75,7 @@ struct word_spacer {
 };
 
 struct word_spacer_f {
-  shared_ptr<word_spacer> p;
+  std::shared_ptr<word_spacer> p;
   explicit word_spacer_f(char space = ' ') : p(new word_spacer(space)) {}
   template <class O>
   void print(O& o) const {
@@ -128,7 +127,23 @@ struct word_spacer_c {
   }
 };
 
-typedef word_spacer_c<' '> spacer;
+template <char sep = ' '>
+struct spacesep {
+  bool squelch;
+  spacesep() : squelch(true) {}
+  template <class O>
+  void print(O& o) {
+    if (squelch)
+      squelch = false;
+    else
+      o << sep;
+  }
+  template <class C, class T>
+  friend inline std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T>& o, spacesep<sep>& me) {
+    me.print(o);
+    return o;
+  }
+};
 
 struct sep {
   char const* s;

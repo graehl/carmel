@@ -109,8 +109,7 @@ typedef Escape3t<true> Escape3s;
 
 struct Escape3Exception : std::exception {
   Escape3Exception() {}
-  ~Escape3Exception() throw() {}
-  char const* what() const throw() {
+  char const* what() const noexcept override {
     return "Unescape3 expected two hex digits or backslash following backslash";
   }
 };

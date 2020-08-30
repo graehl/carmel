@@ -42,7 +42,7 @@ struct hex_int {
   I i;
   U count_set_bits() const { return graehl::count_set_bits(i); }
   typedef void leaf_configure;
-  void assign(std::string const& s, bool complete = true) {
+  void assign(std::string const& s) {
     std::string::size_type const sz = s.size();
     if (sz >= 2 && s[0] == '0' && s[1] == 'x')
       i = (I)hextou<U>(&s[2], &s[sz]);

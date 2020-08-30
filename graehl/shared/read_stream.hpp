@@ -29,8 +29,7 @@ namespace graehl {
 struct SeekException : std::exception {
   char const* what_;
   SeekException(char const* msg = "Seek error") : what_(msg) {}
-  char const* what() const throw() { return what_; }
-  ~SeekException() throw() {}
+  char const* what() const noexcept override { return what_; }
 };
 
 inline bool seek_ok(std::streambuf::pos_type pos) {
@@ -83,8 +82,7 @@ inline std::size_t read_stringstream_malloc(std::stringstream& ss, void*& buffer
       return sz;
     else {
       std::string const& str = ss.str();
-      std::size_t const ssz = str.size();
-      assert(ssz == sz);
+      assert(str.size() == sz);
       std::memcpy(buffer, str.data(), sz);
       return sz;
     }

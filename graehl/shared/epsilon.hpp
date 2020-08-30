@@ -21,11 +21,16 @@
 #pragma once
 
 #include <boost/cstdint.hpp>
+#include <graehl/shared/cpp11.hpp>
 #include <graehl/shared/nan.hpp>
 #include <graehl/shared/order_preserving.hpp>
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#if GRAEHL_CPP20
+#include <bit>
+#include <cstdint>
+#endif
 
 #ifndef GRAEHL_EPSILON
 /**
@@ -142,8 +147,17 @@ inline bool sign_ieee(boost::uint32_t f) {
   return f >> 31;
 }
 
+inline boost::uint32_t get_bits(float f) {
+#if GRAEHL_CPP20
+  return std::bit_cast<boost::uint32_t>(f);
+#else
+  return reinterpret_cast<boost::uint32_t const&>(f);
+#endif
+}
+
+/// unlike f >= 0.0, the ieee sign bit keeps negative 0 separate from positive 0
 inline bool sign_ieee(float f) {
-  return sign_ieee(reinterpret_cast<boost::uint32_t const&>(f));
+  return sign_ieee(get_bits(f));
 }
 
 inline bool sign_ieee(boost::uint64_t f) {
@@ -151,9 +165,17 @@ inline bool sign_ieee(boost::uint64_t f) {
   return f >> 63;
 }
 
+inline boost::uint64_t get_bits(double f) {
+#if GRAEHL_CPP20
+  return std::bit_cast<boost::uint64_t>(f);
+#else
+  return reinterpret_cast<boost::uint64_t const&>(f);
+#endif
+}
+
 inline bool sign_ieee(double f) {
   // TODO: test
-  return sign_ieee(reinterpret_cast<boost::uint64_t const&>(f));
+  return sign_ieee(get_bits(f));
 }
 
 /**
@@ -321,24 +343,24 @@ template <class T>
 inline bool few_ieee_apart_equate_inf_nan(T a, T b, boost::int32_t max_apart) {
   return few_ieee_apart(a, b, max_apart) || nonfinite_same_sign(a, b);
 }
-}
+} // namespace graehl
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
-namespace graehl {
-namespace unit_test {
+namespace graehl { namespace unit_test {
 
 template <class Float>
 void testEpsilon(Float f, unsigned n, double max_ieee_apart_per_n = 0.2) {
   Float x = f;
   Float sum = 0;
-  for (unsigned i = 0; i < n; ++i) sum += x;
+  for (unsigned i = 0; i < n; ++i)
+    sum += x;
   Float nx = x * n;
   unsigned max_ieee_apart = (unsigned)(max_ieee_apart_per_n * n);
-  BOOST_CHECK_MESSAGE(ieee_apart(nx, sum) <= max_ieee_apart,
-                      "ieee_apart larger than " << max_ieee_apart << ": x=" << x << " n=" << n
-                                                << " x*n=" << nx << " (x+...+x)(n times)=" << sum
-                                                << " ieee_apart=" << ieee_apart(nx, sum));
+  BOOST_CHECK_MESSAGE(ieee_apart(nx, sum) <= max_ieee_apart, "ieee_apart larger than "
+                                                               << max_ieee_apart << ": x=" << x << " n=" << n
+                                                               << " x*n=" << nx << " (x+...+x)(n times)=" << sum
+                                                               << " ieee_apart=" << ieee_apart(nx, sum));
 }
 
 BOOST_AUTO_TEST_CASE(TEST_epsilon) {
@@ -347,8 +369,7 @@ BOOST_AUTO_TEST_CASE(TEST_epsilon) {
   BOOST_CHECK_EQUAL(ieee_apart(1234.05, 1234.06), 43980465111);
   BOOST_CHECK_EQUAL(ieee_apart(1234.05f, 1234.06f), 82);
 }
-}
-}
+}} // namespace graehl::unit_test
 
 #endif
 

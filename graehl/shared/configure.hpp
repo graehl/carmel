@@ -120,8 +120,6 @@ namespace {
 const char path_sep = '.';
 }
 
-using graehl::shared_ptr;
-using graehl::make_shared;
 using graehl::string_consumer;
 using graehl::warn_consumer;
 using graehl::shell_quote;
@@ -232,7 +230,6 @@ V2& append_default(std::pair<V1, V2>& map, V1 const& key) {
 template <class Val>
 struct defaulted {
   Val val;
-  Val* operator&() { return &val; }
   operator Val&() { return val; }
   operator Val const&() const { return val; }
   defaulted() { call_init_default(val); }
@@ -339,7 +336,7 @@ struct conf_opt {
   template <class Val>
   std::string get_usage(Val const& val) const {
     std::string const& pre = get_is(val);
-    return concat_optional(pre, usage && pre.size() ? " - " : "", usage);
+    return concat_optional(pre, usage && !pre.empty() ? " - " : "", usage);
   }
 
   std::string get_usage() const { return get_usage_optional().get_value_or(""); }
@@ -576,11 +573,11 @@ struct conf_opt {
   }
 };
 
-typedef shared_ptr<conf_opt> p_conf_opt;
+typedef std::shared_ptr<conf_opt> p_conf_opt;
 
 struct conf_expr_base;
 
-typedef shared_ptr<conf_expr_base> p_conf_expr_base;
+typedef std::shared_ptr<conf_expr_base> p_conf_expr_base;
 
 
 enum config_action_type {
@@ -821,7 +818,7 @@ struct conf_expr_destroy {
 template <class Backend, class Action, class Val>
 struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destroy {
  private:
-  mutable shared_ptr<conf_expr_destroy> subconfig_deleter;
+  mutable std::shared_ptr<conf_expr_destroy> subconfig_deleter;
 
  public:
   /// use to mark sibling-ojects that should have validate called (i.e. not
@@ -849,7 +846,7 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
   }
 
   bool store() const { return is_store(action); }
-  std::string what() const {
+  std::string what() const override {
     std::string r(conf_expr_base::path_name());
     r.push_back(' ');
     r += action_name(action);
@@ -893,7 +890,7 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
 
   bool skip_help() const { return is_help(action) && Backend::too_verbose(*this); }
 
-  ~conf_expr()  // destructor makes things happen; however, we want to take final action only in context of
+  ~conf_expr() override  // destructor makes things happen; however, we want to take final action only in context of
   // caller and all of caller's overrides (when name and superceding parent values are known)
   {
     drop();
@@ -1128,7 +1125,7 @@ inline std::string parent_option_name(std::string const& s) {
 
 struct configure_backend {
   virtual ~configure_backend() {}
-  typedef shared_ptr<configure_backend const> ptr;
+  typedef std::shared_ptr<configure_backend const> ptr;
 };
 
 
@@ -1767,7 +1764,6 @@ void show_effective(std::ostream& o, RootVal* pval, string_consumer const& warn 
 template <class Val>
 struct configure_defaulted {
   Val val;
-  Val* operator&() { return &val; }
   operator Val&() { return val; }
   operator Val const&() const { return val; }
   configure_defaulted() { configure_init(&val); }

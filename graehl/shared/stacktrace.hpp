@@ -13,7 +13,7 @@
 
 #ifdef __linux__
 #include <execinfo.h>
-#include <signal.h>
+#include <csignal>
 #endif
 
 namespace graehl {

@@ -42,6 +42,9 @@ struct JobConf {
     str = graehl::to_string(k.size());
     return str;
   }
+  virtual bool getBoolean(std::string const& k) const { return graehl::string_to<bool>(get(k)); }
+  virtual float getFloat(std::string const& k) const { return graehl::string_to<float>(get(k)); }
+  virtual int getInt(std::string const& k) const { return graehl::string_to<int>(get(k)); }
 };
 }
 #else
@@ -54,11 +57,11 @@ struct MapAsHadoopJobConf : HadoopPipes::JobConf {
   typedef std::map<std::string, std::string> Map;
   Map const* map_;
   MapAsHadoopJobConf(Map const* map = 0) : map_(map) {}
-  bool hasKey(std::string const& k) const { return map_->find(k) != map_->end(); }
-  std::string const& get(std::string const& k) const { return map_->find(k)->second; }
-  bool getBoolean(std::string const& k) const { return graehl::string_to<bool>(get(k)); }
-  float getFloat(std::string const& k) const { return graehl::string_to<float>(get(k)); }
-  int getInt(std::string const& k) const { return graehl::string_to<int>(get(k)); }
+  bool hasKey(std::string const& k) const override { return map_->find(k) != map_->end(); }
+  std::string const& get(std::string const& k) const override { return map_->find(k)->second; }
+  bool getBoolean(std::string const& k) const override { return graehl::string_to<bool>(get(k)); }
+  float getFloat(std::string const& k) const override { return graehl::string_to<float>(get(k)); }
+  int getInt(std::string const& k) const override { return graehl::string_to<int>(get(k)); }
 };
 
 // TODO: add non-leaf help info so hadoop_pipes formatted descriptions have at least one-level-nesting

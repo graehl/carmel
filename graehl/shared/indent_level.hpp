@@ -29,7 +29,7 @@
 #if GRAEHL_DEBUG_INDENT
 #define GRAEHL_INDENT_DBG_MSG(x) std::cerr << x << '\n'
 #else
-#define GRAEHL_INDENT_DBG_MSG
+#define GRAEHL_INDENT_DBG_MSG(x)
 #endif
 
 namespace graehl {

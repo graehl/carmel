@@ -108,7 +108,6 @@ Index get(no_index_in_heap<Key, Index> const&, Key const& k) {
 }
 template <class Key, class Index, class Index2>
 void put(no_index_in_heap<Key, Index> const&, Key const&, Index2 i) {
-  return;
 }
 
 template <class Key, class Distance>

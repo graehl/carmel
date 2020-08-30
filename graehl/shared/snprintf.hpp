@@ -13,10 +13,7 @@
 // limitations under the License.
 /**
 
-   provide ::snprintf for MSVC, which lacks the C99/posix/C++11 snprintf, and
-   ::C99vsnprintf (varargs version)
-
-   also, the slightly faster storage-owning:
+   provide the slightly faster storage-owning:
 
     SprintfStr str("%d %f %s, 1, 1.f, "cstring")
 
@@ -41,83 +38,16 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
-// for MS, this has some microsoft-only _snprintf etc fns that aren't fully C99 compliant - we'll provide a
-// ::snprintf that is
 #include <string>
 
 #ifndef GRAEHL_MUTABLE_STRING_DATA
-#if GRAEHL_CPP11
 /// see http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2668.htm
 /// - &str[0] required to be a writable array just like std::vector
 #define GRAEHL_MUTABLE_STRING_DATA 1
-#else
-#ifdef _MSC_VER
-#if _MSC_VER >= 1500
-// VS 2008 or later
-#define GRAEHL_MUTABLE_STRING_DATA 1
-#else
-#define GRAEHL_MUTABLE_STRING_DATA 0
-#endif
-#else
-#define GRAEHL_MUTABLE_STRING_DATA 1
-#endif
-#endif
 #endif
 
-#ifdef _MSC_VER
-#define GRAEHL_va_free_copy(va)
-// C++11/C99 requires va_copy-msvc doesn't have one
-#ifndef va_copy
-#define va_copy(dst, src) ((dst) = (src))
-#endif
-#else
 // gcc/clang have real va_copy if you use -std=c++0x or later
 #define GRAEHL_va_free_copy(va) va_end(va)
-#endif
-
-// in unix we already have a C99 compliant ::snprintf
-#if defined(_MSC_VER) && !defined(CRT_NO_DEPRECATE)
-
-#ifndef snprintf
-#define snprintf C99snprintf
-#endif
-
-/**
-   conforms to C99 vsnprintf - you can call w/ buflen less than required, and
-   return is number of chars that would have been written (so buflen should be >
-   than that by at least 1 for '\0'
-*/
-inline int C99vsnprintf(char* buf, std::size_t buflen, char const* format, va_list va) {
-  if (buflen) {
-    va_list tmpva;
-    va_copy(tmpva, va);
-    // unfortunately, windows *snprintf_s return -1 if buffer was too small.
-    int count = _vsnprintf_s(buf, buflen, _TRUNCATE, format, tmpva);
-    GRAEHL_va_free_copy(tmpva);
-    if (count >= 0) return count;
-  }
-  return _vscprintf(format, va);  // counts # of chars that would be written
-}
-
-/**
-   conforms to C99 snprintf - you can call w/ buflen less than required, and
-   return is number of chars that would have been written (so buflen should be >
-   than that by at least 1 for '\0'
-*/
-inline int C99snprintf(char* buf, std::size_t buflen, char const* format, ...) {
-  va_list va;
-  va_start(va, format);
-  int count = C99vsnprintf(buf, buflen, format, va);
-  va_end(va);
-  return count;
-}
-// end MSVC C99 wrappers
-#else
-// unix:
-using std::snprintf;
-#define C99vsnprintf std::vsnprintf
-#define C99snprintf std::snprintf
-#endif
 
 namespace graehl {
 
@@ -129,6 +59,13 @@ namespace graehl {
    default buflen=52 makes sizeof(Sprintf<>) == 64 (w/ 64-bit ptrs)
    - note that we'll still succeed even if 52 is too small (by heap alloc)
 */
+/*
+
+  That class is detected suspicious by cppcheck:
+  <error id="va_list_usedBeforeStarted" severity="error" msg="va_list &apos;tmpva&apos; used before va_start() was called."
+    verbose="va_list &apos;tmpva&apos; used before va_start() was called." cwe="664">
+  but not used anymore anyway so commented out.
+
 template <unsigned buflen = 52>
 struct SprintfCstr {
   char buf[buflen];
@@ -149,7 +86,7 @@ struct SprintfCstr {
   iterator begin() const { return cstr; }
   iterator end() const { return cstr + size; }
 
-  SprintfCstr() : size(), cstr() {}
+  SprintfCstr() : size(), cstr() {}  // NOLINT
 
   void clear() {
     free();
@@ -162,18 +99,18 @@ struct SprintfCstr {
     init(format, va);
   }
 
-  void set(char const* format, ...) {
+  void set(char const* format, ...) {  // NOLINT
     va_list va;
-    va_start(va, format);
+    va_start(va, format);  // NOLINT
     set(format, va);
     va_end(va);
   }
 
-  SprintfCstr(char const* format, va_list va) { init(format, va); }
+  SprintfCstr(char const* format, va_list va) { init(format, va); }  // NOLINT
 
-  SprintfCstr(char const* format, ...) {
+  SprintfCstr(char const* format, ...) {  // NOLINT
     va_list va;
-    va_start(va, format);
+    va_start(va, format);  // NOLINT
     init(format, va);
     va_end(va);
   }
@@ -186,14 +123,14 @@ struct SprintfCstr {
   void init(char const* format, va_list va) {
     va_list tmpva;
     va_copy(tmpva, va);
-    size = (unsigned)C99vsnprintf(buf, buflen, format, tmpva);
+    size = (unsigned)std::vsnprintf(buf, buflen, format, tmpva);
     GRAEHL_va_free_copy(tmpva);
     assert(size != (unsigned)-1);
     if (size >= buflen) {
       unsigned heapsz = size + 1;
       assert(heapsz);
       cstr = (char*)std::malloc(heapsz);
-      size = C99vsnprintf(cstr, heapsz, format, va);
+      size = std::vsnprintf(cstr, heapsz, format, va);
     } else
       cstr = buf;
     GRAEHL_va_free_copy(tmpva);
@@ -204,7 +141,7 @@ struct SprintfCstr {
     if (size >= buflen) std::free(cstr);
   }
 };
-
+*/
 
 #if GRAEHL_MUTABLE_STRING_DATA
 /**
@@ -219,9 +156,9 @@ struct Sprintf : std::string {
 
   void set(char const* format, va_list va) { reinit(format, va); }
 
-  void set(char const* format, ...) {
+  void set(char const* format, ...) {  // NOLINT
     va_list va;
-    va_start(va, format);
+    va_start(va, format);  // NOLINT
     set(format, va);
     va_end(va);
   }
@@ -238,40 +175,40 @@ struct Sprintf : std::string {
   */
   template <class V1>
   Sprintf(char const* format, V1 const& v1) : std::string(first_buflen, '\0') {
-    unsigned size = (unsigned)C99snprintf(buf(), buflen, format, v1);
+    unsigned size = (unsigned)std::snprintf(buf(), buflen, format, v1);  // NOLINT
     if (size >= first_buflen) {
       unsigned heapsz = size + 1;
       resize(heapsz);
-      size = C99snprintf(buf(), heapsz, format, v1);
+      size = std::snprintf(buf(), heapsz, format, v1);  // NOLINT
     }
     resize(size);
   }
 
   template <class V1, class V2>
   Sprintf(char const* format, V1 const& v1, V2 const& v2) : std::string(first_buflen, '\0') {
-    unsigned size = (unsigned)C99snprintf(buf(), buflen, format, v1, v2);
+    unsigned size = (unsigned)std::snprintf(buf(), buflen, format, v1, v2);  // NOLINT
     if (size >= first_buflen) {
       unsigned heapsz = size + 1;
       resize(heapsz);
-      size = C99snprintf(buf(), heapsz, format, v1, v2);
+      size = std::snprintf(buf(), heapsz, format, v1, v2);  // NOLINT
     }
     resize(size);
   }
 
   template <class V1, class V2, class V3>
   Sprintf(char const* format, V1 const& v1, V2 const& v2, V3 const& v3) : std::string(first_buflen, '\0') {
-    unsigned size = (unsigned)C99snprintf(buf(), buflen, format, v1, v2, v3);
+    unsigned size = (unsigned)std::snprintf(buf(), buflen, format, v1, v2, v3);  // NOLINT
     if (size >= first_buflen) {
       unsigned heapsz = size + 1;
       resize(heapsz);
-      size = C99snprintf(buf(), heapsz, format, v1, v2, v3);
+      size = std::snprintf(buf(), heapsz, format, v1, v2, v3);  // NOLINT
     }
     resize(size);
   }
 
-  Sprintf(char const* format, ...) : std::string(first_buflen, '\0') {
+  Sprintf(char const* format, ...) : std::string(first_buflen, '\0') {  // NOLINT
     va_list va;
-    va_start(va, format);
+    va_start(va, format);  // NOLINT
     init(format, va);
     va_end(va);
   }
@@ -288,14 +225,14 @@ struct Sprintf : std::string {
   void init(char const* format, va_list va) {
     va_list tmpva;
     va_copy(tmpva, va);
-    unsigned size = (unsigned)C99vsnprintf(buf(), buflen, format, tmpva);
+    unsigned size = (unsigned)std::vsnprintf(buf(), buflen, format, tmpva);  // NOLINT
     GRAEHL_va_free_copy(tmpva);
     assert(size != (unsigned)-1);
     if (size >= first_buflen) {
       unsigned heapsz = size + 1;
       assert(heapsz);
       resize(heapsz);
-      size = C99vsnprintf(buf(), heapsz, format, va);
+      size = std::vsnprintf(buf(), heapsz, format, va);
     }
     resize(size);
   }

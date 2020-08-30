@@ -31,6 +31,7 @@
 #endif
 
 #include <graehl/shared/intrusive_refcount.hpp>
+#include <graehl/shared/stable_vector.hpp>
 #include <vector>
 
 /*
@@ -69,28 +70,74 @@ struct nary_tree {
   typedef children_type Cs;
   Cs children;
   nary_tree() {}
-  nary_tree(nary_tree const& o) : children(o.children) {}
-  nary_tree(child_index n) : children(n) {}
-  nary_tree(child_index n, child_type const& child) : children(n, child) {}
+  nary_tree(nary_tree const& o)
+      : children(o.children) {}
+  nary_tree(child_index n)
+      : children(n) {}
+  nary_tree(child_index n, child_type const& child)
+      : children(n, child) {}
 };
 
-// TODO: use pool_traits?
+
+/// call on vector of shared_ptr or intrusive_ptr of nary_tree nodes to avoid stack recursion
+template <class TreePtrs>
+void freeTreePtrs(TreePtrs& agenda) {
+  while (!agenda.empty()) {
+    typename TreePtrs::value_type parent{std::move(agenda.back())};
+    agenda.pop_back();
+    if (parent)
+      for (auto& child : parent->children)
+        agenda.push_back(std::move(child));
+  }
+}
+
+template <class TreePtr>
+void freeTreePtr(TreePtr& tree) {
+  std::vector<TreePtr> agenda;
+  agenda.push_back(std::move(tree));
+  freeTreePtr(agenda);
+}
+
 
 template <class T, class R = atomic_count, class U = alloc_new_delete>
 struct shared_nary_tree : nary_tree<T, boost::intrusive_ptr<T>>, intrusive_refcount<T, R, U> {
   typedef intrusive_refcount<T, R, U> RefCount;
+  typedef boost::intrusive_ptr<T> Ptr;
   friend struct intrusive_refcount<T, R, U>;
-  typedef nary_tree<T, boost::intrusive_ptr<T>> TreeBase;
+  typedef nary_tree<T, Ptr> TreeBase;
   typedef shared_nary_tree self_type;
 
   shared_nary_tree() {}
-  shared_nary_tree(child_index n) : TreeBase(n) {}
-  shared_nary_tree(child_index n, typename TreeBase::child_type const& child) : TreeBase(n, child) {}
+  shared_nary_tree(child_index n)
+      : TreeBase(n) {}
+  shared_nary_tree(child_index n, typename TreeBase::child_type const& child)
+      : TreeBase(n, child) {}
   shared_nary_tree(shared_nary_tree const& o)
-      : TreeBase(o) {}  // note: refcount doesn't get copied - so T needs to deep copy its data
+      : TreeBase(o) {} // note: refcount doesn't get copied - so T needs to deep copy its data
+
+
+  /// call this first to prevent destructor of the root of a 180,000 deep tree
+  /// overflowing even a large linux stack
+  void clearDeep() {
+    std::vector<Ptr> agenda(std::move(this->children));
+    freeTreePtrs(agenda);
+  }
+
+  /// alternative clearDeep impl; not sure which is faster
+  void clearDeepChildren() {
+    typedef typename TreeBase::children_type Children;
+    stable_vector<Children> agenda; // or std::vector
+    agenda.push_back(std::move(this->children));
+    while (!agenda.empty()) {
+      Children children{std::move(agenda.back())};
+      agenda.pop_back(false);
+      for (auto const& child : children)
+        if (child)
+          agenda.push_back(std::move(child->children));
+    }
+  }
 };
 
-
-}
+} // namespace graehl
 
 #endif

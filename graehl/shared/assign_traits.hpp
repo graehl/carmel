@@ -58,7 +58,7 @@ void assign_impl(T& t, T const& from) {
 #if GRAEHL_CPP11
 template <class T>
 void assign_impl(T& t, T&& from) {
-  t = std::move(from);
+  t = std::forward<T>(from);
 }
 #endif
 
@@ -71,8 +71,7 @@ struct assign_traits_exception : std::exception {
   std::string whatstr;
   assign_traits_exception(std::string const& what = "no assign / default construct")
       : whatstr("assign_traits: " + what) {}
-  char const* what() const throw() { return whatstr.c_str(); }
-  ~assign_traits_exception() throw() {}
+  char const* what() const noexcept override { return whatstr.c_str(); }
 };
 
 #define NO_ASSIGN_MEMBER(Self)                                                                              \
@@ -104,7 +103,7 @@ void call_assign(T& t, T const& from) {
 #if GRAEHL_CPP11
 template <class T>
 void call_assign(T& t, T&& from) {
-  assign_impl(t, std::move(from));
+  assign_impl(t, std::forward<T>(from));
 }
 #endif
 
@@ -144,7 +143,7 @@ struct assignable {
 #if GRAEHL_CPP11
   template <class T>
   static inline void call_assign_impl(T& t, T&& from) {
-    call_assign(t, std::move(from));
+    call_assign(t, std::forward<T>(from));
   }
 #else
   template <class T>
@@ -163,7 +162,7 @@ struct assign_traits : assignable {
   static inline void init(T& t) { call_init(t); }
   static inline void assign(T& t, T const& from) { call_assign(t, from); }
 #if GRAEHL_CPP11
-  void call_assign_impl(T& t, T&& from) { call_assign(t, std::move(from)); }
+  void call_assign_impl(T& t, T&& from) { call_assign(t, std::forward<T>(from)); }
 #endif
   static inline void assign_any(T& t, boost::any const& a) { call_assign_any(t, a); }
 };

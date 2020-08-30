@@ -32,7 +32,7 @@ static char const* base64url = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv
 
 /// \return: each [0..63] has a unique non-0 byte. fairly slow.
 inline bool good_base64_code(char const* base64code) {
-  assert(sizeof(char) == 1);
+  assert(sizeof(char) == 1); // NOLINT
   char seen[256];  // TODO: bitvector instead?
   std::memset(seen, 0, 256);
   for (unsigned i = 0; i < 64; ++i) {

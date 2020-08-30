@@ -59,15 +59,14 @@
 namespace graehl {
 
 struct encoding_error : std::exception {
-  char const* what() const throw() {
+  char const* what() const noexcept override {
     return "binary encoding didn't fit in buffer (or string had extra bytes in decoding)";
   }
-  encoding_error() throw() { stacktrace(); }
-  ~encoding_error() throw() {}
+  encoding_error() noexcept { stacktrace(); }
 };
 
 struct decoding_error : encoding_error {
-  char const* what() const throw() {
+  char const* what() const noexcept override {
     return "binary encoding: buffer had insufficient, or unused, bytes in decoding";
   }
 };

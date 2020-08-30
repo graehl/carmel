@@ -24,7 +24,6 @@
 #include <boost/version.hpp>
 #include <graehl/shared/function.hpp>
 #include <graehl/shared/property_factory.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <utility>
 #include <vector>
 
@@ -207,7 +206,7 @@ IndexedCopier<P1, P2> make_indexed_copier(P1 a, P2 b) {
 
 namespace boost {
 template <class Imp>
-struct property_traits<GRAEHL_SHARED_PTR_NS::reference_wrapper<Imp>> {
+struct property_traits<std::reference_wrapper<Imp>> {
   typedef typename Imp::category category;
   typedef typename Imp::key_type key_type;
   typedef typename Imp::value_type value_type;

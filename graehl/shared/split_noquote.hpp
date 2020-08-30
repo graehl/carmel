@@ -57,7 +57,7 @@ inline std::size_t split_noquote(
     ++n;
     pos = nextpos + delim_len;
   }
-  if (csv.length() != 0) {
+  if (csv.empty()) {
     if (must_complete && n + 1 != N)
       throw_parse_error(csv, "Expected exactly " + to_string(N) + " " + delim + " separated fields", pos);
     if (!f(string(csv, pos, csv.length() - pos))) return n;

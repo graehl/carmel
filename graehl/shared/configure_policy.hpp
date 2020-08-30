@@ -52,18 +52,18 @@ struct tree_configure_policy : configure_policy_base {
     backend.do_tree_action(action, pval, conf);
   }
   template <class Val, class Expr>
-  static void configure(shared_ptr<Val>* pval, Expr& expr) {
+  static void configure(std::shared_ptr<Val>* pval, Expr& expr) {
     auto& p = *pval;
     p->configure(expr);
   }
   template <class Backend, class Action, class Val>
-  static bool init_tree(Backend const& backend, Action const& action, shared_ptr<Val>* pval,
+  static bool init_tree(Backend const& backend, Action const& action, std::shared_ptr<Val>* pval,
                         conf_expr_base const& conf) {
     auto& p = *pval;
     return backend.do_init_tree(action, p.get(), conf);
   }
   template <class Backend, class Action, class Val>
-  static void action(Backend const& backend, Action const& action, shared_ptr<Val>* pval,
+  static void action(Backend const& backend, Action const& action, std::shared_ptr<Val>* pval,
                      conf_expr_base const& conf) {
     auto& p = *pval;
     backend.do_tree_action(action, p.get(), conf);
@@ -105,20 +105,20 @@ struct map_configure_policy : configure_policy_base {
   }
 
   template <class Backend, class Action, class Val>
-  static bool init_tree(Backend const& backend, Action const& action, shared_ptr<Val>* pval,
+  static bool init_tree(Backend const& backend, Action const& action, std::shared_ptr<Val>* pval,
                         conf_expr_base const& conf) {
     auto& p = *pval;
-    if (!p) p = make_shared<Val>();
+    if (!p) p = std::make_shared<Val>();
     backend.do_print_action_open(action, p.get(), conf);
     return true;
   }
   template <class Val, class Expr>
-  static void configure(shared_ptr<Val>* pval, Expr& expr) {}
+  static void configure(std::shared_ptr<Val>* pval, Expr& expr) {}
   template <class Backend, class Action, class Val>
-  static void action(Backend const& backend, Action const& action, shared_ptr<Val>* pval,
+  static void action(Backend const& backend, Action const& action, std::shared_ptr<Val>* pval,
                      conf_expr_base const& conf) {
     auto& p = *pval;
-    if (!p) p = make_shared<Val>();
+    if (!p) p = std::make_shared<Val>();
     backend.do_map_action(action, p.get(), conf);
     backend.do_print_map_sequence_action_close(action, p.get(), conf);
   }

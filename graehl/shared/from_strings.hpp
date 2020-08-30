@@ -130,15 +130,15 @@ struct ptr_from_strings : store_from_strings {
   void ensure_ptr() {
     if (!p) p = Ptr(new value_type());
   }
-  void from_strings(std::vector<std::string> const& s) {
+  void from_strings(std::vector<std::string> const& s) override {
     ensure_ptr();
     select_from_strings<value_type>::from_strings(s, *p);
   }
-  std::string to_string(std::string const& pre_each = "", std::string const& sep_each = " ") const {
+  std::string to_string(std::string const& pre_each = "", std::string const& sep_each = " ") const override {
     ensure_ptr();
     return select_from_strings<value_type>::to_string(*p, pre_each, sep_each);
   }
-  bool container() const { return select_from_strings<value_type>::container; }
+  bool container() const override { return select_from_strings<value_type>::container; }
 };
 
 

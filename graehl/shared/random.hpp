@@ -45,7 +45,6 @@
 
 
 #include <graehl/shared/os.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <boost/optional.hpp>
 #include <algorithm>  // min for boost/random
 #include <cmath>  // also needed for boost/random :( (pow)
@@ -93,7 +92,7 @@ namespace graehl {
 typedef unsigned random_seed_type;  // this is what random_device actually returns.
 
 struct std_rand {
-  unsigned operator()() const { return std::rand(); }
+  unsigned operator()() const { return std::rand(); }  // NOLINT
 };
 
 /**

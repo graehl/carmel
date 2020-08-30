@@ -28,8 +28,6 @@ struct flag {
   bool get() const { return v; }
   operator bool() const { return v; }
   operator bool&() { return v; }
-  bool* operator&() { return &v; }
-  bool const* operator&() const { return &v; }
   bool first() {
     bool r = !v;
     v = true;
@@ -72,8 +70,6 @@ struct counter {
   std::size_t get() const { return (std::size_t)v; }
   operator std::size_t() const { return (std::size_t)v; }
   operator size_type&() { return v; }
-  size_type* operator&() { return &v; }
-  size_type const* operator&() const { return &v; }
   bool first() { return ++v == 1; }
   counter() : v() {}
   counter(std::size_t v) : v(v) {}
@@ -84,7 +80,7 @@ struct counter {
   typedef void leaf_configure;
   friend std::string to_string_impl(counter const& x) { return to_string(x.v); }
   friend void string_to_impl(std::string const& str, counter& x) { string_to(str, x.v); }
-  friend std::string type_string(counter const& x) { return "count"; }  // TODO: ADL
+  friend std::string type_string(counter const&) { return "count"; }  // TODO: ADL
 };
 
 struct default_true {
@@ -93,8 +89,6 @@ struct default_true {
   bool get() const { return v; }
   operator bool() const { return v; }
   operator bool&() { return v; }
-  bool* operator&() { return &v; }
-  bool const* operator&() const { return &v; }
   default_true() : v(true) {}
   default_true(bool v) : v(v) {}
   default_true(default_true const& o) : v(o.v) {}

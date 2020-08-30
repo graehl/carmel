@@ -208,9 +208,13 @@ struct stable_vector {
   bool empty() const { return !size_; }
   I size() const { return size_; }
 
-  void push_back() {
-    if (size_ == capacity_) push_back_chunk();
-    ++size_;
+  T& push_back() {
+    if (size_ == capacity_) {
+      push_back_chunk();
+      ++size_;
+      return chunks_.back()[0];
+    } else
+      return chunks_.back()[size_++ & posmask];
   }
 
 #if GRAEHL_CPP11

@@ -84,7 +84,7 @@ inline size_type parse_size(inputstream& i) {
   if (i.get(c)) return (size_type)scale_mega(c, number);
   if (number - (size_type)number > 100) {
     char buf[100];
-    int len = std::sprintf(buf, "Overflow-size too big to fit: %g", number);
+    int len = std::sprintf(buf, "Overflow-size too big to fit: %g", number);  // NOLINT
     throw std::runtime_error(std::string(buf, len));
   }
   return (size_type)number;
@@ -151,7 +151,7 @@ inline void validate(size_mega<Dec, Sz>&) {}
 
 
 typedef size_mega<false, double> size_bytes;
-typedef size_mega<false, unsigned long long> size_bytes_integral;
+typedef size_mega<false, std::size_t> size_bytes_integral;
 typedef size_mega<false, std::size_t> size_t_bytes;
 typedef size_mega<true, std::size_t> size_t_metric;
 typedef size_mega<true, double> size_metric;

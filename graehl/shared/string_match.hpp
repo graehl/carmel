@@ -217,19 +217,11 @@ inline bool equal_streams_as_seq(Istream& i1, Istream& i2) {
   */
   ParseAs v1, v2;
   for (;;) {
-    bool got1 = (bool)(i1 >> v1);
-    bool got2 = (bool)(i2 >> v2);
-    if (got1) {
-      if (!got2) return false;  // 2 ended first
-    } else {
-      if (!got2) return true;  // both ended together
-      return false;  // 1 ended first
-    }
-    if (!(v1 == v2)) return false;  // value mismatch
+    bool end1 = !(i1 >> v1), end2 = !(i2 >> v2);
+    if (end1) return end2;
+    else if (end2) return false;
+    else if (!(v1 == v2)) return false;  // value mismatch
   }
-  // unreachable!
-  assert(0);
-  return false;
 }
 
 template <class ParseAs, class Ch, class Tr>

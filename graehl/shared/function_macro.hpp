@@ -46,6 +46,7 @@
 #define PREDICATE_OBJ_X_Y(name, expr) FUNCTION_OBJ_X_Y(name, bool, expr)
 
 namespace graehl {
+// cppcheck-suppress syntaxError
 PREDICATE_OBJ_X_Y(less_typeless, x < y);
 PREDICATE_OBJ_X_Y(greater_typeless, x > y);
 PREDICATE_OBJ_X_Y(equal_typeless, x == y);

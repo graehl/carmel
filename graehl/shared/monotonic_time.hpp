@@ -21,7 +21,7 @@
 #pragma once
 
 #include <sys/time.h>
-#include <time.h>
+#include <ctime>
 
 #ifdef __MACH__
 #include <mach/clock.h>

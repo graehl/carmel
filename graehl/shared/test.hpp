@@ -87,7 +87,7 @@ inline bool test_extract(S& s, C& c, bool whine = true) {
     is >> c;
   } catch (std::ios_base::failure& e) {
     if (whine) std::cerr << "Exception: " << e.what() << "\n";
-    return 0;
+    return false;
   }
   return !is.fail();
 }
@@ -102,21 +102,21 @@ inline bool test_extract_insert(S& s, C& c, bool whine = true) {
     if (o.str() != s) {
       std::cerr << "Output after writing and rereading: " << o.str() << '\n'
                 << " ... didn't match original: " << s << '\n';
-      return 0;
+      return false;
     }
   } catch (std::ios_base::failure& e) {
     if (whine)
       std::cerr << "Exception: " << e.what() << "\n";
     else
       throw e;
-    return 0;
+    return false;
   }
 
   if (is.fail()) {
     std::cerr << "Round trip write then read succeeded, but input stream is flagged as failing\n";
-    return 0;
+    return false;
   }
-  return 1;
+  return true;
 }
 
 

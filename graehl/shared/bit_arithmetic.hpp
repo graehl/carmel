@@ -25,7 +25,7 @@
 #include <graehl/shared/type_traits.hpp>
 #include <cassert>
 #include <limits>
-#include <limits.h>
+#include <limits.h> //NOLINT
 
 namespace graehl {
 

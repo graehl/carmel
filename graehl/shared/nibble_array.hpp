@@ -29,7 +29,7 @@
 #endif
 namespace graehl {
 
-template <unsigned nbits2or4 = 2, class unsigned_block_int = unsigned>
+template <unsigned nbits2or4 = 2, class unsigned_block_int = unsigned char>
 struct nibble_array {
   typedef unsigned_block_int Block;
   typedef Block value_type;
@@ -51,17 +51,18 @@ struct nibble_array {
     nibblesz_ = nbits2or4,
     perbyte_ = CHAR_BIT / nbits2or4,
     perblock_ = sizeof(Block) * perbyte_,
+    perblockmask_ = perblock_ - 1,
     lognibblesz_ = nbits2or4 == 2 ? 1 : 2,
   };
   static const Block mask_nibble_ = (Block)(nbits2or4 == 2 ? 3 : 15);
   void zero() { std::memset(blocks_, 0, nbytes_); }
   void fill(value_type v) { std::memset(blocks_, repeated_byte(v), nbytes_); }
-
+  size_type size() const { return sz_; }
   value_type operator[](size_type i) const {
     assert(i < sz_);
     unsigned const shift = blockremainder(i) << lognibblesz_;
     Block const mask = mask_nibble_ << shift;
-    Block const r = (blocks_[block(i)] & mask) >> shift;
+    value_type r = (blocks_[block(i)] & mask) >> shift;
     assert(!(r & ~(Block)mask_nibble_));
     return r;
   }
@@ -117,9 +118,7 @@ struct nibble_array {
     return nibblesz_ == 2 ? (v | (v << 2) | (v << 4) | (v << 6)) : (v | (v << 4));
   }
   static inline size_type block(size_type i) { return i / perblock_; }  // should optimize to bitshift
-  static inline size_type blockremainder(size_type i) {
-    return i % perblock_;
-  }  // should optimize to and mask
+  static inline size_type blockremainder(size_type i) { return i & perblockmask_; }
 };
 }
 

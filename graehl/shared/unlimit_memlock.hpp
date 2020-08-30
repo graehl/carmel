@@ -23,9 +23,9 @@
 
 #include <cstdint>
 #include <stdexcept>
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
 #if defined(_WIN32) || defined(_WIN64)
 #else
 #include <sys/resource.h>

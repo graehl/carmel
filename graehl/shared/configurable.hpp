@@ -24,7 +24,6 @@
 
 #include <graehl/shared/configure.hpp>
 #include <graehl/shared/null_deleter.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 
 namespace configure {
 
@@ -57,23 +56,23 @@ struct configurable {
     example(o, warn, root_path);
   }
   virtual ~configurable() {}
-  typedef shared_ptr<configurable> ptr;
+  typedef std::shared_ptr<configurable> ptr;
 };
 
 template <class Prototype, class Backend>
 struct configure_prototype : configurable {
-  typedef shared_ptr<Prototype> prototype_ptr;
+  typedef std::shared_ptr<Prototype> prototype_ptr;
   prototype_ptr proto;
   configure_backend::ptr backend;
 
   configure_prototype() {}
   configure_prototype(Prototype* proto, Backend const& backend)
-      : proto(proto, null_deleter()), backend(make_shared<Backend>(backend)) {}
+      : proto(proto, null_deleter()), backend(std::make_shared<Backend>(backend)) {}
   // backends are intended to be lightweight-copy value-semantic options so
   // might be stack allocated - thus the make_shared copy construction instead
   // of null_deleter
   configure_prototype(prototype_ptr const& proto, Backend const& backend)
-      : proto(proto), backend(make_shared<Backend>(backend)) {}
+      : proto(proto), backend(std::make_shared<Backend>(backend)) {}
 
   configure_prototype(Prototype* proto, configure_backend::ptr const& backend)
       : proto(proto, null_deleter()), backend(backend) {}
@@ -90,27 +89,27 @@ struct configure_prototype : configurable {
   Prototype* prototype() const { return proto.get(); }
 
 
-  virtual void set_backend(configure_backend::ptr const& p) { backend = p; }
-  virtual configure_backend::ptr get_backend() const { return backend; }
-  virtual void init(string_consumer const& warn, opt_path const& root_path) const {
+  void set_backend(configure_backend::ptr const& p) override { backend = p; }
+  configure_backend::ptr get_backend() const override { return backend; }
+  void init(string_consumer const& warn, opt_path const& root_path) const override {
     configure_action(backend_impl(), init_config(), prototype(), warn, root_path);
   }
-  virtual void store(string_consumer const& warn, opt_path const& root_path) const {
+  void store(string_consumer const& warn, opt_path const& root_path) const override {
     configure_action(backend_impl(), store_config(), prototype(), warn, root_path);
   }
-  virtual void validate(string_consumer const& warn, opt_path const& root_path) const {
+  void validate(string_consumer const& warn, opt_path const& root_path) const override {
     configure_action(backend_impl(), validate_config(), prototype(), warn, root_path);
   }
-  virtual void help(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const {
+  void help(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const override {
     configure_action(backend_impl(), help_config(o), prototype(), warn, root_path);
   }
-  virtual void standard_help(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const {
+  void standard_help(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const override {
     configure::help(o, prototype(), warn, root_path);
   }
-  virtual void effective(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const {
+  void effective(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const override {
     configure_action(backend_impl(), show_effective_config(o), prototype(), warn, root_path);
   }
-  virtual void example(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const {
+  void example(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const override {
     configure_action(backend_impl(), show_example_config(o), prototype(), warn, root_path);
   }
 };
@@ -142,8 +141,8 @@ struct configure_any : configurable {
   }
 
 
-  virtual void set_backend(configure_backend::ptr const& backend) { p->set_backend(backend); }
-  virtual configure_backend::ptr get_backend() const { return p->get_backend(); }
+  void set_backend(configure_backend::ptr const& backend) override { p->set_backend(backend); }
+  configure_backend::ptr get_backend() const override { return p->get_backend(); }
 
   template <class Backend>
   Backend const& backend() {
@@ -162,33 +161,28 @@ struct configure_any : configurable {
     o << help_prefix;
     p->standard_help(o, warn, prefix);
   }
-  virtual void effective(std::ostream& o, string_consumer const& warn) const {
-    p->effective(o, warn, prefix);
+  void example(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const override {
+    p->example(o, warn, prefix);
   }
-  virtual void example(std::ostream& o, string_consumer const& warn) const { p->example(o, warn, prefix); }
-
-  virtual void validate(string_consumer const& warn, opt_path const& root_path) const {
+  void validate(string_consumer const& warn, opt_path const& root_path) const override {
     p->validate(warn, root_path);
   }
-  virtual void init(string_consumer const& warn, opt_path const& root_path) const {
+  void init(string_consumer const& warn, opt_path const& root_path) const override {
     p->init(warn, root_path);
   }
-  virtual void store(string_consumer const& warn, opt_path const& root_path) const {
+  void store(string_consumer const& warn, opt_path const& root_path) const override {
     p->store(warn, root_path);
   }
-  virtual void help(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const {
+  void help(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const override {
     o << help_prefix;
     p->help(o, warn, root_path);
   }
-  virtual void standard_help(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const {
+  void standard_help(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const override {
     o << help_prefix;
     p->standard_help(o, warn, root_path);
   }
-  virtual void effective(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const {
+  void effective(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const override {
     p->effective(o, warn, root_path);
-  }
-  virtual void example(std::ostream& o, string_consumer const& warn, opt_path const& root_path) const {
-    p->example(o, warn, root_path);
   }
 };
 
@@ -202,42 +196,43 @@ struct configure_list : configurable {
   typedef std::vector<configure_any> configurables;
   configurables confs;
 
-  virtual void set_backend(configure_backend::ptr const& backend) {
+  void set_backend(configure_backend::ptr const& backend) override {
     for (configurables::iterator p = confs.begin(), e = confs.end(); p != e; ++p) p->set_backend(backend);
   }
 
-  virtual configure_backend::ptr get_backend() const {
+  configure_backend::ptr get_backend() const override {
     for (configurables::const_iterator p = confs.begin(), e = confs.end(); p != e; ++p)
       return p->get_backend();
     return configure_backend::ptr();
   }
 
-  virtual void init(string_consumer const& warn, opt_path const& root_path = opt_path()) const {
+  void init(string_consumer const& warn, opt_path const& root_path = opt_path()) const override {
     for (configurables::const_iterator p = confs.begin(), e = confs.end(); p != e; ++p)
       p->init(warn, concat(root_path, p->prefix));
   }
-  virtual void store(string_consumer const& warn, opt_path const& root_path = opt_path()) const {
+  void store(string_consumer const& warn, opt_path const& root_path = opt_path()) const override {
     for (configurables::const_iterator p = confs.begin(), e = confs.end(); p != e; ++p)
       p->store(warn, concat(root_path, p->prefix));
   }
-  virtual void validate(string_consumer const& warn, opt_path const& root_path = opt_path()) const {
+  void validate(string_consumer const& warn, opt_path const& root_path = opt_path()) const override {
     for (configurables::const_iterator p = confs.begin(), e = confs.end(); p != e; ++p)
       p->validate(warn, concat(root_path, p->prefix));
   }
-  virtual void help(std::ostream& o, string_consumer const& warn, opt_path const& root_path = opt_path()) const {
+  void help(std::ostream& o, string_consumer const& warn, opt_path const& root_path = opt_path()) const override {
     for (configurables::const_iterator p = confs.begin(), e = confs.end(); p != e; ++p)
       p->help(o, warn, concat(root_path, p->prefix));
   }
-  virtual void standard_help(std::ostream& o, string_consumer const& warn,
-                             opt_path const& root_path = opt_path()) const {
+  void standard_help(std::ostream& o, string_consumer const& warn,
+                     opt_path const& root_path = opt_path()) const override {
     for (configurables::const_iterator p = confs.begin(), e = confs.end(); p != e; ++p)
       p->standard_help(o, warn, concat(root_path, p->prefix));
   }
-  virtual void effective(std::ostream& o, string_consumer const& warn, opt_path const& root_path = opt_path()) const {
+  void effective(std::ostream& o, string_consumer const& warn,
+                 opt_path const& root_path = opt_path()) const override {
     for (configurables::const_iterator p = confs.begin(), e = confs.end(); p != e; ++p)
       p->effective(o, warn, concat(root_path, p->prefix));
   }
-  virtual void example(std::ostream& o, string_consumer const& warn, opt_path const& root_path = opt_path()) const {
+  void example(std::ostream& o, string_consumer const& warn, opt_path const& root_path = opt_path()) const override {
     for (configurables::const_iterator p = confs.begin(), e = confs.end(); p != e; ++p)
       p->example(o, warn, concat(root_path, p->prefix));
   }

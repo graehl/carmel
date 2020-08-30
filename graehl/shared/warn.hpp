@@ -67,7 +67,7 @@ struct ignore {
 };
 
 namespace {
-warn_consumer const cerr_warnings;
+warn_consumer const cerr_warnings;  // NOLINT
 ignore const ignore_warnings;
 string_consumer const default_warn_consumer = cerr_warnings;
 }

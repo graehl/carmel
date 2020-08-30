@@ -13,7 +13,6 @@
 #include <graehl/shared/configure_is.hpp>
 #include <graehl/shared/configure_noop.hpp>
 #include <graehl/shared/configure_traits.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/validate.hpp>
 
 namespace configure {
@@ -56,8 +55,8 @@ struct validate_tree : noop {
     ::adl::adl_validate(*x);
   }
   template <class X>
-  void recurse_configurable(shared_ptr<X>* x) const {
-    shared_ptr<X>& p = *x;
+  void recurse_configurable(std::shared_ptr<X>* x) const {
+    std::shared_ptr<X>& p = *x;
     if (p) recurse_configurable(p.get());
   }
   template <class X>

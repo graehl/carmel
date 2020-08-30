@@ -92,7 +92,7 @@ inline char random_alphanum() {
 
 inline std::string random_alpha_string(unsigned len) {
 #if GRAEHL_CPP11
-  unique_ptr<char[]>
+  std::unique_ptr<char[]>
 #else
   boost::scoped_array<char>
 #endif

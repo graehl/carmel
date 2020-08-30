@@ -59,7 +59,6 @@ DECLARE_DBG_LEVEL(GPROGOPT)
 #include <graehl/shared/from_strings.hpp>
 #include <graehl/shared/noreturn.hpp>
 #include <graehl/shared/prefix_option.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/type_string.hpp>
 #include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/value_str.hpp>
@@ -151,7 +150,8 @@ struct option_options : option_options_base, notify_base<V> {
   }
 
   template <class V2>
-  explicit option_options(option_options<V2> const& o) : option_options_base(o) {  // cannot copy notifier
+  explicit option_options(option_options<V2> const& o) : option_options_base((option_options_base const&)o) {
+    // cannot copy notifier
     optional_to<V2>(o.implicit_value_str, implicit_value_str);
     optional_to<V2>(o.default_value_str, default_value_str);
   }
@@ -333,7 +333,7 @@ boost::program_options::typed_value<T>* defaulted_value(T* v, std::string const&
 
 
 inline void program_options_fatal(std::string const&) NORETURN;
-inline void program_options_fatal(std::string const& msg) ANALYZER_NORETURN {
+inline void program_options_fatal(std::string const& msg) {
   throw std::runtime_error(msg);
 }
 
@@ -400,7 +400,7 @@ struct printable_options_description : boost::program_options::options_descripti
   typedef printable_options_description<Ostream> self_type;
   typedef boost::program_options::options_description options_description;
   typedef boost::program_options::option_description option_description;
-  typedef shared_ptr<self_type> group_type;
+  typedef std::shared_ptr<self_type> group_type;
   typedef std::vector<group_type> groups_type;
   struct printable_option {
     typedef boost::shared_ptr<option_description> OD;
@@ -416,7 +416,7 @@ struct printable_options_description : boost::program_options::options_descripti
 
     std::string const& vmkey() const { return od->key(name()); }
     template <class T>
-    printable_option(T* tag, OD const& od) : print(tag), od(od), in_group(false) {}
+    printable_option(T* tag, OD const& od_) : print(tag), od(od_), in_group(false) {}
     printable_option() : in_group(false) {}
   };
   typedef std::vector<printable_option> options_type;
@@ -473,7 +473,7 @@ struct printable_options_description : boost::program_options::options_descripti
     return option(name, val, description, hidden, defaulted, opt);
   }
 
-  shared_ptr<string_pool> descs;  // because opts lib only takes char *, hold them here.
+  std::shared_ptr<string_pool> descs;  // because opts lib only takes char *, hold them here.
   template <class T, class C>
   self_type& operator()(char const* name, boost::program_options::typed_value<T, C>* val,
                         std::string const& description, bool hidden = false) {

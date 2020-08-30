@@ -59,7 +59,7 @@
 // needed)
 #define GRAEHL_SMALL_VECTOR_POD_ONLY 1
 
-#include <stdlib.h>
+#include <cstdlib>
 
 /**
    if 1, complete valgrind safety at the cost of speed. if 0, code is still
@@ -68,7 +68,7 @@
 */
 
 #ifndef GRAEHL_VALGRIND
-#if NDEBUG
+#ifdef NDEBUG
 #define GRAEHL_VALGRIND 0
 #else
 #define GRAEHL_VALGRIND 1
@@ -227,7 +227,7 @@ struct small_vector {
 #if GRAEHL_CPP11
   /// move
   small_vector(small_vector&& o) noexcept {
-    std::memcpy(this, &o, sizeof(small_vector));
+    std::memcpy(this, &o, sizeof(small_vector)); // NOLINT
     o.clear_nodestroy();
   }
 
@@ -240,7 +240,7 @@ struct small_vector {
   small_vector& operator=(small_vector&& o) noexcept {
     assert(&o != this);
     free();
-    std::memcpy(this, &o, sizeof(small_vector));
+    std::memcpy(this, &o, sizeof(small_vector)); // NOLINT
     o.clear_nodestroy();
     return *this;
   }
@@ -258,7 +258,7 @@ struct small_vector {
   void moveAssign(small_vector& o) {
     assert(&o != this);
     free();
-    std::memcpy(this, &o, sizeof(small_vector));
+    std::memcpy(this, &o, sizeof(small_vector)); // NOLINT
     o.clear_nodestroy();
   }
 
@@ -366,7 +366,7 @@ struct small_vector {
   small_vector(T const* i, size_type N) { init_range(i, N); }
 
   template <class Iter>
-  small_vector(Iter const& i, Iter const& end, typename enable_type<typename Iter::value_type>::type* enable = 0)
+  small_vector(Iter const& i, Iter const& end, typename enable_type<typename Iter::value_type>::type* = 0)
   // couldn't SFINAE on std::iterator_traits<Iter> in gcc (for Iter=int)
   {
     init_range(i, end);
@@ -451,8 +451,13 @@ struct small_vector {
 
   T* end() { return begin() + d_.stack.sz_; }
   T const* end() const { return begin() + d_.stack.sz_; }
-  typedef std::pair<T const*, T const*> slice_type;
-  slice_type slice() const {
+  typedef std::pair<T const*, T const*> const_slice_type;
+  const_slice_type slice() const {
+    return d_.stack.sz_ > kMaxInlineSize ? slice_type(d_.heap.begin_, d_.heap.begin_ + d_.stack.sz_)
+                                         : slice_type(d_.stack.vals_, d_.stack.vals_ + d_.stack.sz_);
+  }
+  typedef std::pair<T*, T*> slice_type;
+  slice_type slice() {
     return d_.stack.sz_ > kMaxInlineSize ? slice_type(d_.heap.begin_, d_.heap.begin_ + d_.stack.sz_)
                                          : slice_type(d_.stack.vals_, d_.stack.vals_ + d_.stack.sz_);
   }
@@ -565,7 +570,7 @@ struct small_vector {
 
   void assign(T const* array, size_type n) { memcpy_n(realloc(n), array, array + n); }
 
-  void assign(T const* i, T const* end, size_type sz) {
+  void assign(T const* i, T const* end) {
     size_type n = (size_type)(end - i);
     memcpy_n(realloc(n), i, n);
   }
@@ -1509,6 +1514,7 @@ void test_small_vector_2() {
   EXPECT_TRUE(vg < v4);
 }
 
+// cppcheck-suppress syntaxError
 BOOST_AUTO_TEST_CASE(test_small_vector_larger_than_2) {
   test_small_vector_1<small_vector<int, 1>>();
   test_small_vector_1<small_vector<int, 3, std::size_t>>();
@@ -1526,8 +1532,9 @@ BOOST_AUTO_TEST_CASE(small_vector_compatible_serialization) {
   test_small_vector_same_serializations<small_vector<int, 3, std::size_t>>();
   test_small_vector_same_serializations<small_vector<int, 5, unsigned short>>();
 }
-}
-}
+
+
+}}
 
 #endif
 // GRAEHL_TEST

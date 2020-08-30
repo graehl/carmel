@@ -23,7 +23,7 @@
 #include <graehl/shared/filter_file_stream.hpp>
 
 #if USE_BOOST_GZSTREAM
-#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/gzip.hpp>  // NOLINT
 // see also zlib.hpp for (.gz header)-less compression
 #endif
 
@@ -34,8 +34,8 @@
 namespace graehl {
 
 #if USE_BOOST_GZSTREAM
-typedef filter_file_stream<boost::iostreams::gzip_decompressor, boost::iostreams::input, std::ifstream> igzstream;
-typedef filter_file_stream<boost::iostreams::gzip_compressor, boost::iostreams::output, std::ofstream> ogzstream;
+typedef filter_file_stream<boost::iostreams::gzip_decompressor, boost::iostreams::input, std::ifstream> igzstream;  // NOLINT
+typedef filter_file_stream<boost::iostreams::gzip_compressor, boost::iostreams::output, std::ofstream> ogzstream;  // NOLINT
 #endif
 #if USE_BOOST_BZ2STREAM
 typedef filter_file_stream<boost::iostreams::bz2_decompressor, boost::iostreams::input, std::ifstream> ibz2stream;

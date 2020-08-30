@@ -169,7 +169,7 @@ GRAEHL_FORCE_INLINE uint32_t fetch_uint32(char const* p) {
   std::memcpy(&x, p, sizeof(x));
   return x;
 #else
-  return *(reinterpret_cast<graehl::uint32_t const*>(p));
+  return *(reinterpret_cast<graehl::uint32_t const*>(p)); // NOLINT
 #endif
 }
 
@@ -179,7 +179,7 @@ GRAEHL_FORCE_INLINE uint64_t fetch_uint64(char const* p) {
   std::memcpy(&x, p, sizeof(x));
   return x;
 #else
-  return *(reinterpret_cast<graehl::uint64_t const*>(p));
+  return *(reinterpret_cast<graehl::uint64_t const*>(p)); // NOLINT
 #endif
 }
 
@@ -212,7 +212,7 @@ inline bool is_power_of_2(Int i) {
 inline uint32_t next_power_of_2(uint32_t x) {
   if (!x) return 1;
 #ifndef HAVE_BUILTIN_CLZ
-  assert(sizeof(x) == sizeof(unsigned));
+  assert(sizeof(x) == sizeof(unsigned)); // NOLINT
   return 1u << (32 - __builtin_clz(x - 1));
 #else
   assert(x <= (1 << 30));
@@ -232,7 +232,7 @@ inline uint32_t next_power_of_2(uint32_t x) {
 inline uint64_t next_power_of_2(uint64_t x) {
   if (!x) return 1;
 #if HAVE_BUILTIN_CLZ
-  assert(sizeof(x) == sizeof(unsigned long));
+  assert(sizeof(x) == sizeof(unsigned long)); // NOLINT
   return (uint64_t)1 << (64 - __builtin_clzl(x - 1));
 #else
   assert(x <= (1ULL << 60));

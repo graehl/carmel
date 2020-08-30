@@ -21,19 +21,36 @@
 #define STRING_BUILDER_GRAEHL_2015_10_29_HPP
 #pragma once
 
-#include <graehl/shared/string_to.hpp>
-//
 #include <graehl/shared/adl_to_string.hpp>
 #include <graehl/shared/base64.hpp>
+#include <graehl/shared/int_types.hpp>
 #include <graehl/shared/itoa.hpp>
 #include <graehl/shared/string_buffer.hpp>
+#include <graehl/shared/string_to.hpp>
 #include <graehl/shared/word_spacer.hpp>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace graehl {
 
+struct nonempty {
+  template <class S>
+  bool operator()(S const& s) const {
+    return !s.empty();
+  }
+};
+
 struct string_builder : string_buffer {
+  template <class Pair>
+  string_builder& appendPair(Pair const& p) {
+    this->insert(string_buffer::end(), p.first, p.second);
+    return *this;
+  }
+  string_builder& operator()(std::pair<std::string::const_iterator, std::string::const_iterator> word) {
+    this->insert(string_buffer::end(), word.first, word.second);
+    return *this;
+  }
   template <class Int>
   string_builder& base64LE_pad(Int x) {
     base64LE_append_pad(*this, x);
@@ -81,7 +98,9 @@ struct string_builder : string_buffer {
   struct unappend {
     string_buffer& builder;
     std::size_t size;
-    unappend(string_buffer& builder) : builder(builder), size(builder.size()) {}
+    unappend(string_buffer& builder)
+        : builder(builder)
+        , size(builder.size()) {}
     ~unappend() {
       assert(builder.size() >= size);
       builder.resize(size);
@@ -101,7 +120,8 @@ struct string_builder : string_buffer {
 
   string_builder() { this->reserve(80); }
   string_builder(unsigned reserveChars) { this->reserve(reserveChars); }
-  explicit string_builder(std::string const& str) : string_buffer(str.begin(), str.end()) {}
+  explicit string_builder(std::string const& str)
+      : string_buffer(str.begin(), str.end()) {}
   string_builder& clear() {
     string_buffer::clear();
     return *this;
@@ -148,8 +168,9 @@ struct string_builder : string_buffer {
     std::size_t sz = this->size();
     this->resize(sz + maxLen);
     // For Windows, snprintf is provided by shared/sprintf.hpp (in global namespace)
-    unsigned written = (unsigned)snprintf(begin() + sz, maxLen, fmt, val);
-    if (written >= maxLen) written = 0;
+    unsigned written = (unsigned)snprintf(begin() + sz, maxLen, fmt, val); // NOLINT
+    if (written >= maxLen)
+      written = 0;
     this->resize(sz + written);
     return *this;
   }
@@ -157,8 +178,9 @@ struct string_builder : string_buffer {
   string_builder& nprintf(unsigned maxLen, char const* fmt, Val val, Val2 val2) {
     std::size_t sz = this->size();
     this->resize(sz + maxLen);
-    unsigned written = (unsigned)snprintf(begin() + sz, maxLen, fmt, val, val2);
-    if (written >= maxLen) written = 0;
+    unsigned written = (unsigned)snprintf(begin() + sz, maxLen, fmt, val, val2); // NOLINT
+    if (written >= maxLen)
+      written = 0;
     this->resize(sz + written);
     return *this;
   }
@@ -171,10 +193,6 @@ struct string_builder : string_buffer {
   enum { kMaxInt32Chars = 12, kMaxInt64Chars = 22 };
 
   string_builder& operator()(unsigned char x) {
-    utos_append((string_buffer&)*this, x);
-    return *this;
-  }
-  string_builder& operator()(unsigned short x) {
     utos_append((string_buffer&)*this, x);
     return *this;
   }
@@ -227,7 +245,8 @@ struct string_builder : string_buffer {
     return *this;
   }
   string_builder& operator()(char const* s) {
-    for (; *s; ++s) this->push_back(*s);
+    for (; *s; ++s)
+      this->push_back(*s);
     return *this;
   }
   string_builder& operator()(char const* s, unsigned len) { return (*this)(s, s + len); }
@@ -248,14 +267,15 @@ struct string_builder : string_buffer {
     return str;
   }
 #include <graehl/shared/warning_push.h>
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
   void operator=(std::string const& s) { static_cast<std::string&>(*this) = s; }
 // TODO: remove pragma
 #if GRAEHL_CPP11
   void operator=(std::string&& s) { static_cast<std::string&>(*this) = std::move(s); }
-  explicit string_builder(char const* str) : string_buffer(str) {}
+  string_builder(char const* c)
+      : string_buffer(c) {}
   /// destructive: move away from current buffer (can't use any more w/o clear)
   void to(std::string& str) { str = std::move((std::string&)*this); }
   std::string const& str() const { return *this; }
@@ -268,7 +288,8 @@ struct string_builder : string_buffer {
     return *this;
   }
 #else
-  explicit string_builder(char const* str) : string_buffer(str, str + std::strlen(str)) {}
+  explicit string_builder(char const* str)
+      : string_buffer(str, str + std::strlen(str)) {}
   void to(std::string& str) {
     str.assign(this->begin(), this->end());
     clear();
@@ -297,13 +318,15 @@ struct string_builder : string_buffer {
     return prefixLen > this->size() ? std::string() : std::string(this->begin() + prefixLen, this->end());
   }
   std::string str(std::size_t len) const {
-    if (this->size() <= len) return *this;
+    if (this->size() <= len)
+      return *this;
     const_iterator b = this->begin();
     return std::string(b, b + len);
   }
   std::string shorten(std::size_t drop_suffix_chars) {
     std::size_t n = this->size();
-    if (drop_suffix_chars > n) return std::string();
+    if (drop_suffix_chars > n)
+      return std::string();
     const_iterator b = this->begin();
     return std::string(b, b + (n - drop_suffix_chars));
   }
@@ -313,24 +336,28 @@ struct string_builder : string_buffer {
      initial 'bool first = true' (or every time if first == false)
   */
   string_builder& space_except_first(bool& first, char space = ' ') {
-    if (!first) operator()(space);
+    if (!first)
+      operator()(space);
     first = false;
     return *this;
   }
 
   template <class Sep>
   string_builder& sep_except_first(bool& first, Sep const& sep) {
-    if (!first) operator()(sep);
+    if (!first)
+      operator()(sep);
     first = false;
     return *this;
   }
 
   string_builder& append_space(std::string const& space) {
-    if (!this->empty()) operator()(space);
+    if (!this->empty())
+      operator()(space);
     return *this;
   }
   string_builder& append_space(char space = ' ') {
-    if (!this->empty()) operator()(space);
+    if (!this->empty())
+      operator()(space);
     return *this;
   }
 
@@ -343,18 +370,21 @@ struct string_builder : string_buffer {
   }
 
   string_builder& word(std::string const& t, std::string const& space) {
-    if (t.empty()) return *this;
+    if (t.empty())
+      return *this;
     return append_space(space)(t);
   }
   string_builder& word(std::string const& t, char space = ' ') {
-    if (t.empty()) return *this;
+    if (t.empty())
+      return *this;
     return append_space(space)(t);
   }
 
   string_builder& escape_char(char c) {
     char const quote = '"';
     char const backslash = '\\';
-    if (c == quote || c == backslash) this->push_back(backslash);
+    if (c == quote || c == backslash)
+      this->push_back(backslash);
     return (*this)(c);
   }
 
@@ -362,7 +392,8 @@ struct string_builder : string_buffer {
   string_builder& quoted(CharIter i, CharIter const& end) {
     char const quote = '"';
     this->push_back(quote);
-    for (; i != end; ++i) escape_char(*i);
+    for (; i != end; ++i)
+      escape_char(*i);
     this->push_back(quote);
     return *this;
   }
@@ -420,14 +451,31 @@ struct string_builder : string_buffer {
       sep_except_first(first, sep)(*i);
     return *this;
   }
+  template <class Seq, class If, class Sep>
+  string_builder& join_if(Seq const& seq, If p, Sep const& sep) {
+    bool first = true;
+    for (auto const& s : seq)
+      if (p(s))
+        sep_except_first(first, sep)(s);
+    return *this;
+  }
   template <class Seq, class Sep>
+  string_builder& join_nonempty(Seq const& seq, Sep const& sep) {
+    return join_if(seq, nonempty(), sep);
+  }
+  template <class Seq>
+  string_builder& join_nonempty(Seq const& seq) {
+    return join_if(seq, nonempty(), ' ');
+  }
+  template <class Seq>
   string_builder& join(Seq const& seq) {
     return join(seq, ' ');
   }
 
   template <class Seq, class After, class Sep>
   string_builder& join_and(Seq const& seq, After const& after, Sep const& sep) {
-    for (typename Seq::const_iterator i = seq.begin(), e = seq.end(); i != e; ++i) (*this) (*i)(sep);
+    for (typename Seq::const_iterator i = seq.begin(), e = seq.end(); i != e; ++i)
+      (*this) (*i)(sep);
     return (*this)(after);
   }
 
@@ -442,9 +490,14 @@ struct string_builder : string_buffer {
   template <class Out>
   void print_skip_first_char(Out& out) const {
     std::size_t sz = string_buffer::size();
-    if (sz) out.write(begin() + 1, --sz);
+    if (sz)
+      out.write(begin() + 1, --sz);
   }
 };
+
+inline string_builder& appending(string_buffer& b) {
+  return *reinterpret_cast<string_builder*>(&b);
+}
 
 template <class Seq, class Sep>
 std::string joined_seq(Seq const& seq, Sep const& sep) {
@@ -470,6 +523,6 @@ inline std::string to_string_brackets(V const& val) {
 }
 
 
-}
+} // namespace graehl
 
 #endif

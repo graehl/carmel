@@ -92,7 +92,7 @@ byteptr encode_leb128(byteptr p, Uint x) {
 }
 
 template <class Uint>
-byteptr encode_leb128(byteptr p, byteptr e, Uint x) {
+byteptr encode_leb128(byteptr p, const_byteptr e, Uint x) {
   if (leb128_max_bytes(x) + p > e) throw leb128error();
   return encode_leb128(p, x);
 }

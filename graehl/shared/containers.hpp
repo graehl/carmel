@@ -25,7 +25,7 @@
 */
 
 #include <boost/config.hpp>
-#include <limits.h>
+#include <climits>
 #ifndef CHAR_BIT
 #define CHAR_BIT 8
 #endif

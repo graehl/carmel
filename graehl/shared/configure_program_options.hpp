@@ -172,7 +172,7 @@ struct program_options_exec : boost::noncopyable {
   }
 };
 
-typedef shared_ptr<program_options_exec> program_options_exec_ptr;
+typedef std::shared_ptr<program_options_exec> program_options_exec_ptr;
 struct program_options_exec_new {
   program_options_exec_ptr p;
   program_options_exec* operator->() const { return p.get(); }

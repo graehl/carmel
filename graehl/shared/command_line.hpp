@@ -130,7 +130,7 @@ struct argc_argv : private std::stringbuf {
     }
     *o++ = 0;
   }
-  argc_argv() : argvptrs() {}
+  argc_argv() = default;
   explicit argc_argv(std::string const& cmdline, char const* progname = "ARGV") { parse(cmdline, progname); }
 };
 

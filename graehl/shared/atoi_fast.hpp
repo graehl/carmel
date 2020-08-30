@@ -30,6 +30,7 @@
 #endif
 
 #include <boost/integer_traits.hpp>
+#include <graehl/shared/int_types.hpp>
 #include <graehl/shared/verbose_exception.hpp>
 #include <algorithm>
 #include <cctype>
@@ -39,9 +40,9 @@
 #include <limits>
 
 #if GRAEHL_HAVE_STRTOUL
-#include <limits.h>  //strtoul
+#include <climits>  //strtoul
 #endif
-#undef min  // damn you, windows
+#undef min  // windows headers (used to?) define these
 #undef max
 #undef DELETE
 
@@ -200,7 +201,7 @@ inline U atou_fast_advance_nooverflow(I& i, I end) {
 }
 
 template <class U, class Str, class I>
-inline U atou_fast_advance_nooverflow(Str const& s, I& i, I end) {
+inline U atou_fast_advance_nooverflow(Str const&, I& i, I end) {
   return atou_fast_advance_nooverflow<U>(i, end);
 }
 
@@ -216,7 +217,7 @@ inline U atou_fast_complete(It begin, It end) {
 }
 
 template <class U, class Str, class I>
-inline U atou_fast_complete(Str const& s, I begin, I end) {
+inline U atou_fast_complete(Str const&, I begin, I end) {
   return atou_fast_complete<U>(begin, end);
 }
 
@@ -227,8 +228,8 @@ inline U atou_fast_complete(Str const& s) {
 
 template <class U>
 inline U atou_fast_complete(char const* s) {
-  return atou_fast_complete<U>(s, s + std::strlen(
-                                          s));  // TODO: could skip strlen call w/ a few more lines of code
+  return atou_fast_complete<U>(
+      s, s + std::strlen(s));  // TODO: could skip strlen call w/ a few more lines of code
 }
 
 template <class I>
@@ -294,17 +295,17 @@ inline unsigned atou_nows(char const* s) {
   return atou_fast<unsigned>(s);
 }
 
-inline long strtol_complete(char const* s, int base = 0) {
+inline int64_t strtol_complete(char const* s, int base = 0) {
   char* e;
   if (*s) {
-    long r = strtol(s, &e, base);
+    int64_t r = strtol(s, &e, base);
     char c = *e;
     if (!c || std::isspace(c))  // simplifying assumption: we're happy if there's other stuff in the string,
       // so long as the number ends in a space or eos. TODO: loop consuming spaces
       // until end?
       return r;
-    THROW_MSG(string_to_exception, "integer from string '" << s << "' => " << r << " had extra chars: '" << e
-                                                           << "'");
+    THROW_MSG(string_to_exception,
+              "integer from string '" << s << "' => " << r << " had extra chars: '" << e << "'");
   }
   // empty string => 0
   return 0;
@@ -312,7 +313,7 @@ inline long strtol_complete(char const* s, int base = 0) {
 
 // returns -INT_MAX or INT_MAX if number is too large/small
 inline int strtoi_complete_bounded(char const* s, int base = 0) {
-  long l = strtol_complete(s, base);
+  int64_t l = strtol_complete(s, base);
   if (l < std::numeric_limits<int>::min()) return std::numeric_limits<int>::min();
   if (l > std::numeric_limits<int>::max()) return std::numeric_limits<int>::max();
   return l;
@@ -326,7 +327,7 @@ inline int strtoi_complete_bounded(char const* s, int base = 0) {
 
 // throw if out of int range
 inline int strtoi_complete_exact(char const* s, int base = 10) {
-  long l = strtol_complete(s, base);
+  int64_t l = strtol_complete(s, base);
   if (l < std::numeric_limits<int>::min() || l > std::numeric_limits<int>::max())
     THROW_MSG(string_to_exception, "Out of range for int " INTRANGE_STR ": '" << s << "'");
   return l;
@@ -334,12 +335,12 @@ inline int strtoi_complete_exact(char const* s, int base = 10) {
 
 // FIXME: preprocessor separation for tokens int<->unsigned, long<->unsigned long, strtol<->strtoul ? massive
 // code duplication
-inline unsigned long strtoul_complete(char const* s, int base = 0) {
-  unsigned long r;
+inline uint64_t strtoul_complete(char const* s, int base = 0) {
+  uint64_t r;
   if (*s) {
 #if GRAEHL_HAVE_STRTOUL
     char* e;
-    r = strtoul(s, &e, base);
+    r = std::strtoul(s, &e, base);
     char c = *e;
     if (!c || std::isspace(c))  // simplifying assumption: we're happy if there's other stuff in the string,
       // so long as the number ends in a space or eos. TODO: loop consuming spaces
@@ -356,7 +357,7 @@ inline unsigned long strtoul_complete(char const* s, int base = 0) {
 }
 
 inline unsigned strtou_complete_bounded(char const* s, int base = 10) {
-  unsigned long l = strtoul_complete(s, base);
+  uint64_t l = strtoul_complete(s, base);
 #include <graehl/shared/warning_compiler.h>
   CLANG_DIAG_OFF(tautological-compare)
   if (l < std::numeric_limits<unsigned>::min()) return std::numeric_limits<unsigned>::min();
@@ -372,7 +373,7 @@ inline unsigned strtou_complete_bounded(char const* s, int base = 10) {
 
 // throw if out of int range
 inline unsigned strtou_complete_exact(char const* s, int base = 10) {
-  unsigned long l = strtoul_complete(s, base);
+  uint64_t l = strtoul_complete(s, base);
   if (l < std::numeric_limits<unsigned>::min() || l > std::numeric_limits<unsigned>::max())
     THROW_MSG(string_to_exception, "Out of range for unsigned " UINTRANGE_STR ": '" << s << "'");
   CLANG_DIAG_ON(tautological-compare)
@@ -555,6 +556,13 @@ Float parse_real(std::string::const_iterator p, std::string::const_iterator end,
   return parse_real<Float>(&*p, &*end, require_complete);
 }
 
+template <class Float>
+Float parse_real(std::string const& str, bool require_complete = true) {
+  char const* d = str.data();
+  return parse_real<Float>(d, d + str.size(), require_complete);
+}
+
+
 inline float parse_float(char const* p, char const* end, bool require_complete = true) {
   return parse_real<float>(p, end, require_complete);
 }
@@ -563,14 +571,22 @@ inline double parse_double(char const* p, char const* end, bool require_complete
   return parse_real<double>(p, end, require_complete);
 }
 
+inline float parse_float(std::string const& str, bool require_complete = true) {
+  return parse_real<float>(str, require_complete);
+}
+
+inline double parse_double(std::string const& str, bool require_complete = true) {
+  return parse_real<double>(str, require_complete);
+}
+
 template <class Float>
 Float parse_real(char const* cstr, bool require_complete = true) {
   CstrCursor str(cstr);
   if (require_complete) {
     Float r = scan_real<Float>(str);
     if (str)
-      THROW_MSG(string_to_exception, "conversion to real number from '"
-                                         << cstr << "' leaves unused characters " << str.p);
+      THROW_MSG(string_to_exception,
+                "conversion to real number from '" << cstr << "' leaves unused characters " << str.p);
     return r;
   } else
     return scan_real<Float>(str);
@@ -585,6 +601,7 @@ inline double parse_double(char const* cstr, bool require_complete = true) {
 }
 
 #ifdef GRAEHL_TEST
+// cppcheck-suppress syntaxError
 BOOST_AUTO_TEST_CASE(test_scan_real) {
   BOOST_CHECK_EQUAL(parse_float("1.25"), 1.25f);
   BOOST_CHECK_THROW(parse_float("1.25a"), string_to_exception);

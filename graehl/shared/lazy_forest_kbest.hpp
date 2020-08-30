@@ -301,6 +301,9 @@ struct permissive_kbest_filter {
   permissive_kbest_filter() {}
   permissive_kbest_filter(init_type const& g) {}
 
+  unsigned size() const { return 0; }
+  bool empty() const { return !size(); }
+
   template <class E>
   bool permit(E const& e) const {
     return true;
@@ -344,19 +347,29 @@ struct projected_duplicate_filter : Projection {
   typedef projected_duplicate_filter<Deriv, Projection, MapSelect> self_type;
   enum { trivial = 0 };
   projected_duplicate_filter(projected_duplicate_filter const& o) : Projection(o), maxreps(o.maxreps) {}
-  projected_duplicate_filter(unsigned maxreps = 0, Projection const& projection = Projection())
+  projected_duplicate_filter(unsigned maxreps, Projection const& projection)
       : Projection(projection), maxreps(maxreps) {}
+  projected_duplicate_filter(projected_duplicate_filter&& o) noexcept
+      : Projection(static_cast<Projection&&>(o)), maxreps(o.maxreps), projecteds(std::move(o.projecteds)) {}
+  projected_duplicate_filter& operator=(projected_duplicate_filter&& o) noexcept {
+    static_cast<Projection&>(*this) = static_cast<Projection&&>(o);
+    maxreps = o.maxreps;
+    projecteds = std::move(o.projecteds);
+    return *this;
+  }
   unsigned maxreps;
   typedef Deriv derivation_type;
   typedef typename Projection::result_type projected_type;
   typedef typename MapSelect::template map<projected_type, unsigned>::type projecteds_type;
   projecteds_type projecteds;
+  unsigned size() const { return projecteds.size(); }
+  bool empty() const { return !size(); }
   bool permit(derivation_type const& d) {
     if (!maxreps) return true;
     projected_type const& projected = Projection::operator()(d);
     unsigned n = ++projecteds[projected];
     EIFDBG(LAZYF, 3, std::ostringstream projstr; print_projection(projstr, d);
-           SHOWM3(LAZYF, "dup-filter permit?", projstr.str(), n, maxreps));
+           SHOWM3(LAZYF, "@" << std::hex << this << " dup-filter permit?", projstr.str(), n, maxreps));
     return n <= maxreps;
   }
   template <class O>
@@ -425,29 +438,14 @@ void adl_print(A& a, B const& b, C const& c, D const& d) {
 // i've left this copyable even though you should for efficiency's sake only copy empty things, e.g. if you
 // want to compile a vector of them that's fine
 template <class DerivationFactory, class FilterFactory = permissive_kbest_filter_factory>
-struct lazy_forest : public FilterFactory::filter_type  // empty base class opt. - may have state e.g. hash of
-// seen strings or trees
+struct lazy_forest : FilterFactory::filter_type  // empty base class opt (see projected_duplicate_filter)
 {
-#if GRAEHL_CPP11
-  /// move
-  lazy_forest(lazy_forest&& o) noexcept : pq(std::move(o.pq)), memo(std::move(o.memo)) { assert(&o != this); }
-
-  /// move
-  lazy_forest& operator=(lazy_forest&& o) noexcept {
-    assert(&o != this);
-    pq = std::move(o.pq);
-    memo = std::move(o.memo);
-    return *this;
-  }
-#endif
-
   typedef DerivationFactory derivation_factory_type;
   typedef FilterFactory filter_factory_type;
+  typedef typename filter_factory_type::filter_type filter_type;
+
   /**
-     formerly global; now thread safe by passing Environment & around. this is
-     the minimal refactor that achieves the goal; an alternative would be to put
-     more of the code inside this struct (which manages individual lazy_forest
-     objects) and make it the primary interface
+     formerly static (global) lazy_forest members; now thread safe by passing Environment& around
   */
   struct Environment {
     derivation_factory_type derivation_factory;
@@ -456,14 +454,30 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
     void set_derivation_factory(derivation_factory_type const& df) { derivation_factory = df; }
     void set_filter_factory(filter_factory_type const& f) { filter_factory = f; }
     bool throw_on_cycle;
-    Environment() : throw_on_cycle(true) {}
+    Environment(filter_factory_type const& ff) : filter_factory(ff), throw_on_cycle(true) {
+      assert(typename filter_factory_type::filter_type(filter_factory.filter_init()).empty());
+    }
   };
 
-  typedef typename filter_factory_type::filter_type filter_type;
+  explicit lazy_forest(Environment const& env) : filter_type(env.filter_factory.filter_init()) {
+    assert(empty());
+    assert(static_cast<filter_type*>(this)->empty());
+  }
+  lazy_forest(lazy_forest&& o) noexcept
+      : filter_type(static_cast<filter_type&&>(o)), pq(std::move(o.pq)), memo(std::move(o.memo)) {
+    assert(0);
+  }
+  lazy_forest& operator=(lazy_forest&& o) noexcept {
+    assert(0);
+    assert(&o != this);
+    pq = std::move(o.pq);
+    memo = std::move(o.memo);
+    static_cast<filter_type&>(*this) = static_cast<filter_type&&>(o);
+    return *this;
+  }
+
   typedef lazy_forest<derivation_factory_type, filter_factory_type> forest;
   typedef forest self_type;
-
-  explicit lazy_forest(Environment const& env) : filter_type(env.filter_factory.filter_init()) {}
 
   typedef typename derivation_factory_type::derivation_type derivation_type;
 
@@ -516,6 +530,7 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
     derivation_type derivation;
 
     bool self_loop(forest const* self) const {
+      assert(self);
       if (!child[1]) return false;
       return child[0] == self;
     }
@@ -558,43 +573,45 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
       if (o.derivation != derivation) return false;
       return true;
     }
+    bool operator!=(hyperedge const& o) const { return !(*this == o); }
   };
 
   static inline derivation_type get_child_best(forest const& f) {
     return f.pq.empty() ? NONE() : f.pq[0].derivation;
   }
 
-  void fix_hyperedge(Environment& env, hyperedge& edge, bool dfs = true) {
+  /** in case your add_first_sorted isn't right somehow with 0-cost epsilons? */
+  bool fix_hyperedge(Environment& env, hyperedge& edge, bool dfs = true) {
     forest* c0 = edge.child[0];
     if (c0) {
       if (dfs) c0->fix_edges(env, true);
       forest* c1 = edge.child[1];
       derivation_type const& d0 = get_child_best(*c0);
-      if (d0 == NONE()) return;
+      if (d0 == NONE()) return false;
       if (c1) {
         if (dfs) c1->fix_edges(env, true);
         derivation_type const& d1 = get_child_best(*c1);
-        if (d1 != NONE()) {
-          env.derivation_factory.fix_edge(edge.derivation, d0, get_child_best(*c1));
-          return;
-        }
+        if (d1 != NONE()) return env.derivation_factory.fix_edge(edge.derivation, d0, get_child_best(*c1));
       }
-      env.derivation_factory.fix_edge(edge.derivation, d0);
+      return env.derivation_factory.fix_edge(edge.derivation, d0);
     }
+    return false;
   }
 
   /// only needed if you call sort() and the result may be memo[0] != what you
   /// used for best subderivations for that node
-  void fix_edges(Environment& env, bool dfs = true)
-  {
-    if (empty()) return;
+  std::size_t fix_edges(Environment& env, bool dfs = true) {
+    if (empty()) return 0;
     assert(!memo.empty() && !pq.empty());
     hyperedge const& best = top();
-    if (!env.derivation_factory.needs_fixing(best.derivation)) return;
+    if (!env.derivation_factory.needs_fixing(best.derivation)) return false;
     // needs_fixing can mark corrected states so calling fix_edge(true) on every state isn't quadratic.
     assert(pq[0].derivation == memo[0]);
-    for (typename pq_t::iterator i = pq.begin(), e = pq.end(); i != e; ++i) fix_hyperedge(env, *i, dfs);
+    std::size_t fixed = 0;
+    for (typename pq_t::iterator i = pq.begin(), e = pq.end(); i != e; ++i)
+      fixed += fix_hyperedge(env, *i, dfs);
     memo[0] = best.derivation;
+    return fixed;
   }
 
   template <class O>
@@ -617,11 +634,11 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
     }
     if (s > (nqueue ? 0u : 0u)) {
       o << "\n first={{{";
-      adl_print(o, first_best(), filter());  // o<< first_best();
+      o << first_best();
       o << "}}}";
       if (s > 2) {
         o << "\n last={{{";
-        adl_print(o, last_best(), filter());  // o<< last_best();
+        o << last_best();
         o << "}}}";
       }
       // o << " pq=" << pq;
@@ -698,7 +715,7 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
     assertlvl(11, memo.size() > 1);
     return *(memo.end() - 2);
   }
-  bool empty() const { return !memo.size() || memo.front() == NONE() || memo.front() == PENDING(); }
+  bool empty() const { return memo.empty() || memo.front() == NONE() || memo.front() == PENDING(); }
   std::size_t pq_size() const { return pq.size(); }
   lazy_kbest_index_type memo_size() const {
     lazy_kbest_index_type r = (lazy_kbest_index_type)memo.size();
@@ -726,17 +743,15 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
     EIFDBG(LAZYF, 1, KBESTINFOT("GENERATE SUCCESSORS FOR " << this << '[' << memo.size() << "] = " << pending));
     pop();  // since we made a copy already into pending...
 
-    derivation_type old_parent
-        = pending
-              .derivation;  // remember this because we'll be destructively updating pending.derivation below
+    derivation_type old_parent = pending.derivation;
+    // remember this because we'll be destructively updating pending.derivation below:
     //    assertlvl(19, memo.size()>=2 && memo.back() == PENDING()); // used to be true when not removing
     //    duplicates: && old_parent==memo[memo.size()-2]
     if (pending.child[0]) {  // increment first
       generate_successor_hyperedge(env, pending, old_parent, 0);
-      if (pending.child[1]
-          && pending.childbp[0] == 0) {  // increment second only if first is initial - one path to any (a, b)
+      if (pending.child[1] && pending.childbp[0] == 0)
+        // increment second only if first is initial - one path to any (a, b)
         generate_successor_hyperedge(env, pending, old_parent, 1);
-      }
     }
     if (pq.empty())
       return NONE();
@@ -763,6 +778,24 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
     EIFDBG(LAZYF, 3, KBESTINFOT("add_first_sorted lazy-node=" << this << ": " << *this));
   }
 
+  /// call *once* with rest = plain add. then sort_except_front after
+  void add_front(Environment& env, derivation_type r, forest* left = NULL, forest* right = NULL) {
+    set_first_best(env, r);
+    if (pq.empty())
+      pq.emplace_back(r, left, right);
+    else {
+      pq.emplace_back(std::move(pq.front()));
+      pq.front() = hyperedge(r, left, right);
+    }
+  }
+
+  void add_maybe_front(Environment& env, bool front, derivation_type r, forest* left = NULL, forest* right = NULL) {
+    if (front)
+      add_front(env, r, left, right);
+    else
+      add(r, left, right);
+  }
+
   /// must be added from best to worst order ( r1 > r2 > r3 > ... )
   void add_sorted(Environment& env, derivation_type r, forest* left = NULL, forest* right = NULL) {
 #ifndef NDEBUG
@@ -783,9 +816,9 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
 
   /// may add in any order, but must call sort() before any get_best()
   void add(derivation_type r, forest* left = NULL, forest* right = NULL) {
-    EIFDBG(LAZYF, 2, KBESTINFOT("add lazy-node=" << this << " derivation=" << r << " left=" << left
-                                                 << " right=" << right));
-    pq.push_back(hyperedge(r, left, right));
+    EIFDBG(LAZYF, 2,
+           KBESTINFOT("add lazy-node=" << this << " derivation=" << r << " left=" << left << " right=" << right));
+    pq.emplace_back(r, left, right);
     EIFDBG(LAZYF, 3, KBESTINFOT("done (heap) " << r));
   }
 
@@ -793,6 +826,35 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
     std::make_heap(pq.begin(), pq.end());
     finish_adding(env, check_best_is_selfloop);
     EIFDBG(LAZYF, 3, KBESTINFOT("sorted lazy-node=" << this << ": " << *this));
+  }
+
+  void sort_except_front(Environment& env, bool check_best_is_selfloop = false) {
+    auto b = pq.begin(), e = pq.end();
+    if (b == e) {
+      assert(memo.empty());
+      memo.clear();
+      memo.push_back(NONE());
+    } else {
+      assert(memo.empty() || (memo.size() == 1 && memo.front() == b->derivation));
+      hyperedge const front = *b;
+      std::make_heap(b, e);
+      if (memo.empty())
+        memo.push_back(b->derivation);
+      else if (*b != front) {
+        auto i = b;
+        // TODO (if you want a headache): heap property means front must be in
+        // b[1] or b[2], except for ties. alternatively, build heap without
+        // front (move to end), then heap_add
+        while (*++i != front) assert(i != e);
+        assert(*i == front);
+        assert(!call_derivation_better_than(*i, *b) && !call_derivation_better_than(*b, *i));
+        // unless you add_front a wrong 'best' derivation, the cost of heap top can only be exactly equal
+        std::swap(*i, *b);
+      }
+      assert(*b == front);
+      assert(front.derivation == memo.front());
+      if (check_best_is_selfloop && best_is_selfloop()) throw lazy_derivation_cycle();
+    }
   }
 
   bool best_is_selfloop() const { return top().self_loop(this); }
@@ -814,7 +876,7 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
   /// if you added unsorted, don't call this - call sort() instead
   void finish_adding(Environment& env, bool check_best_is_selfloop = false) {
     if (pq.empty())
-      set_first_best(env, NONE());
+      memo.push_back(NONE());
     else if (check_best_is_selfloop && !postpone_selfloop())
       throw lazy_derivation_cycle();
     else
@@ -848,8 +910,9 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
 
     derivation_type new_child = (child_node.get_best(env, ++child_i));
     if (new_child != NONE()) {  // has child-succesor
-      EIFDBG(LAZYF, 6, KBESTINFOT("HAVE CHILD SUCCESSOR for i=" << i << ": [" << pending.childbp[0] << ','
-                                                                << pending.childbp[1] << "]");
+      EIFDBG(LAZYF, 6,
+             KBESTINFOT("HAVE CHILD SUCCESSOR for i=" << i << ": [" << pending.childbp[0] << ','
+                                                      << pending.childbp[1] << "]");
              SHOWM7(LAZYF, "generator_successor-child-i", i, pending.childbp[0], pending.childbp[1],
                     old_parent, old_child, new_child, child_node));
       pending.derivation = env.derivation_factory.make_worse(old_parent, old_child, new_child, i);
@@ -876,7 +939,10 @@ struct lazy_forest : public FilterFactory::filter_type  // empty base class opt.
     // will nevertheless still be in the vector v, unless it is explicitly removed.
     pq.pop_back();
   }
-  hyperedge const& top() const { return pq.front(); }
+  hyperedge const& top() const {
+    assert(!pq.empty());
+    return pq.front();
+  }
 };
 
 }  // ns

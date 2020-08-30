@@ -57,6 +57,7 @@
 #include <graehl/shared/append.hpp>
 #include <graehl/shared/cpp11.hpp>
 #include <graehl/shared/type_traits.hpp>
+#include <graehl/shared/int_types.hpp>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -93,7 +94,6 @@ DECLARE_DBG_LEVEL(GRSTRINGTO)
 #include <graehl/shared/is_container.hpp>
 #include <graehl/shared/itoa.hpp>
 #include <graehl/shared/nan.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/snprintf.hpp>
 #include <graehl/shared/word_spacer.hpp>
 #include <limits>
@@ -177,10 +177,10 @@ inline void string_to_impl(char const* s, int& x) {
 }
 #endif
 
-inline void string_to_impl(std::string const& s, long& x) {
+inline void string_to_impl(std::string const& s, int64_t& x) {
   x = strtol_complete(s.c_str());
 }
-inline void string_to_impl(char const* s, long& x) {
+inline void string_to_impl(char const* s, int64_t& x) {
   x = strtol_complete(s);
 }
 
@@ -279,10 +279,10 @@ inline std::string to_string_impl(char const* s) {
 }
 
 #if GRAEHL_HAVE_LONGER_LONG
-inline void string_to_impl(std::string const& s, unsigned long& x) {
+inline void string_to_impl(std::string const& s, uint64_t& x) {
   x = strtoul_complete(s.c_str());
 }
-inline void string_to_impl(char const* s, unsigned long& x) {
+inline void string_to_impl(char const* s, uint64_t& x) {
   x = strtoul_complete(s);
 }
 #endif
@@ -311,7 +311,7 @@ PrintfBytes bytes_double_default = 32;
 */
 inline std::string to_string_roundtrip(float x) {
   char buf[bytes_double_for_float_roundtrip];
-  return std::string(buf, buf + std::sprintf(buf, fmt_double_for_float_roundtrip, (double)x));
+  return std::string(buf, buf + std::sprintf(buf, fmt_double_for_float_roundtrip, (double)x));  // NOLINT
 }
 
 inline std::string to_string_impl(float x) {
@@ -319,13 +319,13 @@ inline std::string to_string_impl(float x) {
   return ftos(x);
 #else
   char buf[bytes_double_for_float_default];
-  return std::string(buf, buf + std::sprintf(buf, fmt_double_for_float_default, (double)x));
+  return std::string(buf, buf + std::sprintf(buf, fmt_double_for_float_default, (double)x));  // NOLINT
 #endif
 }
 
 inline std::string to_string_roundtrip(double x) {
   char buf[bytes_double_roundtrip];
-  return std::string(buf, buf + std::sprintf(buf, fmt_double_roundtrip, x));
+  return std::string(buf, buf + std::sprintf(buf, fmt_double_roundtrip, x));  // NOLINT
 }
 
 inline std::string to_string_impl(double x) {
@@ -333,7 +333,7 @@ inline std::string to_string_impl(double x) {
   return ftos(x);
 #else
   char buf[bytes_double_default];
-  return std::string(buf, buf + std::sprintf(buf, fmt_double_default, x));
+  return std::string(buf, buf + std::sprintf(buf, fmt_double_default, x));  // NOLINT
 #endif
 }
 
@@ -341,13 +341,13 @@ inline void string_to_impl(char const* s, double& x) {
   if (s[0] == 'n' && s[1] == 'o' && s[2] == 'n' && s[3] == 'e' && s[4] == 0)
     x = (double)NAN;
   else
-    x = std::atof(s);
+    x = std::atof(s); // NOLINT
 }
 inline void string_to_impl(char const* s, float& x) {
   if (s[0] == 'n' && s[1] == 'o' && s[2] == 'n' && s[3] == 'e' && s[4] == 0)
     x = (float)NAN;
   else
-    x = (float)std::atof(s);
+    x = (float)std::atof(s); // NOLINT
 }
 inline void string_to_impl(std::string const& s, double& x) {
   string_to_impl(s.c_str(), x);
@@ -357,7 +357,7 @@ inline void string_to_impl(std::string const& s, float& x) {
 }
 
 template <class Str>
-bool try_string_to(Str const& str, Str& to, bool complete = true) {
+bool try_string_to(Str const& str, Str& to, bool /*complete*/ = true) {
   str = to;
   return true;
 }
@@ -385,7 +385,7 @@ void string_to_impl(From const& from, To& to) {
   to = lexical_cast<To>(from);
 #else
   if (!try_string_to(from, to))
-    throw std::runtime_error(std::string("Couldn't convert (string_to): ") + from);
+    throw std::runtime_error(std::string("Couldn't convert (string_to): ") + from); // NOLINT
 #endif
 }
 
@@ -411,11 +411,11 @@ boost::optional<Val>& string_to_optional(std::string const& str, boost::optional
 }
 
 template <class Val>
-shared_ptr<Val>& string_to_shared_ptr(std::string const& str, shared_ptr<Val>& opt) {
+std::shared_ptr<Val>& string_to_shared_ptr(std::string const& str, std::shared_ptr<Val>& opt) {
   if (str == "none")
     opt.reset();
   else
-    opt = make_shared<Val>(string_to<Val>(str));
+    opt = std::make_shared<Val>(string_to<Val>(str));
   return opt;
 }
 

@@ -27,7 +27,6 @@
 
 #include <boost/optional.hpp>
 #include <graehl/shared/int_types.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/string_to.hpp>
 
 namespace graehl {
@@ -51,17 +50,17 @@ GRAEHL_FOR_DISTINCT_FLOAT_TYPES(GRAEHL_EXAMPLE_VALUE_FLOAT)
 
 template <class T>
 std::string example_value() {
-  return example_value(*(T const*)0);
+  return example_value(*(T const*)0); // NOLINT
 }
 
 template <class T>
-std::string example_value(shared_ptr<T> const&) {
-  return example_value(*(T const*)0);
+std::string example_value(std::shared_ptr<T> const&) {
+  return example_value(*(T const*)0); // NOLINT
 }
 
 template <class T>
 std::string example_value(boost::optional<T> const&) {
-  return example_value(*(T const*)0);
+  return example_value(*(T const*)0); // NOLINT
 }
 
 

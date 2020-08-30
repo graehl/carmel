@@ -41,6 +41,7 @@ template <class Val, class Enable = void>
 struct print_maybe_container {
   template <class O>
   void print(O& o, Val const& val, bool bracket = false) {
+    (void)bracket;
     o << val;
   }
 };

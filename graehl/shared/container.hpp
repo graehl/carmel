@@ -91,7 +91,7 @@ inline typename std::map<K, V>::mapped_type* find_second(const std::map<K, V>& h
 }
 
 template <class T>
-inline bool container_equal(T const& v1, T const& v2, typename T::const_iterator* SFINAE = 0) {
+inline bool container_equal(T const& v1, T const& v2, typename T::const_iterator* /*SFINAE*/ = 0) {
   if (v1.size() != v2.size()) return false;
   for (typename T::const_iterator i1 = v1.begin(), i2 = v2.begin(), e1 = v1.end(); i1 != e1; ++i1, ++i2)
     if (!(*i1 == *i2)) return false;
@@ -126,7 +126,7 @@ template <class S>
 void containertest() {
   typedef typename S::template container<unsigned>::type cont;
   cont c;
-  BOOST_CHECK(c.size() == 0);
+  BOOST_CHECK(c.empty());
   c.push_back(10);
   c.push_back(9);
   BOOST_CHECK(c.size() == 2);

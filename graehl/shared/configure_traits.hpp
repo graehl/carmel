@@ -8,7 +8,6 @@
 #pragma once
 
 #include <graehl/shared/leaf_configurable.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/type_traits.hpp>
 #include <map>
 #include <set>
@@ -23,8 +22,6 @@ using graehl::enable_if;
 using graehl::is_fundamental;
 using graehl::is_integral;
 using graehl::is_enum;
-using graehl::shared_ptr;
-using graehl::make_shared;
 using graehl::integral_constant;
 
 template <class Val, class Enable = void>
@@ -50,7 +47,7 @@ struct leaf_configurable : integral_constant<bool, has_leaf_configure<Val>::valu
 template <class T1>
 struct leaf_configurable<boost::optional<T1>, void> : leaf_configurable<T1> {};
 template <class T1>
-struct leaf_configurable<shared_ptr<T1>, void> : leaf_configurable<T1> {};
+struct leaf_configurable<std::shared_ptr<T1>, void> : leaf_configurable<T1> {};
 
 template <class Val, class Enable = void>
 struct scalar_leaf_configurable : leaf_configurable<Val> {};
@@ -76,8 +73,8 @@ struct map_leaf_configurable<std::pair<T1, T2>, void> : true_type {
   enum { is_pair = true };
 };
 template <class T1>
-struct map_leaf_configurable<shared_ptr<T1>, void> : map_leaf_configurable<T1> {
-  static inline void clear(shared_ptr<T1>* m) { m->reset(make_shared<T1>()); }
+struct map_leaf_configurable<std::shared_ptr<T1>, void> : map_leaf_configurable<T1> {
+  static inline void clear(std::shared_ptr<T1>* m) { m->reset(std::make_shared<T1>()); }
 };
 
 template <class Val, class Enable = void>
@@ -130,7 +127,7 @@ struct preorder_recurse<X, typename enable_if<map_leaf_configurable<X>::value>::
     //   for (auto& y : *x) preorder_recurse(&y.second, c);
   }
   template <class C>
-  static void recurse(shared_ptr<X>* x, C const& c) {
+  static void recurse(std::shared_ptr<X>* x, C const& c) {
     auto& p = x;
     if (p) recurse_preorder_map(p.get(), c);
   }
@@ -153,7 +150,7 @@ inline void recurse_preorder_map(M& m, C const& c) {
   for (auto& y : m) recurse_preorder(&y.second, c);
 }
 template <class M, class C>
-inline void recurse_preorder_map(shared_ptr<M>& m, C const& c) {
+inline void recurse_preorder_map(std::shared_ptr<M>& m, C const& c) {
   if (m)
     for (auto& y : *m) recurse_preorder(&y.second, c);
 }

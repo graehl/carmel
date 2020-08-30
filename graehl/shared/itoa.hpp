@@ -84,7 +84,7 @@ char* utoa(char* buf, Int n_) {
 
 // left_pad_0(buf, utoa(buf+bufsz, n)) means that [buf, buf+bufsz) is a left-0 padded seq. of digits. no 0s
 // are added if utoa is already past buf (you must have ensured that this is valid memory, naturally)
-inline void left_pad(char* left, char* buf, char pad = '0') {
+inline void left_pad(char const* left, char* buf, char pad = '0') {
   while (buf > left) *--buf = pad;
   // return buf;
 }

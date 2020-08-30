@@ -23,7 +23,6 @@
 #include <graehl/shared/cpp11.hpp>
 #include <graehl/shared/cpp11.hpp>
 #include <graehl/shared/intrusive_refcount.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <utility>
 
 namespace graehl {

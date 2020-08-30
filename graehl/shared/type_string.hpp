@@ -23,22 +23,21 @@
 
 */
 
-#ifndef TYPE_STRING_2012531_HPP
-#define TYPE_STRING_2012531_HPP
+#ifndef GRAEHL_SHARED__TYPE_STRING_2012531_HPP
+#define GRAEHL_SHARED__TYPE_STRING_2012531_HPP
 #pragma once
 
 
 #include <boost/optional.hpp>
 #include <boost/type_traits/is_integral.hpp>
 #include <graehl/shared/int_types.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/unordered.hpp>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
-
+#include <memory>
 
 namespace graehl {
 template <class T>
@@ -52,7 +51,7 @@ template <class T, class Enable = void>
 struct TypeString {
   static std::string get() {
     using namespace graehl;
-    return type_string_impl(*(T*)0);
+    return type_string_impl(*(T*)0); // NOLINT
   }
 };
 
@@ -91,7 +90,7 @@ GRAEHL_TYPE_STRING_TEMPLATE_1(std::vector, "sequence of ")
 GRAEHL_TYPE_STRING_TEMPLATE_1(std::set, "set of ")
 GRAEHL_TYPE_STRING_TEMPLATE_1(graehl::unordered_set, "set of ")
 GRAEHL_TYPE_STRING_TEMPLATE_1(boost::optional, "optional ")
-GRAEHL_TYPE_STRING_TEMPLATE_1(graehl::shared_ptr, "")
+GRAEHL_TYPE_STRING_TEMPLATE_1(std::shared_ptr, "")
 
 #define GRAEHL_PRIMITIVE_TYPE_STRING(T, name) \
   template <>                                 \
@@ -167,14 +166,15 @@ std::string type_name(T const& t) {
 
 #ifdef GRAEHL_TEST
 #include <graehl/shared/test.hpp>
+
 namespace graehl {
 
 BOOST_AUTO_TEST_CASE(TEST_type_string) {
   using namespace std;
-  typedef map<string, string> SS;
-  typedef map<string, int> SI;
-  typedef map<int, int> II;
-  typedef vector<SI> VSI;
+  typedef std::map<string, string> SS;
+  typedef std::map<string, int> SI;
+  typedef std::map<int, int> II;
+  typedef std::vector<SI> VSI;
   typedef boost::optional<VSI> OptionalVSI;
   typedef shared_ptr<VSI> SharedVSI;
   typedef std::pair<II, SI> P;

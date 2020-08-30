@@ -37,7 +37,6 @@
 #include <boost/smart_ptr/detail/atomic_count.hpp>
 #include <graehl/shared/alloc_new_delete.hpp>
 #include <graehl/shared/cpp11.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/type_traits.hpp>
 #include <cassert>
 #include <utility>
@@ -171,7 +170,7 @@ using boost::intrusive_ptr;
 
 template <class T, class Enable = void>
 struct shared_ptr_maybe_intrusive {
-  typedef shared_ptr<T> type;
+  typedef std::shared_ptr<T> type;
 };
 
 template <class T>
@@ -215,9 +214,9 @@ struct intrusive_deleter {
 
 // typename enable_if<typename intrusive_traits<T>::user_allocator>::type
 template <class T>
-shared_ptr<T> shared_from_intrusive(T* p) {
+std::shared_ptr<T> shared_from_intrusive(T* p) {
   if (p) intrusive_ptr_add_ref(p);
-  return shared_ptr<T>(p, intrusive_deleter<T>());
+  return std::shared_ptr<T>(p, intrusive_deleter<T>());
 }
 
 

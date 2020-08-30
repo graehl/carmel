@@ -53,7 +53,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 #include <graehl/shared/from_strings.hpp>
-#include <graehl/shared/shared_ptr.hpp>
 #include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/verbose_exception.hpp>
 #include <map>

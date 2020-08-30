@@ -27,7 +27,7 @@
 #define NORETURN_JG2012613_HPP
 #pragma once
 
-#if defined(__GNUC__) && __GNUC__ >= 3
+#if defined(__GNUC__) && __GNUC__ >= 3 || defined(__clang__)
 #define NORETURN __attribute__((noreturn))
 #else
 #define NORETURN

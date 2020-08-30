@@ -35,7 +35,6 @@ inline void copy_file(std::string const& source, std::string const& dest, bool s
 
 inline void mkdir_parents(std::string const& dirname) {
   boost::filesystem::create_directories(dirname);
-  return;
 }
 
 inline int system_shell_safe(std::string const& cmd) {

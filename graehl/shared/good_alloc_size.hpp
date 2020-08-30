@@ -20,6 +20,9 @@
 #define GOOD_ALLOC_SIZE_JG_2014_08_30_HPP
 #pragma once
 
+#include <cassert>
+#include <cstddef>
+
 namespace graehl {
 
 template <unsigned divisor>
@@ -44,11 +47,12 @@ inline bool is_pow2(Size x) {
 }
 
 /// return multiple of divisor >= req. divisor must be a power of 2
-template <class Size>
-inline Size round_up_pow2(Size req, Size divisor_pow2) {
+template <class Size, class Size2>
+inline Size round_up_pow2(Size req, Size2 divisor_pow2) {
   assert(is_pow2(divisor_pow2));
-  --divisor_pow2;
-  return (req + divisor_pow2) & ~divisor_pow2;
+  Size p2 = (Size)divisor_pow2;
+  --p2;
+  return (req + p2) & ~p2;
 }
 
 /// must be power of 2

@@ -65,6 +65,7 @@
 #include <graehl/shared/cpp11.hpp>
 #include <graehl/shared/int_types.hpp>
 #include <string>
+#include <cstring>
 #if GRAEHL_CPP11
 #include <utility>
 #else
@@ -110,14 +111,14 @@ GRAEHL_FORCE_INLINE uint64_t farmhash_len_16(uint64_t u, uint64_t v, uint64_t mu
 /// short strings are hashed here.
 GRAEHL_FORCE_INLINE uint64_t farmhash_len_0to16(char const* s, std::size_t len) {
   if (len >= 8) {
-    uint64_t mul = k_bigprime2 + len * 2;  // odd
+    uint64_t mul = k_bigprime2 + len * 2; // odd
     uint64_t a = fetch_uint64(s) + k_bigprime2;
     uint64_t b = fetch_uint64(s + len - 8);
     uint64_t c = bit_rotate_right_64(b, 37) * mul + a;
     uint64_t d = (bit_rotate_right_64(a, 25) + b) * mul;
     return farmhash_len_16(c, d, mul);
   } else if (len >= 4) {
-    uint64_t mul = k_bigprime2 + len * 2;  // odd
+    uint64_t mul = k_bigprime2 + len * 2; // odd
     uint64_t a = fetch_uint32(s);
     return farmhash_len_16(len + (a << 3), fetch_uint32(s + len - 4), mul);
   } else if (len > 0) {
@@ -132,7 +133,7 @@ GRAEHL_FORCE_INLINE uint64_t farmhash_len_0to16(char const* s, std::size_t len) 
 }
 
 GRAEHL_FORCE_INLINE uint64_t farmhash_len_16to32(char const* s, std::size_t len) {
-  uint64_t mul = k_bigprime2 + len * 2;  // odd
+  uint64_t mul = k_bigprime2 + len * 2; // odd
   uint64_t a = fetch_uint64(s) * k_bigprime1;
   uint64_t b = fetch_uint64(s + 8);
   uint64_t c = fetch_uint64(s + len - 8) * mul;
@@ -142,7 +143,7 @@ GRAEHL_FORCE_INLINE uint64_t farmhash_len_16to32(char const* s, std::size_t len)
 }
 
 GRAEHL_FORCE_INLINE uint64_t farmhash_len_32to64(char const* s, std::size_t len) {
-  uint64_t mul = k_bigprime2 + len * 2;  // odd
+  uint64_t mul = k_bigprime2 + len * 2; // odd
   uint64_t a = fetch_uint64(s) * k_bigprime2;
   uint64_t b = fetch_uint64(s + 8);
   uint64_t c = fetch_uint64(s + len - 8) * mul;
@@ -172,7 +173,6 @@ struct Uint128p {
 /// \return a 16-byte hash for 32bit wxyz, plus 16 bytes of seeds ab. Quick and dirty.
 GRAEHL_FORCE_INLINE Uint128p weak_farmhash_len_32_with_seeds(uint64_t w, uint64_t x, uint64_t y, uint64_t z,
                                                              uint64_t a, uint64_t b) {
-  Uint128p result;
   uint64_t c;
   a += w;
   b = bit_rotate_right_64(b + a + z, 21);
@@ -180,9 +180,11 @@ GRAEHL_FORCE_INLINE Uint128p weak_farmhash_len_32_with_seeds(uint64_t w, uint64_
   a += x;
   a += y;
   b += bit_rotate_right_64(a, 44);
-  result.first = a + z;
-  result.second = b + c;
-  return result;
+#if GRAEHL_CPP11
+  return {a + z, b + c};
+#else
+  return Uint128p(a + z, b + c);
+#endif
 }
 
 /// \return a 16-byte hash for s[0] ... s[31], 16 bytes of seeds ab.  Quick and dirty (a and b should be
@@ -195,8 +197,8 @@ GRAEHL_FORCE_INLINE Uint128p weak_farmhash_len_32_with_seeds(char const* s, uint
 #if GRAEHL_FARMHASH_INLINE
 static inline
 #endif
-    uint64_t
-    farmhash_long(char const* s, std::size_t len) {
+  uint64_t
+  farmhash_long(char const* s, std::size_t len) { // NOLINT
   const uint64_t seed = 81;
   uint64_t x = seed, y = seed * k_bigprime1 + 113, z = fast_mixbits(y * k_bigprime2 + 113) * k_bigprime2;
 #if GRAEHL_CPP11
@@ -266,6 +268,8 @@ struct Farmhash {
     return farmhash(s.data(), s.length());
   }
 
+  inline std::size_t operator()(char const* data) const { return farmhash(data, std::strlen(data)); }
+
   /// for tbb::concurrent_hash_map
   template <class StringView>
   static inline std::size_t hash(StringView const& s) {
@@ -275,9 +279,17 @@ struct Farmhash {
   static inline bool equal(StringView1 const& a, StringView2 const& b) {
     return a == b;
   }
+  template <class StringView>
+  static inline bool equal(char const* a, StringView const& v) {
+    return !std::strcmp(a, v.data());
+  }
+  template <class StringView>
+  static inline bool equal(StringView const& v, char const* a) {
+    return !std::strcmp(a, v.data());
+  }
 };
 
 
-}
+} // namespace graehl
 
 #endif

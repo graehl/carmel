@@ -28,20 +28,25 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <stdlib.h>
-// see also shell.hpp for things relying on unix or cygwin shell
+#include <cstdlib>
 
 #if (defined(_WIN32) || defined(__WIN32__) || defined(WIN32)) && !defined(__CYGWIN__)
 #define OS_WINDOWS
-#include <io.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif
+#ifndef VC_EXTRALEAN
+#define VC_EXTRALEAN 1
+#endif
 #include <windows.h>
+#include <io.h>
 #else
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <sys/stat.h>  // NOLINT
+#include <sys/types.h>  // NOLINT
+#include <fcntl.h>  // NOLINT
+#include <signal.h>  // NOLINT
+#include <stdlib.h>  // NOLINT
+#include <unistd.h>  // NOLINT
 #endif
 
 #if !defined(MEMMAP_IO_WINDOWS) && !defined(MEMMAP_IO_POSIX)
@@ -109,6 +114,7 @@ inline char* cstr_copy(std::string const& str) {
 }
 
 #ifdef OS_WINDOWS
+
 const DWORD getenv_maxch
     = 65535;  // //Limit according to http://msdn.microsoft.com/en-us/library/ms683188.aspx
 static char getenv_buf[getenv_maxch];
@@ -128,17 +134,18 @@ inline long get_process_id() {
 }
 }  // ns
 
+#include <string.h>
+
 #else
 
-#include <unistd.h>
+#include <errno.h> // NOLINT
+#include <unistd.h> // NOLINT
 namespace graehl {
 typedef int Error;
-inline long get_process_id() {
+inline std::size_t get_process_id() {
   return getpid();
 }
 }  // ns
-#include <errno.h>
-#include <string.h>
 #endif
 
 namespace graehl {
@@ -168,7 +175,7 @@ inline char* putenv_copy(std::string const& name_equals_val) {
 }
 
 inline int system_safe(std::string const& cmd) {
-  int ret = ::system(cmd.c_str());
+  int ret = ::system(cmd.c_str()); // NOLINT
   if (ret == -1) throw std::runtime_error(cmd);
   return ret >> 8;
 }
@@ -239,7 +246,6 @@ inline bool remove_file(std::string const& filename) {
 struct tmp_fstream {
   std::string filename;
   std::fstream file;
-  bool exists;
   explicit tmp_fstream(char const* c) {
     choose_name();
     open();
@@ -299,9 +305,9 @@ inline std::string safe_tmpnam(std::string const& filename_template = "/tmp/tmp.
                                bool keepfile = false, bool worldReadable = false) {
   const unsigned MY_MAX_PATH = 1024;
   char tmp[MY_MAX_PATH + 1];
-  std::strncpy(tmp, filename_template.c_str(), MY_MAX_PATH-TMPNAM_SUFFIX_LEN);
+  std::strncpy(tmp, filename_template.c_str(), MY_MAX_PATH - TMPNAM_SUFFIX_LEN);
 
-  if (!is_tmpnam_template(filename_template)) std::strcpy(tmp + filename_template.length(), TMPNAM_SUFFIX);
+  if (!is_tmpnam_template(filename_template)) std::strncpy(tmp + filename_template.size(), TMPNAM_SUFFIX, TMPNAM_SUFFIX_LEN + 1);
 
 #ifdef OS_WINDOWS
   int err = ::_mktemp_s(tmp,
@@ -420,7 +426,7 @@ inline pid_t popen3(int* fd, char const** const cmd, bool stderrToFd2 = true) {
     execvp(*cmd, const_cast<char* const*>(cmd));  // doesn't return (normally)
 
     perror("Couldn't execvp command");
-    fprintf(stderr, " \"%s\"\n", *cmd);
+    fprintf(stderr, " \"%s\"\n", *cmd); // NOLINT
     _exit(1);
   }
 fail:

@@ -21,9 +21,9 @@
 #define FILTER_FILE_STREAM_JG_2015_01_06_HPP
 #pragma once
 
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
-#include <boost/iostreams/traits.hpp>
+#include <boost/iostreams/filtering_stream.hpp> // NOLINT
+#include <boost/iostreams/filtering_streambuf.hpp> // NOLINT
+#include <boost/iostreams/traits.hpp> // NOLINT
 #include <fstream>
 #include <stdexcept>
 
@@ -100,7 +100,7 @@ struct filter_file_streambuf : boost::iostreams::filtering_streambuf<Mode> {
     opened(name);
   }
 
-  ~filter_file_streambuf() {
+  ~filter_file_streambuf() override {
     Base::reset();  // flush filter buffer before closing output file
   }
 
@@ -137,7 +137,7 @@ struct filter_file_stream : boost::iostreams::filtering_stream<Mode> {
     opened(name);
   }
 
-  ~filter_file_stream() {
+  ~filter_file_stream() override {
     Base::reset();  // flush filter buffer before closing output file
   }
 

@@ -33,8 +33,7 @@ namespace graehl {
     std::string message;                                                    \
     ExceptionClass(std::string const& m = "error") : message(msgPre + m) {} \
     ExceptionClass(ExceptionClass const& o) : message(o.message) {}         \
-    ~ExceptionClass() throw() {}                                            \
-    char const* what() const throw() { return message.c_str(); }            \
+    char const* what() const noexcept override { return message.c_str(); }            \
   }
 
 #define SIMPLE_EXCEPTION_CLASS(ExceptionClass) SIMPLE_EXCEPTION_PREFIX(ExceptionClass, #ExceptionClass ": ")
@@ -46,8 +45,8 @@ struct verbose_exception : public std::exception {
   std::string message;
 
   verbose_exception() : file(""), function(""), line(), message("unspecified verbose_exception") {}
-  verbose_exception(char const* m) : file(""), function(""), line(), message(m) {}
-  verbose_exception(std::string const& m) : file(""), function(""), line(), message(m) {}
+  explicit verbose_exception(char const* m) : file(""), function(""), line(), message(m) {}
+  explicit verbose_exception(std::string const& m) : file(""), function(""), line(), message(m) {}
   verbose_exception(verbose_exception const& o)
       : file(o.file), function(o.function), line(o.line), message(o.message) {}
 
@@ -100,9 +99,7 @@ struct verbose_exception : public std::exception {
     message = mbuf.str();
   }
 
-  ~verbose_exception() throw() {}
-
-  char const* what() const throw() { return message.c_str(); }
+  char const* what() const noexcept override { return message.c_str(); } // NOLINT
 };
 }
 
@@ -134,7 +131,7 @@ struct verbose_exception : public std::exception {
 #define VTHROW_MSG(msg) VTHROW_A_MSG(graehl::verbose_exception, msg)
 
 #define VERBOSE_EXCEPTION_WRAP(etype)                                                                           \
-  etype(std::string const& msg = "error") : graehl::verbose_exception("(" #etype ") " + msg) {}                 \
+  explicit etype(std::string const& msg = "error") : graehl::verbose_exception("(" #etype ") " + msg) {}                 \
   etype(char const* fun, char const* fil, unsigned lin)                                                         \
       : graehl::verbose_exception(fun, fil, lin, "(" #etype ") ") {}                                            \
   template <class M1>                                                                                           \

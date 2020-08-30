@@ -22,8 +22,6 @@
 #define GRAEHL__SHARED__NULL_DELETER_HPP
 #pragma once
 
-#include <graehl/shared/shared_ptr.hpp>
-
 namespace graehl {
 
 struct null_deleter {
@@ -33,13 +31,13 @@ struct null_deleter {
 };
 
 template <class V>
-shared_ptr<V> no_delete(V& v) {
-  return shared_ptr<V>(&v, null_deleter());
+std::shared_ptr<V> no_delete(V& v) {
+  return std::shared_ptr<V>(&v, null_deleter());
 }
 
 template <class V>
-shared_ptr<V> no_delete(V* v) {
-  return shared_ptr<V>(v, null_deleter());
+std::shared_ptr<V> no_delete(V* v) {
+  return std::shared_ptr<V>(v, null_deleter());
 }
 
 

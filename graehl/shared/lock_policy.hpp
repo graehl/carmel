@@ -39,15 +39,97 @@
 };
 */
 
+#define GRAEHL_SPIN_LOCKING_ATOMIC 1
+#if !GRAEHL_CPP11
+#undef GRAEHL_SPIN_LOCKING_ATOMIC
+#endif
+
+#if defined(_MSC_VER)
+#ifndef VC_EXTRALEAN
+#define VC_EXTRALEAN 1
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX 1
+#endif
+#include <windows.h>
+#include <emmintrin.h> // _mm_pause
+#include <synchapi.h> // Sleep
+#include <timeapi.h> // timeBeginPeriod
+#undef min
+#undef max
+#else
+#include <sched.h> // ssched_yield
+#include <time.h> // nanosleep
+#endif
+
+#if GRAEHL_SPIN_LOCKING_ATOMIC
+#include <atomic>
+#else
 #include <boost/detail/lightweight_mutex.hpp>
 #include <boost/thread/locks.hpp>
+#endif
 #include <graehl/shared/no_locking.hpp>
+#include <cassert>
+#include <limits>
+#if GRAEHL_CPP11
+#include <thread>
+#endif
 
 namespace graehl {
 
-// typedef boost::mutex locking;
-// typedef boost::detail::lightweight_mutex spin_locking; ///WARNING: does not support
-// scoped_lock(spin_locking&,bool)
+#if defined(_MSC_VER)
+inline void sleepms(long milliseconds) {
+  typedef std::numeric_limits<DWORD> Limit;
+  while (milliseconds > Limit::max()) {
+    Sleep(Limit::max());
+    milliseconds -= Limit::max();
+  }
+  Sleep((DWORD)milliseconds);
+}
+inline void sleepns(long nanoseconds) {
+  sleepms(nanoseconds / 1000);
+}
+#else
+inline void sleepns(long nanoseconds) {
+  timespec r = {0, nanoseconds};
+  assert(r.tv_nsec == nanoseconds);
+  assert(r.tv_sec == 0);
+  nanosleep(&r, nullptr);
+}
+inline void sleepms(long milliseconds) {
+  sleepns(milliseconds * 1000);
+}
+#endif
+
+inline void sleep_escalating_3() {
+  sleepms(1);
+}
+
+inline void sleep_escalating_2() {
+#if defined(_MSC_VER)
+#if GRAEHL_CPP11
+  std::this_thread::yield();
+#else
+  sleepms(0);
+#endif
+#else
+  sched_yield(); // on linux, like sleep(0) - go to end of line
+#endif
+}
+
+inline void sleep_escalating_1() {
+#if defined(_MSC_VER)
+  _mm_pause();
+#else
+  __builtin_ia32_pause(); // __asm__ __volatile__( "rep; nop" :: : "memory" );
+#endif
+}
+
+struct init_sleep_escalating {
+#if defined(_MSC_VER)
+  init_sleep_escalating() { timeBeginPeriod(1u); }
+#endif
+};
 
 struct locking {
 #if GRAEHL_CPP11
@@ -62,11 +144,56 @@ struct locking {
 };
 
 struct spin_locking {
+#if GRAEHL_SPIN_LOCKING_ATOMIC
+  class mutex_type {
+    std::atomic<bool> lock_ = {0};
+
+   public:
+    /// \post you hold lock. may sleep forever unless previous holder calls unlock()
+    void lock() noexcept {
+   maybe_unlocked:
+      if (!lock_.exchange(true, std::memory_order_acquire)) return;
+      if (!lock_.load(std::memory_order_relaxed)) goto maybe_unlocked;
+      if (!lock_.load(std::memory_order_relaxed)) goto maybe_unlocked;
+      if (!lock_.load(std::memory_order_relaxed)) goto maybe_unlocked;
+      unsigned k = 0;
+      for (; k < 16; ++k)
+        if (try_lock())
+          return;
+        else
+          sleep_escalating_1();
+      for (; k < 64; ++k)
+        if (try_lock())
+          return;
+        else
+          sleep_escalating_2();
+      for (;;)
+        if (try_lock())
+          return;
+        else
+          sleep_escalating_3();
+    }
+
+    /// \return true iff you hold lock. does not wait.
+    bool try_lock() noexcept {
+      // load before exchange optimize while(!try_lock()) against held lock
+      return !lock_.load(std::memory_order_relaxed) && !lock_.exchange(true, std::memory_order_acquire);
+    }
+
+    /// \pre you hold lock
+    /// \post you don't hold lock
+    void unlock() noexcept { lock_.store(false, std::memory_order_release); }
+    typedef std::lock_guard<mutex_type> scoped_lock;
+  };
+#else
+  ///
   typedef boost::detail::lightweight_mutex mutex_type;
+#endif
   typedef mutex_type::scoped_lock guard_type;
+  typedef mutex_type::scoped_lock unique_lock_type;
 };
 
 
-}
+} // namespace graehl
 
 #endif

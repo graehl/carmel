@@ -23,6 +23,10 @@
     #else
     # define MODULE_IFDBG(x) x
     #endif
+
+    runtime: x_DBG=4 means IFDBG(x, 4) happens but not 5
+
+    (see dbg_level.hpp>
 */
 
 #ifndef GRAEHL_SHARED__IFDBG_HPP

@@ -109,7 +109,7 @@ struct bit_names {
     }
   }
 
-  std::string const& bitname(Int val, std::string const& fallback) const {
+  std::string const& bitname(Int val) const {
     for (typename NameValues::const_iterator i = nv_.begin(), e = nv_.end(); i != e; ++i)
       if (i->second == val) return i->first;
     return to_string(hex_int<Int>(val));

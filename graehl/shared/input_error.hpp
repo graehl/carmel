@@ -66,8 +66,7 @@ inline void output_n(O& o, C const& c, unsigned n) {
 
 template <class Ic, class It, class Oc, class Ot>
 inline std::streamoff show_error_context(std::basic_istream<Ic, It>& in, std::basic_ostream<Oc, Ot>& out,
-                                         unsigned prechars = GRAEHL__ERROR_PRETEXT_CHARS,
-                                         unsigned postchars = GRAEHL__ERROR_CONTEXT_CHARS) {
+                                         unsigned prechars = GRAEHL__ERROR_PRETEXT_CHARS) {
   char c;
   std::streamoff actual_pretext_chars = 0;
   // if (fstrm * fs = dynamic_cast<fstrm *>(&in)) { // try tell/seek always, -1 return if it fails anyway

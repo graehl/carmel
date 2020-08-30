@@ -210,7 +210,7 @@ struct TailsUpHypergraph {
       unsigned ntails_uniq = 0;
       do {
         Adj& a = adj[tail(*i, ed, g)];
-        if (a.size() && last_added(a) == ed) {
+        if (!a.empty() && last_added(a) == ed) {
           // last hyperarc with same tail = same hyperarc
         } else {  // new (unique) tail
           add(a, Tail(ed));  // default multiplicity=1
@@ -313,7 +313,7 @@ struct TailsUpHypergraph {
     EdgeCostMap ec;
 
     typedef built_pmap<vertex_tag, graph, unsigned> Rereach;
-    typedef shared_ptr<Rereach> RereachPtr;
+    typedef std::shared_ptr<Rereach> RereachPtr;
     typedef typename Rereach::property_map_type RereachP;
     RereachPtr rereachptr;
     RereachP rereach;
@@ -566,7 +566,6 @@ struct TailsUpHypergraph {
       }
       stat.n_unpopped = heap.size();
       TUHG_SHOWP_ALL(5, "post-finish");
-      SHOWIF0(TUHG, 1, stat);
     }
     void go() {
       init();

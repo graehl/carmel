@@ -33,4 +33,18 @@
 #define GRAEHL_CPP14_TYPETRAITS 1
 #endif
 
+#if __cplusplus >= 201700L
+// GCC 8.2 has 201709 and clang 7.0 has 201707
+#define GRAEHL_CPP17 1
+#else
+#define GRAEHL_CPP17 0
+#endif
+
+#if __cplusplus >= 202000L
+// GCC 8.2 has 201709 and clang 7.0 has 201707
+#define GRAEHL_CPP20 1
+#else
+#define GRAEHL_CPP20 0
+#endif
+
 #endif

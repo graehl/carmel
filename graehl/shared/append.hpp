@@ -34,6 +34,10 @@ void append(std::string& v, Iter begin, Iter end) {
   v.append(begin, end);
 }
 
+inline void append(std::string& s, char c) {
+  s.push_back(c);
+}
+
 inline void append(std::string& s, std::string const& x) {
   s.append(x);
 }
@@ -41,6 +45,20 @@ inline void append(std::string& s, std::string const& x) {
 template <class C, class Range>
 inline void append(C& c, Range const& range) {
   append(c, range.begin(), range.end());
+}
+
+template <class Str, class Sep>
+Str& space(bool& first, Str& str, Sep const& sep) {
+  if (first)
+    first = false;
+  else
+    append(str, sep);
+  return str;
+}
+
+template <class Str>
+Str& space(bool& first, Str& str) {
+  return space(first, str, ' ');
 }
 
 

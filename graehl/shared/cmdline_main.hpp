@@ -395,7 +395,7 @@ struct main {
       log_stream = &std::cerr;
     else if (!is_default_log(log_file)) {
       // tee to cerr
-      teebufptr.reset(new teebuf(log_stream->rdbuf(), std::cerr.rdbuf()));
+      teebufptr = std::make_unique<teebuf>(log_stream->rdbuf(), std::cerr.rdbuf());
       teestreamptr.reset(log_stream = new std::ostream(teebufptr.get()));
     }
     if (quiet) verbose = 0;
