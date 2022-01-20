@@ -1349,7 +1349,9 @@ sub cp_file_check {
 }
 
 sub cp_file_force {
-    return cp_file_check(@_) or croak "failed to cp_file_check ".join(' ',@_);
+    my $r = cp_file_check(@_);
+    croak("failed to cp_file_check ".join(' ',@_)) unless $r;
+    $r
 }
 
 my $MAXPATH=200; # room for suffixes
@@ -2824,12 +2826,12 @@ sub push_hash_list {
 sub getfield_regexp {
     my ($fieldname)=@_;
     $fieldname = defined $fieldname ? qr/\Q$fieldname\E/ : qr/\S+/;
-    return qr/\b(\Q$fieldname\E)=({{{(.*?)}}}|([^{]\S*))\b/;
+    return qr/\b(\Q$fieldname\E)=(\{\{\{(.*?)}}}|([^{]\S*))\b/;
 }
 
 sub getfield {
   my ($field,$line)=@_;
-  if ($line =~ /\Q$field\E=(?:{{{(.*?)}}}|(\S*))/) {
+  if ($line =~ /\Q$field\E=(?:\{\{\{(.*?)}}}|(\S*))/) {
       return (defined $1) ? $1 : $2;
   } else {
       return undef;
@@ -2838,7 +2840,7 @@ sub getfield {
 
 sub getfields {
     my ($href,$line)=@_;
-    while ($line =~ /\b([\w\-]+)=({{{(.*?)}}}|([^{]\S*))/go) {
+    while ($line =~ /\b([\w\-]+)=(\{\{\{(.*?)}}}|([^{]\S*))/go) {
         my $key=$1;
         $href->{$key}=defined $3 ? $3 : $4;
     }

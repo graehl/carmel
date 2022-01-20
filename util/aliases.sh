@@ -1,7 +1,3 @@
-export LC_ALL=C
-unset LC_ALL
-#export LC_ALL="en_US.UTF-8"
-export LC_CTYPE="en_US.UTF-8"
 UTIL=${UTIL:-$(echo ~/u)}
 . $UTIL/add_paths.sh
 . $UTIL/bashlib.sh
@@ -11,20 +7,25 @@ set -b
 shopt -s checkwinsize
 shopt -s cdspell
 export VISUAL=emacsclient
+export CLANGTIDYSKIP=1
 if [[ $TERM = dumb && ! $INSIDE_EMACS ]] ; then
     export EDITOR=vi
 else
     export EDITOR=emacs
 fi
-s2p() {
-    scp ~/summary/phrases.py c-graehl:summary/
-}
-cols() {
-    paste -d'|' "$@" | column -t
+gjen() {
+    #    ssh graehl ' "$@"'
+    chost=graehl c-with "x/jenkins/jenkins_buildscript ${BUILD:-Release} $* --no-cleanup --no-externals-update --no-publish"
 }
 #require 'pl.pretty'.dump(set)
-setdiff() {
-    perl -e 'for (1..$#ARGV) { $f=$ARGV[$_];open F,$f or die;while(defined($_=<F>)) { chomp; $s{$_}++ } } open F,$ARGV[0] or die; while(defined($_=<F>)) { chomp; print "$_\n" unless $s{$_} }'  "$@"
+makepdf() {
+    local name=$1
+    shift
+    if [[ `dirname $name` = . ]] ; then
+        name=~/Documents/scan
+    fi
+    mkdir -p `dirname $name`
+    convert -quality 60 "$@" $name.pdf
 }
 coforce() {
     (
@@ -256,6 +257,15 @@ partlines() {
 while(<>){++$n;if ($k/$n < $p) { print STDERR $_; ++$k; } else { print $_; } }
 ' "$@"
 }
+locu() {
+    local enutf8=${enutf8:-en_US.UTF-8}
+    export LC_ALL=$enutf8
+    unset LANG
+}
+locc() {
+    export LC_ALL=C
+    unset LANG
+}
 perlutf8() {
     local enutf8=${enutf8:-en_US.UTF-8}
     LC_ALL=$enutf8 perl "$@"
@@ -388,6 +398,13 @@ nonen() {
         getline $f $1
     done
 }
+getlines() {
+    f="$1"
+    shift
+    for i in "$@"; do
+        getline $i "$f"
+    done
+}
 mv3() {
     (set -e
      [[ -f $1 ]]
@@ -513,38 +530,36 @@ bootstrap() {
       #      libtoolize -i --recursive
     )
 }
-export GCCVERSION=6.1.0
+export GCCVERSION=8.3.0
 xmtc=$(echo ~/c)
 xmtx=$(echo ~/x)
 racer=$(echo $xmtx)
 xmtxs=$xmtx/sdl
 GRAEHL_INCLUDE=$xmtxs
 xmtextbase=$(echo ~/c/xmt-externals)
-tmpextbase=$(echo ~/c/xmt-externals-tmp)
 xmtexts=$xmtextbase/Shared
 xmtextc=$xmtexts/cpp
 SDL_SHARED_EXTERNALS_PATH=$xmtexts
 graehlmac=mbp
 case $(uname) in
     Darwin)
+        lwuname=Apple
         lwarch=Apple
-        sdlarch=Apple
         ;;
     Linux)
+        lwuname=Linux
         lwarch=FC12
-        sdlarch=Linux
         shopt -s globstar || true
         ;;
     *)
         lwarch=Windows
-        sdlarch=Windows
+        lwuname=Windows
         ;;
 esac
 xmtext=$xmtextbase/$lwarch
-tmpext=$tmpextbase/$sdlarch
 xmtextsrc=$HOME/c/xmt-externals-source
 export SDL_EXTERNALS_PATH=$xmtext
-export SDL_EXTERNALS_TMP_PATH=$tmpext
+export SDL_EXTERNALS_TMP_PATH=$HOME/c/sdl-externals-tmp/$lwuname
 export HADOOP_DIR=$SDL_EXTERNALS_PATH/../Shared/java/hadoop-2.7.3
 export JAVA_HOME=$SDL_EXTERNALS_PATH/libraries/jdk1.8.0_66
 py=$(echo $xmtx/python)
@@ -799,10 +814,9 @@ tmuxmax() {
 byobumax() {
     /usr/lib/byobu/include/tmux-detach-all-but-current-client
 }
-comm() {
+gcom() {
     git commit -a -m "$*"
 }
-
 mvrm() {
     (set -e
      ! [[ $3 ]]
@@ -973,7 +987,7 @@ taruser() {
 tarx() {
     local user
     local a
-    taruser "$@"
+    taruser "$1"
     shift
     (
         d=~/$user/$a
@@ -1366,26 +1380,8 @@ cutmp4() {
      ffmpeg -i "$1" -ss $2 -to $3 -async 1 -c copy "${1%.mp4}.$(safefilename $2-$3).mp4"
     )
 }
-headmp4() {
-    (set -x
-     ffmpeg -i "$1" -to "$2" -async 1 -c copy "${1%.mp4}.$(safefilename $2).mp4"
-    )
-}
-startmp4() {
-    (set -x
-     ffmpeg -i "$1" -ss "$2" -async 1 -c copy "${1%.mp4}.$(safefilename $2)-.mp4"
-    )
-}
-shrinkmp4() {
-    (set -x;
-     crf=${2:-19}
-     scale=${3:--1:432}
-     scalen=`perl -e '$_=shift;s/:?-1:?//;s/:/./g;print' -- "$scale"`
-     out="${1%.mp4}.$scalen.q$crf.mp4"
-     ffmpeg -i "$1" -crf "$crf" -c:a copy -c:v libx264 -r 30 -vf scale="$scale" -preset veryslow "$out"
-     open "$out"
-     ls -l "$out"
- )
+cutmp4rough() {
+    ffmpeg -ss $2 -i "$1"  -to $3 -acodec copy -vcodec copy -async 1 -c copy "${1%.mp4}.$(safefilename $2-$3).mp4"
 }
 nbest() {
     hyp best -a feature -n "$@"
@@ -1593,16 +1589,6 @@ gitignorerm() {
 }
 gitdiffl() {
     git diff --stat "$@" | cut -d' ' -f2
-}
-gitdifflb() {
-    (
-        from=`gitbranch`
-        set -e
-        upre
-        mkdir -p ~/diffl
-        gitdiffl origin/master | head -n -1 > ~/diffl/$from.txt
-        preview ~/diffl/$from.txt
-    )
 }
 linelens() {
     if [[ $words ]] ; then
@@ -4158,10 +4144,10 @@ c-make() {
                  echo ASAN: $f
              fi
              if [[ "$*" ]] ; then
-                 c-s CLANGTIDYSKIP=$CLANGTIDYSKIP ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
+                 c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
                  #'&&' "$@"
              else
-                 c-s CLANGTIDYSKIP=$CLANGTIDYSKIP ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
+                 c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
              fi
          )  2>&1 | filter-gcc-errors
      done
@@ -4257,17 +4243,7 @@ cr-makes() {
     (cr-c;BUILD=all c-make "$@")
 }
 cr-make() {
-    (cr-c;
-     c-with "cd ~/x/$BUILD; make -j7 $1; yreg $2"
-     #c-make "$@"
-    )
-}
-cd-make() {
-    (c-c
-     b-d
-     c-with "cd ~/x/$BUILD; make -j7 $1; yreg $2"
-     #c-make "$@"
-    )
+    (cr-c;c-make "$@")
 }
 cw-make() {
     (cw-c;c-make "$@")
@@ -4668,7 +4644,7 @@ c-test() {
     if [[ $BUILD = Release ]] ; then
         rel=Release
     fi
-    if false && [[ $ASAN ]] ; then
+    if [[ $ASAN ]] ; then
         rel=Asan
     fi
     local uarg
@@ -4737,7 +4713,7 @@ tunssh() {
         local sshdir=`echo ~/.ssh`
         cd ~/.ssh
         cp -af $sshdir/config.tun $sshdir/config
-        ssh -f -N tun
+        ssh -f -C -q -N tun
     )
 }
 homessh() {
@@ -4883,7 +4859,7 @@ n-s() {
         ssh $args
     fi
 }
-nhost=$jhost
+nhost=mte-gitbuild03.ad.ai.sdl.com
 ns-n() {
     nhost=gitbuild$n n-s "$@"
 }
@@ -5462,7 +5438,7 @@ cto() {
     )
 }
 gerrit2local() {
-    perl -e '$_=shift;s{C:/jenkins/workspace/XMT-Release-Windows}{/local/graehl/xmt}g;s{/local2/}{/local/}g;s{^/local/graehl/xmt}{'$HOME'/x};print' "$@"
+    perl -e '$_=shift;s{/local/jenkins/workspace/aiprod-xmt-gerrit/src[^/]*/}{/local/graehl/xmt/};s{/local/nbuild/jenkins/workspace/XMT-Release-Linux[^/]*/}{/local/graehl/xmt/};s{C:/jenkins/workspace/XMT-Release-Windows}{/local/graehl/xmt}g;s{/local2/}{/local/}g;s{/local/jenkins/workspace/aiprod-xmt-gerrit/src}{/local/graehl/xmt}g;s{^/local/graehl/xmt}{'$HOME'/x}g;s{/home/graehl}{'$HOME'}g;print' "$@"
 }
 nblanklines() {
     if grep -c -q ^$ "$@"; then
@@ -5546,8 +5522,24 @@ ccp() {
         )
     fi
 }
+csh() {
+    (
+             local cargs
+            if [[ $cuser ]] ; then
+                 cargs+="-l $cuser"
+             fi
+             if [[ ${cidentity:-} ]] ; then
+                 cargs+=" -i $cidentity"
+             fi
+             ssh $cargs $chost "$@"
+    )
+}
 ccpa() {
+    cd ~/x
     ccpgitadd=1 ccp "$@"
+}
+nccpa() {
+    ccpgitadd=1 nccp "@"
 }
 ccp1() {
     local n=$#
@@ -5555,7 +5547,10 @@ ccp1() {
     ccp "$1" "$dst"
 }
 ncp() {
-    chost=$nhost cidentity=$nidentity cuser=$nuser ccp "$@"
+    chost=$nhost cidentity=$nidentity cuser=${cuser:-$nuser} ccp "$@"
+}
+nsh() {
+    chost=$nhost cidentity=$nidentity cuser=${cuser:-$nuser} csh "$@"
 }
 ccat() {
     c-s cat "$*"
@@ -5564,10 +5559,10 @@ csave() {
     save12 ~/tmp/c-s.`filename_from $1 $2` c-s "$@"
 }
 creg() {
-    save12 ~/tmp/creg.`filename_from "$@"` c-with yreg "$@"
+    save12 ~/tmp/creg.`filename_from "$@"` cwith yreg "$@"
 }
 cregr() {
-    save12 ~/tmp/cregr.`filename_from "$@"` c-with yregr "$@"
+    save12 ~/tmp/cregr.`filename_from "$@"` cwith yregr "$@"
 }
 treg() {
     save12 /tmp/reg yreg "$@"
@@ -5806,6 +5801,12 @@ yregs() {
 yregfilter() {
     grep -v '# Configuration: ' | egrep -v '^# [0-9]+ yaml subdirs|^# Found |^# Existing temp dirs'
 }
+yregs() {
+    forall yreg "$@"
+}
+yregrs() {
+    forall yregr "$@"
+}
 yreg() {
     if [[ ${xmtShell:-} ]] ; then
         makeh xmtShell
@@ -5814,7 +5815,7 @@ yreg() {
     # -t 2
     (set -e;
      nbin=/home/nbuild/local/bin
-     npython=$nbin/python2.7
+     npython=$nbin/python3
      if [[ -x $npython ]] ; then
          python=$npython
      else
@@ -5829,9 +5830,7 @@ yreg() {
      export PYTHONPATH=${PYTHONPATH%:}
      export TMPDIR=${TMPDIR:-/var/tmp}
      bdir=${bdir:-$xmtx/${BUILD:=Debug}}
-     . ~/x/xmtpath.sh
-     export LD_LIBRARY_PATH=$bdir/xmt/lib:$LD_LIBRARY_PATH
-     #export LD_LIBRARY_PATH=$bdir/xmt/lib:/local/gcc/lib64:$HOME/pub/lib:$LD_LIBRARY_PATH
+     export LD_LIBRARY_PATH=$bdir/xmt/lib:/local/gcc/lib64:$HOME/pub/lib:$LD_LIBRARY_PATH
      local logfile=/tmp/yreg.`filename_from "$@" ${BUILD:=Debug}`
      cd $xmtx/RegressionTests
      THREADS=${MAKEPROC:-`ncpus`}
@@ -5851,7 +5850,21 @@ yreg() {
      if [[ ${memcheck:-} ]] || [[ ${MEMCHECKREGTEST:-} -eq 1 ]] ; then
          memcheckparam=--memcheck
      fi
+     if [[ $nospeed ]] ; then
+         minconc=2
+         maxconc=9999
+     fi
+     if [[ $justspeed ]] ; then
+         minconc = 1
+         maxconc = 1
+     fi
      local REGTESTPARAMS="${REGTESTPARAMS:-} ${memcheckparam:-} -b $bdir -t $THREADS -x regtest_tmp_${USER}_${BUILD} ${GLOBAL_REGTEST_YAML_ARGS:-} ${STDERR_REGTEST:-}"
+     if [[ $minconc && $minconc -gt 1 ]] ; then
+         REGTESTPARAMS+=" -C ${minconc:-0}"
+     fi
+     if [[ $maxconc && $maxconc -lt 9999 ]] ; then
+         REGTESTPARAMS+=" -D ${maxconc:-0}"
+     fi
      if [[ ${exitfail:-} != 0 ]] ; then
          REGTESTPARAMS+=" -X"
      fi
@@ -5971,11 +5984,14 @@ cwith() {
     )
 }
 linjen() {
+    locu
     cd $xmtx
     local branch=${branch:-`git_branch`}
     mendq
-    pushc $branch $xmtx
+    pushc $branch
+    #$xmtx
     ctitle jen "$@"
+    echo |
     (set -e;
      tmp2=`tmpnam`
      tmp=`echo ~/tmp`
@@ -5985,23 +6001,23 @@ linjen() {
      rm $tmp2
      log=$tmp/linjen.`csuf`.$branch.$BUILD
      mv $log ${log}2 || true
-     GCCVERSION=${GCCVERSION:-6.1.0}
+     GCCVERSION=${GCCVERSION:-8.3.0}
      if [[ $chost = deep ]] ; then
          gccprefix=
      else
-         gccprefix=$xmtextbase/FC12/libraries/gcc-$GCCVERSION
+         gccprefix=$xmtextbase/FC12/libraries/gcc
+         #-$GCCVERSION
      fi
      #gccprefix=/local/gcc
+     # gccprefix=$gccprefix GCCVERSION=$GCCVERSION GCC_SUFFIX=$GCC_SUFFIX
+     #JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/  NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=1
      echo linjen:
-     c-s debug=$debug CLANGTIDYSKIP=$CLANGTIDYSKIP CLANGTIDYERR=$CLANGTIDYERR PROFILE=$PROFILE GCC_SUFFIX=$GCC_SUFFIX nohup=$nohup JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/ SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE gccprefix=$gccprefix GCCVERSION=$GCCVERSION SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} NOLOCALGCC=$NOLOCALGCC SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} NOPIPES=${NOPIPES:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 threads=${threads:-} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} PUBLISH=${PUBLISH:-0} NO_CCACHE=$NO_CCACHE jen "$@" 2>&1) | tee ~/tmp/linjen.`csuf`.$branch | ${filtercat:-$filtergccerr}
+     c-s debug=$debug CLANGTIDYSKIP=$CLANGTIDYSKIP CLANGTIDYERR=$CLANGTIDYERR PROFILE=$PROFILE nohup=$nohup SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} NOPIPES=${NOPIPES:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-0} CLEANUP=${CLEANUP:-0} UPDATE=0 REGTESTTHREADS=$REGTESTTHREADS threads=${threads:-9} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} PUBLISH=${PUBLISH:-0} jen --no-cleanup "$@" 2>&1) | tee $tmp | ${filtercat:-$filtergccerr}
 }
 jen() {
     echo jen:
     cd $xmtx
     local build=${1:-${BUILD:-Release}}
-    if [[ $1 ]] ; then
-        shift
-    fi
     if ! [[ $SDL_BUILD_TYPE ]] ; then
         SDL_BUILD_TYPE=Development
         if [[ $build = Release ]] ; then
@@ -6031,7 +6047,6 @@ jen() {
         nightlyargs="--memcheck --speedtest"
     fi
     local threads=${MAKEPROC:-`ncpus`}
-    set -x
     UPDATE=${UPDATE:-0}
     local ccargs=
     if [[ $HOST = deep ]] ; then
@@ -6045,7 +6060,7 @@ jen() {
     if [[ $nohup ]] ; then
         nohupcmd=nohup
     fi
-    cmake=${cmake:-} CC=$CC CXX=$CXX GCC_SUFFIX=$GCC_SUFFIX gccprefix=$gccprefix SDL_ETS_BUILD=$SDL_ETS_BUILD GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} NOPIPES=${NOPIPES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} $nohupcmd jenkins/jenkins_buildscript --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} CC=$CC CXX=$CXX GCC_SUFFIX=$GCC_SUFFIX gccprefix=$gccprefix SDL_ETS_BUILD=$SDL_ETS_BUILD GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} NOPIPES=${NOPIPES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} $nohupcmd jenkins/jenkins_buildscript --regthreads 2 --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -6068,7 +6083,39 @@ jen() {
     echo "#fails = $nfails" >> $log.fails
     echo overc $log
 }
-
+catz1() {
+    if [ -z "$1" -o "$1" = - ] ; then
+        gunzip -f -c
+    else
+        while [[ ${1:-} ]] ; do
+            if [ ! -f "$1" ] ; then
+                echo "input file $1 not found" 1>&2
+                exit -1
+            fi
+            if [ "${1%.gz}" != "$1" -o "${1%.tgz}" != "$1" ] ; then
+                gunzip -f -c "$1"
+            else
+                if [ "${1%.bz2}" != "$1" ] ; then
+                    bunzip2 -c "$1"
+                else
+                    cat "$1"
+                fi
+            fi
+            shift
+        done
+    fi
+}
+catz() {
+    for f in "$@"; do
+        catz1 "$f"
+    done
+}
+timestamp() {
+    date +%Y.%m.%d_%H.%M
+}
+ncpus() {
+    echo 8
+}
 
 yjen(){
     chost=y linjen "$@"
@@ -6097,7 +6144,7 @@ dmk() {
 cmk() {
     chost=c-graehl c-make "$@"
 }
-gjen() {
+macjen() {
     (set -e
      macget ${1:?mac-branch [jen args]}
      shift
@@ -7009,7 +7056,7 @@ filterblock() {
     if [[ ${blockline:-} ]] ; then
         grep -v "$blockline" --line-buffered
     else
-        cat -u
+        cat
     fi
 }
 save12() {
@@ -7077,9 +7124,9 @@ while (<>) {
 }
 vocab() {
     perl -ne 'chomp;for (split) {
-push @w,$_ unless ($v{$_}++);
+push @w,$_ unless ($v {$_}++);
 }
-END { print "$v{$_} $_\n" for (@w) }
+END { print "$v {$_} $_\n" for (@w) }
 ' "$@"
 }
 xmtspeed() {
@@ -7212,9 +7259,6 @@ macbuild() {
         BUILD=$build makeh $tar
         if [[ $all ]] ; then
             xmtcm $build
-        fi
-        if [[ $reg ]] ; then
-            BUILD=$build yreg $regs
         fi
     )
 }
@@ -7737,8 +7781,9 @@ makejust() {
     norun=1 makerun "$@"
 }
 makeh() {
+    export CLANGTIDYSKIP=1
     export CLANGTIDYERR=0
-    gcc6=1 usegcc
+    #gcc6=1 usegcc
     showvars_required CXX CC
     if [[ $1 = xmt ]] ; then
         makerun xmtShell --help
@@ -8782,8 +8827,8 @@ s2c() {
     (cd ~
      set -e
      c-sync u .gitconfig
-     #c-to x/run.sh
-     #c-to x/xmtpath.sh
+     c-to x/run.sh
+     c-to x/xmtpath.sh
      #chost=ceto c-sync u g script bugs .gitconfig
     )
 }
@@ -11037,7 +11082,7 @@ if ! [[ $MAKEPROC ]] ; then
     if [[ $lwarch = Apple ]] ; then
         MAKEPROC=2
     elif [[ $HOST = c-graehl ]] ; then
-        MAKEPROC=19
+        MAKEPROC=13
     else
         MAKEPROC=7
     fi
@@ -11292,6 +11337,9 @@ rmtorch() {
 if false && [[ -d /home/graehl/anaconda3/bin ]] ; then
     export PATH="/home/graehl/anaconda3/bin:$PATH"
 fi
+if [[ -d /opt/conda/bin ]] ; then
+    export PATH="/opt/conda/bin:$PATH"
+fi
 condor_rmall() {
     for f in `condor_q | perl -ne 'print "$1\n" if m{^([0-9.]+)\s+graehl}'`; do
         echo $f
@@ -11366,14 +11414,18 @@ uselocalgcc() {
     export CXX=g++
     case $(uname) in
         Darwin)
+            lwuname=Apple
             lwarch=Apple
             ;;
         Linux)
+            lwuname=Linux
             lwarch=FC12
             shopt -s globstar || true
             ;;
         *)
-            lwarch=Windows ;;
+            lwarch=Windows
+            lwuname=Windows
+            ;;
     esac
 }
 gccsysincludes() {
@@ -11418,6 +11470,281 @@ untidyclang() {
 ctexec() {
     env -i PATH=PATH=/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/App:/usr/bin:/bin:/.auto/home/graehl/c/coretraining/main/3rdParty/git:. LD_LIBRARY_PATH=/.auto/home/graehl/c/coretraining/main/lib:/.auto/home/graehl/c/coretraining/main/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/tbb2.1/ia32/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/sh81smp/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/boost-1_33_1/lib;PATH=/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/App:/usr/bin:/bin:/.auto/home/graehl/c/coretraining/main/3rdParty/git:. PERL5LIB=/.auto/home/graehl/c/coretraining/main/kraken/xlearnnnlm/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib:/.auto/home/graehl/c/coretraining/main/3rdParty/perl_libs:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib/TroyPerlLib:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib:/.auto/home/graehl/c/coretraining/main/3rdParty/perl_libs:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib/TroyPerlLib "$@"
 }
-curlj() {
-    curl -H 'Content-Type: application/json' "$@"
+pdfconcat2() {
+    pdfconcat -o /tmp/concat2.pdf "$@" && cp "$1" /tmp/ && mv /tmp/concat2.pdf "$1" && open "$1"
+}
+pdfsign() {
+    (set -e
+     set -x
+     rm -rf tmp
+     mkdir tmp
+     pdfseparate "$1" tmp/%d.pdf
+     [[ -f tmp/$2.pdf ]]
+     cp "$3" tmp/$2.pdf
+     base="${1%.pdf}"
+     base="${base%-executable}"
+     base="${base% Template}"
+     out="${4:-$base-executed.pdf}"
+     pdfconcat --output "$out" $(ls -1 tmp/*.pdf | sort -k2 -t/ -n)
+     open "$out"
+     echo $out
+     #rm -rf tmp
+    )
+}
+
+mvnenv() {
+    export PATH="/usr/local/opt/protobuf@2.6/bin:$PATH"
+  export LDFLAGS="-L/usr/local/opt/protobuf@2.6/lib"
+  export CPPFLAGS="-I/usr/local/opt/protobuf@2.6/include"
+
+  export PKG_CONFIG_PATH="/usr/local/opt/protobuf@2.6/lib/pkgconfig"
+      export MAVEN_OPTS="-DsocksProxyHost=127.0.0.1 -DsocksProxyPort=12345"
+      export GRADLE_OPTS="-DsocksProxyHost=127.0.0.1 -DsocksProxyPort=12345"
+    mvn "$@"
+}
+mvns() {
+    mvnenv
+    mvn -T 4.0C "$@"
+}
+gradles() {
+    mvnenv
+    gradle $GRADLE_OPTS "$@"
+}
+
+scpm2() {
+    (
+        set -e
+    mkdir -p ~/.m2/repository
+    cd ~/.m2/repository
+    rm -rf bak/
+    #gondola Icecube
+    for r in com/github/sps/metrics; do
+        set -x
+        mv $r bak/
+        mkdir -p $r
+        scp -r cmt-jenkins-master:/local/jenkins/.m2/repository/$r ~/.m2/repository/$r
+    done
+    )
+}
+dgerrit() {
+    gerritfor development
+}
+vnc1920mode() {
+    xrandr -d :1 --newmode "1920x1080"  150.63  1856 1968 2168 2480  980 981 984 1014  -HSync +Vsync
+    xrandr -d :1 --output VNC-0 --mode 1920x1080
+    xrandr -d :1 --addmode VNC-0 1920x1080
+}
+tunvnc() {
+    ssh -f -N tunvnc
+}
+zgerrit() {
+    cd ~/cz
+    dgerrit
+}
+zbase() {
+    cd ~/cz
+    git fetch origin
+    git rebase origin/development
+}
+flattenpdfform() {
+  if [[ $# -ne 2 ]]
+  then
+    echo "Usage: flattenpdf input.pdf output.pdf"
+    return 1
+  fi
+  temp=$(mktemp)
+  pdftk "$1" generate_fdf output ${temp}
+  pdftk "$1" fill_form ${temp} output "$2" flatten
+  rm ${temp}
+}
+htmlentities() {
+    perl -ne 'print $1,"\n" if /(&[^ ;]*;)/ && !$n{$1}++' "$@"
+}
+md5dups() {
+    perl -ne '$m=substr($_,0,32);print substr($last,33) if $l eq $m || $dup;$wasdup=$dup;$dup = $l eq $m;print "\n" if $wasdup && !$dup;$l=$m;$last=$_;' "$@"
+}
+finddup() {
+    for d in "$@"; do
+        find "$d" -type f -exec md5sum {} \;
+        echo
+    done 2>/dev/null | sort | md5dups
+}
+randn() {
+    modn=${1:-100}
+    plus=${2:-0}
+    echo -n $((plus+RANDOM%modn))
+}
+randfloat() {
+    local min="$1"
+    local max="$2"
+    printf '%s' $(echo "scale=4; ($min)+($RANDOM/32768)*(($max)-($min))" | bc )
+}
+pdf2pngdpi() {
+    gs -sDEVICE=pngalpha -r${2:-300} -o "$1".png "$1"
+}
+flatpdf() {
+    local in="$1"
+    shift
+    pdf2ps "$in" - | ps2pdf - "$@"
+}
+fakescan1page() {
+    (set -e
+     dpi=${3:-144}
+     blur=`randfloat 1.05 1.6`
+     #blur=1.2123
+    stretch=`randn 1 2`
+    #stretch=7
+    rotate=`randfloat -.6 .9`
+    #rotate=.45
+    echo $blur $stretch $rotate
+    set -x
+    o=${2%.pdf}
+    flat="$1".flat.pdf
+    flatpdf "$1" "$flat"
+    convert -background transparent "$flat" -colorspace gray \( +clone -blur 0x$blur -level 97.5%,97.5% +noise Random -threshold 99% -negate \) +swap -compose divide -composite -linear-stretch $stretch%x0% -rotate $rotate "$o.2.pdf"
+    rm "$flat"
+    # without -negate is nice grayscale for images
+    gs -sDEVICE=pngalpha -r$dpi -o "$o.png" "$o.2.pdf"
+    convert -background white "$o.png" -density $dpi -compress Zip "$2"
+    rm -f "$o.png" "$o.2.pdf"
+    set +x
+    # +noise Random -threshold 99% -negate
+#convert "$1" -colorspace gray \( +clone -blur 15,15 \) -compose Divide_Src -composite -normalize -threshold 80% "$2"
+)
+}
+fakescan1() {
+    (set -e
+    #pagesdir=`mktemp -d`
+    #rm -rf $pagesdir
+    in="$1"
+    out="$2"
+    shift
+    shift
+    cpdf "$in" -split -chunk 1 -o "$in%%%%.pdf"
+    ofiles=""
+    for i in `seq -w 1 9999`; do
+        p=$in$i.pdf
+        [[ -f $p ]] || break
+        scanp=$p.scan.pdf
+        fakescan1page $p $scanp ${dpi:-144}
+        rm $p
+        echo $p $scanp
+        ofiles+=" $scanp"
+    done
+    cpdf $ofiles AND -squeeze -o "$out"
+    ls -al $ofiles
+    rm $ofiles
+    )
+}
+fakescan() {
+    outpre=${1?fakescan prefix/ *.pdf}
+    if [[ ${outpre%/} != $outpre ]] ; then
+        set -x
+        mkdir -p $outpre
+        set +x
+    fi
+    shift
+    for f in "$@"; do
+        to="$outpre$f"
+        fakescan1 "$f" "$to"
+        echo $to
+    done
+    #convert $f -colorspace gray \( +clone +noise Random -threshold 99% -negate -blur 0x5 -level 97.5%,97.5% \) -evaluate-sequence min -blur 0xecho $RANDOM %2 +1 | bc` -level 25%,75% -rotate -0.echo $RANDOM %10 +1 | bc -sharpen 0x3.0 -blur 0xecho $RANDOM %2 +1 | bc -level 10%,90% -rotate -0.` echo $RANDOM %10 +1 | bc` -sharpen 0x1.2 -colorspace gray
+}
+pdfnpages() {
+    pdftk "$1" dump_data output - | perl -ne 'print "$1\n" if /^NumberOfPages: (.*)/'
+}
+pdfpage() {
+    pdftk "$1" cat "$2" output "pg$2-$1"
+}
+pdfgray() {
+    (
+        i=$1
+        shift
+        p=${i%.pdf}
+gs \
+   -o "$p-gray.pdf" \
+   -sDEVICE=pdfwrite \
+   -dPDFSETTINGS=/prepress \
+   -sColorConversionStrategy=Gray \
+   -sColorConversionStrategyForImages=Gray \
+   -sProcessColorModel=DeviceGray \
+   -dCompatibilityLevel=1.4 \
+   "$i"
+)
+}
+pdfbw() {
+    (
+        i=$1
+        shift
+        p=${i%.pdf}
+gs -sDEVICE=psmono \
+  -dNOPAUSE -dBATCH -dSAFER \
+  -sOutputFile="$p.ps"
+gs \
+   -o "$p-bw.pdf" \
+   -sDEVICE=pdfwrite \
+   -dPDFSETTINGS=/prepress \
+   -sColorConversionStrategy=Gray \
+   -sColorConversionStrategyForImages=Gray \
+   -sProcessColorModel=DeviceGray \
+   -dCompatibilityLevel=1.4 \
+   "$p.ps"
+)
+}
+
+pdfbw2() {
+    (
+        i=$1
+        shift
+        p=${i%.pdf}
+gs -sDEVICE=ps2write \
+  -dNOPAUSE -dBATCH -dSAFER \
+  -sOutputFile="$p.ps"
+gs \
+   -o "$p-bw.pdf" \
+   -sDEVICE=pdfwrite \
+   -dPDFSETTINGS=/prepress \
+   -sColorConversionStrategy=Gray \
+   -sColorConversionStrategyForImages=Gray \
+   -sProcessColorModel=DeviceGray \
+   -dCompatibilityLevel=1.4 \
+   -c "/osetcolor {/setcolor} bind def /setcolor {pop [0 0 0] osetcolor} def" \
+   -f "$p.ps"
+)
+}
+
+pdfdpi() {
+    (
+        dpi=${dpi:-200}
+        i=$1
+        shift
+        p=${i%.pdf}
+gs \
+   -o "$p-$dpi.pdf" \
+   -sDEVICE=pdfwrite \
+-dCompatibilityLevel=1.3 \
+-dPDFSETTINGS=/ebook \
+-dEmbedAllFonts=true \
+-dSubsetFonts=true \
+-dColorImageDownsampleType=/Bicubic \
+-dColorImageResolution=$dpi \
+-dGrayImageDownsampleType=/Bicubic \
+-dGrayImageResolution=$dpi \
+   -dMonoImageDownsampleType=/Bicubic \
+   -dMonoImageResolution=$dpi \
+  -dColorImageDownsampleThreshold=1.0 \
+  -dGrayImageDownsampleThreshold=1.0 \
+  -dMonoImageDownsampleThreshold=1.0 \
+   -dDownsampleColorImages \
+   -dDownsampleGrayImages \
+   -dDownsampleMonoImages \
+   "$i"
+)
+}
+
+fakedpi() {
+    dpi=${dpi:-200}
+    fakescan1 "$1" 2.pdf
+    pdfdpi 2.pdf; mv 2-$dpi.pdf scanned.pdf
 }
