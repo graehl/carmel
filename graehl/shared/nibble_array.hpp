@@ -55,8 +55,8 @@ struct nibble_array {
     lognibblesz_ = nbits2or4 == 2 ? 1 : 2,
   };
   static const Block mask_nibble_ = (Block)(nbits2or4 == 2 ? 3 : 15);
-  void zero() { std::memset(blocks_, 0, nbytes_); }
-  void fill(value_type v) { std::memset(blocks_, repeated_byte(v), nbytes_); }
+  void zero() { std::memset((void*)blocks_, 0, nbytes_); }
+  void fill(value_type v) { std::memset((void*)blocks_, repeated_byte(v), nbytes_); }
   size_type size() const { return sz_; }
   value_type operator[](size_type i) const {
     assert(i < sz_);

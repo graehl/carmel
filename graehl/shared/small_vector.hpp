@@ -15,6 +15,9 @@
 #define GRAEHL_SHARED___SMALL_VECTOR
 #pragma once
 #include <graehl/shared/cpp11.hpp>
+#if GRAEHL_CPP11
+#include <initializer_list>
+#endif
 
 /** \file
 
@@ -225,6 +228,12 @@ struct small_vector {
   void push_back() { new (push_back_uninitialized()) T; }
 
 #if GRAEHL_CPP11
+  small_vector(std::initializer_list<T> const& l)
+  {
+    alloc(l.size());
+    std::copy(l.begin(), l.end(), begin());
+  }
+
   /// move
   small_vector(small_vector&& o) noexcept {
     std::memcpy(this, &o, sizeof(small_vector)); // NOLINT
@@ -483,7 +492,7 @@ struct small_vector {
 
   void erase(size_type ibegin, size_type iend) {
     size_type sz = d_.stack.sz_;
-    if (iend == sz) {
+    if (iend >= sz) {
       resize(ibegin);
     } else {
       size_type nafter = sz - iend;
@@ -750,7 +759,10 @@ struct small_vector {
   }
 
   void insert_index(size_type atIndex, T const* i, T const* e) {
-    size_type N = (size_type)(e - i);
+    insert_index_range(atIndex, i, (size_type)(e - i));
+  }
+
+  void insert_index_range(size_type atIndex, T const* i, size_type N) {
     memcpy_n(insert_hole_index(atIndex, N), i, N);
   }
 

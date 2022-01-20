@@ -119,7 +119,7 @@ struct band_matrix {
     std::memcpy(data_, o.data_, bytes());
   }
 
-  void zero() { std::memset(data_, 0, bytes()); }
+  void zero() { std::memset((void*)data_, 0, bytes()); }
 
   void fill(T const& x) {
     for (iterator i = begin(), e = end(); i != e; ++i) *i = x;

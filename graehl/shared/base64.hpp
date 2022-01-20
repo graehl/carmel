@@ -34,7 +34,7 @@ static char const* base64url = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv
 inline bool good_base64_code(char const* base64code) {
   assert(sizeof(char) == 1); // NOLINT
   char seen[256];  // TODO: bitvector instead?
-  std::memset(seen, 0, 256);
+  std::memset((void*)seen, 0, 256);
   for (unsigned i = 0; i < 64; ++i) {
     unsigned char c = base64code[i];
     assert((unsigned)c < 256);

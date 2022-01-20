@@ -261,7 +261,7 @@ set_pmap<P, V> pmap_setter(P& p, V const& v) {
 
 template <class G, class P, class T, class V>
 void init_pmap(T t, G const& g, P& p, V const& v = V()) {
-  visit(t, g, pmap_setter(p, v));
+  graehl::visit(t, g, pmap_setter(p, v));
 }
 
 template <class G, class T, class V>
@@ -281,7 +281,7 @@ struct built_pmap {
   property_map_type pmap;
   built_pmap(G const& g) : g(g), impl(P(g).template init<V>()), pmap(impl) {}
   built_pmap(G const& g, V const& i) : g(g), impl(P(g).template init<V>()), pmap(impl) { init(i); }
-  void init(V const& v) { visit(T(), g, pmap_setter(pmap, v)); }
+  void init(V const& v) { graehl::visit(T(), g, pmap_setter(pmap, v)); }
 };
 
 template <class D, class S>
@@ -297,7 +297,7 @@ struct copy_pmap_v {
 
 template <class T, class G, class D, class S>
 void copy_pmap(T t, G const& g, D const& dest, S const& src) {
-  visit(t, g, copy_pmap_v<D, S>(dest, src));
+  graehl::visit(t, g, copy_pmap_v<D, S>(dest, src));
 }
 
 template <class C1, class C2, class C3>

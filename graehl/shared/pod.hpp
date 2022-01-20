@@ -48,7 +48,7 @@
 #define GRAEHL_CHECK_DEBUG_MAX_SIZE(x)                                                      \
   do {                                                                                      \
     if ((x) > GRAEHL_DEBUG_MAX_SIZE) {                                                      \
-      std::cerr << "\ERROR: (probably) pod array size=" << (x) << " suspiciously large.\n"; \
+      std::cerr << "\nERROR: (probably) pod array size=" << (x) << " suspiciously large.\n"; \
       throw encoding_error();                                                               \
     }                                                                                       \
   } while (0)

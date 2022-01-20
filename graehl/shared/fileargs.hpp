@@ -178,6 +178,21 @@ inline std::string general_options_desc() {
 }
 
 
+inline void call_flush(std::ofstream &o) {
+  o.flush();
+}
+
+inline void call_flush(std::ostream &o) {
+  o.flush();
+}
+
+inline void call_flush(std::ifstream &) {
+}
+
+inline static void call_flush(std::istream &) {
+}
+
+
 template <class Stream>
 struct stream_traits {
   static bool is_default(std::string const& s) { return s == stdin_filename; }
@@ -192,6 +207,10 @@ struct stream_traits {
     x.template set_new_buf<std::ifstream>(s, "Couldn't open input file", large_buf);
   }
   static char const* type_string() { return "input filename " GRAEHL_GZ_USAGE; }
+  static void call_flush(Stream &) {
+  }
+  static void call_close(Stream &) {
+  }
 };
 
 template <>
@@ -199,6 +218,11 @@ struct stream_traits<std::ifstream> : stream_traits<std::istream> {
   static bool is_default(std::string const& s) { return false; }
   BOOST_STATIC_CONSTANT(bool, file_only = true);
   static char const* type_string() { return "input filename"; }
+  static void call_close(std::ifstream &o) {
+    o.close();
+  }
+  static void call_close(std::istream &o) {
+  }
 };
 
 template <>
@@ -215,6 +239,17 @@ struct stream_traits<std::ofstream> {
   static void call_set_file(Filearg& x, std::string const& s, bool large_buf) {
     x.template set_new_buf<std::ofstream>(s, "Couldn't open output file", large_buf);
   }
+  static void call_flush(std::ofstream &o) {
+    o.flush();
+  }
+  static void call_flush(std::ostream &o) {
+    o.flush();
+  }
+  static void call_close(std::ofstream &o) {
+    o.close();
+  }
+  static void call_close(std::ostream &o) {
+  }
 };
 
 template <>
@@ -222,6 +257,9 @@ struct stream_traits<std::ostream> : stream_traits<std::ofstream> {
   static bool is_default(std::string const& s) { return s == stdin_filename || s == stderr_filename; }
   BOOST_STATIC_CONSTANT(bool, file_only = false);
   static char const* type_string() { return "output filename " GRAEHL_GZ_USAGE; }
+  static void call_flush(std::ostream &o) {
+    o.flush();
+  }
 };
 
 template <class S>
@@ -308,10 +346,16 @@ struct file_arg {
   std::string const& str() const { return name; }
 
   void flush() {
-    if (!none) pointer->flush();
+    if (!none) traits::call_flush(*pointer);
   }
 
-  void close() { set_none(); }
+  void close() {
+    if (!none) {
+      traits::call_flush(*pointer);
+      traits::call_close(*pointer);
+    }
+    set_none();
+  }
 
   typedef file_arg<Stream> self_type;
 

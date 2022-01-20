@@ -7,6 +7,7 @@
 #define CONFIGURE_TRAITS_GRAEHL_2016_09_12_HPP
 #pragma once
 
+#include <boost/optional.hpp>
 #include <graehl/shared/leaf_configurable.hpp>
 #include <graehl/shared/type_traits.hpp>
 #include <map>
@@ -16,13 +17,13 @@
 
 namespace configure {
 
-using graehl::false_type;
-using graehl::true_type;
 using graehl::enable_if;
+using graehl::false_type;
+using graehl::integral_constant;
+using graehl::is_enum;
 using graehl::is_fundamental;
 using graehl::is_integral;
-using graehl::is_enum;
-using graehl::integral_constant;
+using graehl::true_type;
 
 template <class Val, class Enable = void>
 struct has_leaf_configure : false_type {};
@@ -39,7 +40,7 @@ struct is_string<std::basic_string<charT, traits, Alloc>> : true_type {};
 // leaf_configurable means don't expect a .configure member.
 template <class Val, class Enable>
 struct leaf_configurable : integral_constant<bool, has_leaf_configure<Val>::value || is_fundamental<Val>::value
-                                                       || is_enum<Val>::value || is_string<Val>::value> {};
+                                                     || is_enum<Val>::value || is_string<Val>::value> {};
 
 //"leaf" - use this for all classes that should be configured as leaves, where you
 // can't add a member "typedef void leaf_configurable;"
@@ -116,7 +117,8 @@ struct preorder_recurse<X, typename enable_if<sequence_leaf_configurable<X>::val
   template <class C>
   static void recurse(X* x, C const& c) {
     typedef typename X::value_type Y;
-    for (Y& y : *x) preorder_recurse<Y>::recurse(&y, c);
+    for (Y& y : *x)
+      preorder_recurse<Y>::recurse(&y, c);
   }
 };
 template <class X>
@@ -129,7 +131,8 @@ struct preorder_recurse<X, typename enable_if<map_leaf_configurable<X>::value>::
   template <class C>
   static void recurse(std::shared_ptr<X>* x, C const& c) {
     auto& p = x;
-    if (p) recurse_preorder_map(p.get(), c);
+    if (p)
+      recurse_preorder_map(p.get(), c);
   }
 };
 template <class X>
@@ -137,7 +140,8 @@ struct preorder_recurse<X, typename enable_if<set_leaf_configurable<X>::value>::
   template <class C>
   static void recurse(X* x, C const& c) {
     typedef typename X::value_type Y;
-    for (auto const& y : *x) preorder_recurse<Y>::recurse(const_cast<Y*>(&y), c);
+    for (auto const& y : *x)
+      preorder_recurse<Y>::recurse(const_cast<Y*>(&y), c);
   }
 };
 
@@ -147,15 +151,17 @@ inline void recurse_preorder_map(std::pair<A, B>& pair, C const& c) {
 }
 template <class M, class C>
 inline void recurse_preorder_map(M& m, C const& c) {
-  for (auto& y : m) recurse_preorder(&y.second, c);
+  for (auto& y : m)
+    recurse_preorder(&y.second, c);
 }
 template <class M, class C>
 inline void recurse_preorder_map(std::shared_ptr<M>& m, C const& c) {
   if (m)
-    for (auto& y : *m) recurse_preorder(&y.second, c);
+    for (auto& y : *m)
+      recurse_preorder(&y.second, c);
 }
 
 
-}
+} // namespace configure
 
 #endif

@@ -29,7 +29,7 @@ template <int width = 5>
 struct percent {
   double frac;
   percent(double f) : frac(f) {}
-  percent(double num, double den) : frac(num / den) {}
+  percent(double num, double den) : frac(den ? num / den : 0) {}
   double get_percent() const { return frac * 100; }
   template <class C, class T>
   void print(std::basic_ostream<C, T>& o) const {

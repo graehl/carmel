@@ -80,16 +80,29 @@ template <class O, class V, class S>
 typename graehl::enable_if<!graehl::is_class<V>::value>::type print(O& o, V const& v, S const&) {
   o << v;
 }
-}
+} // namespace adl_default
 
 /// several levels of indirection to ensure we can find the free 'o << val' or
 /// 'print(o, val, state)' member in the same namespace as val (or o or state)
 namespace adl {
 
+struct First {};
+struct Second {};
+
 template <class O, class V>
 inline void adl_print(O& o, V const& val);
 template <class O, class V, class S>
 void adl_print(O& o, V const& val, S const& s);
+
+template <class Pair>
+void adl_print(std::ostream& out, Pair const& p, First const&) {
+  adl_print(out, p.first);
+}
+
+template <class Pair>
+void adl_print(std::ostream& out, Pair const& p, Second const&) {
+  adl_print(out, p.second);
+}
 
 template <class V, class Enable = void>
 struct Print {
@@ -157,16 +170,19 @@ void adl_print(O& o, V const& v, S const& s) {
 template <char Space = ' ', char Open = '[', char Close = ']'>
 struct list_format {
   bool first;
-  list_format() : first(true) {}
+  list_format()
+      : first(true) {}
 
   typedef Print<char> CharPrint;
   template <class O>
   void open(O& o) {
-    if (Open) CharPrint::call(o, Open);
+    if (Open)
+      CharPrint::call(o, Open);
   }
   template <class O>
   void close(O& o) {
-    if (Close) CharPrint::call(o, Close);
+    if (Close)
+      CharPrint::call(o, Close);
   }
   template <class O>
   void space(O& o) {
@@ -203,14 +219,15 @@ static std::string str(V const& v, S& s) {
   ::adl::Print<V>::call((std::ostream&)r, v, s);
   return r.str();
 }
-}
+} // namespace adl
 
 namespace adl_default {
 template <class O, class V, class If>
 O& operator<<(O& o, V const& v) {
   ::adl::list_format<> format;
   format.open(o);
-  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) format.element(o, *i);
+  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i)
+    format.element(o, *i);
   format.close(o);
   return o;
 }
@@ -220,7 +237,8 @@ template <class O, class V, class S, class If>
 void print(O& o, V const& v, S const& s) {
   ::adl::list_format<> format;
   format.open(o);
-  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i) format.element(o, v, s);
+  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i)
+    format.element(o, v, s);
   format.close(o);
 }
 #endif
@@ -235,14 +253,16 @@ template <class O, class A>
 void print(O& o, std::pair<A*, A*> v) {
   ::adl::list_format<> format;
   format.open(o);
-  for (; v.first != v.second; ++v.first) format.element(o, *v.first);
+  for (; v.first != v.second; ++v.first)
+    format.element(o, *v.first);
   format.close(o);
 }
 template <class O, class A>
 void print(O& o, std::pair<A const*, A const*> v) {
   ::adl::list_format<> format;
   format.open(o);
-  for (; v.first != v.second; ++v.first) format.element(o, *v.first);
+  for (; v.first != v.second; ++v.first)
+    format.element(o, *v.first);
   format.close(o);
 }
 
@@ -256,17 +276,19 @@ template <class O, class A, class S>
 void print(O& o, std::pair<A*, A*> v, S const& s) {
   ::adl::list_format<> format;
   format.open(o);
-  for (; v.first != v.second; ++v.first) format.element(o, *v.first, s);
+  for (; v.first != v.second; ++v.first)
+    format.element(o, *v.first, s);
   format.close(o);
 }
 template <class O, class A, class S>
 void print(O& o, std::pair<A const*, A const*> v, S const& s) {
   ::adl::list_format<> format;
   format.open(o);
-  for (; v.first != v.second; ++v.first) format.element(o, *v.first, s);
+  for (; v.first != v.second; ++v.first)
+    format.element(o, *v.first, s);
   format.close(o);
 }
-}
+} // namespace adl_default
 
 
 namespace graehl {
@@ -281,7 +303,9 @@ template <class V, class S>
 struct Printer {
   V const& v;
   S const& s;
-  Printer(V const& v, S const& s) : v(v), s(s) {}
+  Printer(V const& v, S const& s)
+      : v(v)
+      , s(s) {}
 };
 
 /// it's important to return ostream and not the more specific stream.
@@ -308,7 +332,8 @@ Printer<V, S> printer(V const& v, S const& s) {
 template <class V>
 struct AdlPrinter {
   V v;
-  AdlPrinter(V v) : v(v) {}
+  AdlPrinter(V v)
+      : v(v) {}
 };
 
 /// it's important to return ostream and not the more specific stream.
@@ -332,7 +357,9 @@ template <class V, class S>
 struct PrinterMove {
   V v;
   S s;
-  PrinterMove(V&& v, S s) : v(std::forward<V>(v)), s(s) {}
+  PrinterMove(V&& v, S s)
+      : v(std::forward<V>(v))
+      , s(s) {}
 };
 
 /// it's important to return ostream and not the more specific stream.
@@ -354,7 +381,8 @@ typename enable_if<is_container<O>::value, O>::type& operator<<(O& out, PrinterM
 template <class V>
 struct AdlPrinterMove {
   V v;
-  AdlPrinterMove(V&& v) : v(std::forward<V>(v)) {}
+  AdlPrinterMove(V&& v)
+      : v(std::forward<V>(v)) {}
 };
 
 
@@ -455,6 +483,6 @@ AdlPrinter<V> printer(V const& v) {
 #endif
 
 
-}
+} // namespace graehl
 
 #endif

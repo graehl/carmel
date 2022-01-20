@@ -48,12 +48,10 @@
 
 
 #ifndef GRAEHL_EXTENDED_HYPERGRAPH_TRAITS
-#define GRAEHL_EXTENDED_HYPERGRAPH_TRAITS 0
+#define GRAEHL_EXTENDED_HYPERGRAPH_TRAITS 1
 #endif
 
-#if GRAEHL_EXTENDED_HYPERGRAPH_TRAITS
 #include <graehl/shared/graph.hpp>  // graph_object
-#endif
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/range/iterator_range.hpp>
@@ -73,7 +71,6 @@ hyperarc_tag const hyperarcT;
 template <class T>
 struct hypergraph_traits : boost::graph_traits<T>, edge_traits<T> {
 //  typedef typename graph::hyperarc_index_map hyperarc_index_map;
-#if GRAEHL_EXTENDED_HYPERGRAPH_TRAITS
   typedef T graph;
   typedef boost::graph_traits<graph> GT;
   typedef typename graph::hyperarc_descriptor hyperarc_descriptor;
@@ -87,11 +84,8 @@ struct hypergraph_traits : boost::graph_traits<T>, edge_traits<T> {
   typedef boost::iterator_range<hyperarc_iterator> pair_hyperarc_it;
   typedef boost::iterator_range<vertex_iterator> pair_vertex_it;
   typedef boost::iterator_range<edge_iterator> pair_edge_it;
-
-#endif
 };
 
-#if GRAEHL_EXTENDED_HYPERGRAPH_TRAITS
 template <class G>
 struct graph_object<G, hyperarc_tag> {
   typedef typename hypergraph_traits<G>::hyperarc_descriptor descriptor;
@@ -103,7 +97,6 @@ template <class G>
 inline typename graph_object<G, hyperarc_tag>::iterator_pair begin_end(hyperarc_tag, G& g) {
   return hyperarcs(g);
 }
-#endif
 
 /*
   struct NoWeight {

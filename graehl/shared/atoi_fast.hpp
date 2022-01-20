@@ -40,9 +40,9 @@
 #include <limits>
 
 #if GRAEHL_HAVE_STRTOUL
-#include <climits>  //strtoul
+#include <climits> //strtoul
 #endif
-#undef min  // windows headers (used to?) define these
+#undef min // windows headers (used to?) define these
 #undef max
 #undef DELETE
 
@@ -56,7 +56,7 @@ VERBOSE_EXCEPTION_DECLARE(string_to_exception)
 
 // NOTE: stdlib atoi consumes dead whitespace; these don't
 template <class U>
-inline U atou_fast(char const* p) {  // faster than stdlib atoi. doesn't return how much of string was used.
+inline U atou_fast(char const* p) { // faster than stdlib atoi. doesn't return how much of string was used.
   U x = 0;
   while (*p >= '0' && *p <= '9') {
     x *= 10;
@@ -67,7 +67,7 @@ inline U atou_fast(char const* p) {  // faster than stdlib atoi. doesn't return 
 }
 
 template <class I>
-inline I atoi_fast(char const* p) {  // faster than stdlib atoi. doesn't return how much of string was used.
+inline I atoi_fast(char const* p) { // faster than stdlib atoi. doesn't return how much of string was used.
   I x = 0;
   bool neg = false;
   if (*p == '-') {
@@ -85,13 +85,16 @@ inline I atoi_fast(char const* p) {  // faster than stdlib atoi. doesn't return 
 template <class CharIt>
 struct PutChars {
   CharIt begin, end;
-  PutChars(CharIt begin, CharIt end) : begin(begin), end(end) {}
+  PutChars(CharIt begin, CharIt end)
+      : begin(begin)
+      , end(end) {}
   friend inline std::ostream& operator<<(std::ostream& out, PutChars const& self) {
     self.print(out);
     return out;
   }
   void print(std::ostream& out) const {
-    for (CharIt i = begin; i != end; ++i) out.put(*i);
+    for (CharIt i = begin; i != end; ++i)
+      out.put(*i);
   }
 };
 
@@ -133,7 +136,8 @@ inline U hextou(char const* begin, char const* end, bool complete = true) {
                                                               << x);
       return x;
     }
-    if (++p == end) return x;
+    if (++p == end)
+      return x;
   }
 }
 
@@ -152,7 +156,8 @@ inline U octaltou(char const* begin, char const* end, bool complete = true) {
                                                               << x);
       return x;
     }
-    if (++p == end) return x;
+    if (++p == end)
+      return x;
   }
 }
 
@@ -160,10 +165,12 @@ template <class U, class I>
 inline U atou_fast_advance(I& i, I end) {
   typedef typename std::iterator_traits<I>::value_type Char;
   U x = 0;
-  if (i == end) return x;
+  if (i == end)
+    return x;
   for (; i != end; ++i) {
     const Char c = *i;
-    if (c < '0' || c > '9') return x;
+    if (c < '0' || c > '9')
+      return x;
     x *= 10;
     x += c - '0';
   }
@@ -181,21 +188,23 @@ inline U atou_fast_advance_nooverflow(I& i, I end) {
   I begin = i;
   const U maxTenth = boost::integer_traits<U>::const_max / 10;
   U x = 0;
-  if (i == end) return x;
+  if (i == end)
+    return x;
   for (; i != end; ++i) {
     const Char c = *i;
-    if (c < '0' || c > '9') return x;
+    if (c < '0' || c > '9')
+      return x;
     if (x > maxTenth)
       THROW_MSG(string_to_exception, "ascii to unsigned overflow on char "
-                                         << c << " in '" << putChars(begin, end) << "': " << x << "*10 > "
-                                         << boost::integer_traits<U>::const_max);
+                                       << c << " in '" << putChars(begin, end) << "': " << x << "*10 > "
+                                       << boost::integer_traits<U>::const_max);
     x *= 10;
     U prev = x;
     x += c - '0';
     if (x < prev)
       THROW_MSG(string_to_exception, "ascii to unsigned overflow on char "
-                                         << c << " in '" << putChars(begin, end) << "': " << prev
-                                         << " * 10 + " << c << " => (overflow) " << x);
+                                       << c << " in '" << putChars(begin, end) << "': " << prev << " * 10 + "
+                                       << c << " => (overflow) " << x);
   }
   return x;
 }
@@ -211,8 +220,8 @@ inline U atou_fast_complete(It begin, It end) {
   U r = atou_fast_advance<U>(i, end);
   if (i != end)
     THROW_MSG(string_to_exception, "ascii to unsigned incomplete - only used first "
-                                       << i - begin << " characters of '" << putChars(begin, end) << "' => "
-                                       << r << " - trim whitespace too");
+                                     << i - begin << " characters of '" << putChars(begin, end) << "' => "
+                                     << r << " - trim whitespace too");
   return r;
 }
 
@@ -228,13 +237,11 @@ inline U atou_fast_complete(Str const& s) {
 
 template <class U>
 inline U atou_fast_complete(char const* s) {
-  return atou_fast_complete<U>(
-      s, s + std::strlen(s));  // TODO: could skip strlen call w/ a few more lines of code
+  return atou_fast_complete<U>(s, s + std::strlen(s)); // TODO: could skip strlen call w/ a few more lines of code
 }
 
 template <class I>
-inline I
-atou_fast(std::string const& s) {  // faster than stdlib atoi. doesn't return how much of string was used.
+inline I atou_fast(std::string const& s) { // faster than stdlib atoi. doesn't return how much of string was used.
   return atou_fast<I>(s.begin(), s.end());
 }
 
@@ -242,7 +249,8 @@ template <class I, class It>
 inline I atoi_fast_advance(It& i, It end) {
   typedef typename std::iterator_traits<It>::value_type Char;
   I x = 0;
-  if (i == end) return x;
+  if (i == end)
+    return x;
   bool neg = false;
   if (*i == '-') {
     neg = true;
@@ -250,7 +258,8 @@ inline I atoi_fast_advance(It& i, It end) {
   }
   for (; i != end; ++i) {
     const Char c = *i;
-    if (c < '0' || c > '9') return x;
+    if (c < '0' || c > '9')
+      return x;
     x *= 10;
     x += c - '0';
   }
@@ -268,14 +277,13 @@ inline I atoi_fast_complete(It begin, It end) {
   I r = atoi_fast_advance<I>(i, end);
   if (i != end)
     THROW_MSG(string_to_exception, "ascii to int incomplete - only used first "
-                                       << i - begin << " characters of '" << putChars(begin, end) << "' => "
-                                       << r << " - trim whitespace too");
+                                     << i - begin << " characters of '" << putChars(begin, end) << "' => "
+                                     << r << " - trim whitespace too");
   return r;
 }
 
 template <class I>
-inline I
-atoi_fast(std::string const& s) {  // faster than stdlib atoi. doesn't return how much of string was used.
+inline I atoi_fast(std::string const& s) { // faster than stdlib atoi. doesn't return how much of string was used.
   return atoi_fast<I>(s.begin(), s.end());
 }
 
@@ -300,7 +308,7 @@ inline int64_t strtol_complete(char const* s, int base = 0) {
   if (*s) {
     int64_t r = strtol(s, &e, base);
     char c = *e;
-    if (!c || std::isspace(c))  // simplifying assumption: we're happy if there's other stuff in the string,
+    if (!c || std::isspace(c)) // simplifying assumption: we're happy if there's other stuff in the string,
       // so long as the number ends in a space or eos. TODO: loop consuming spaces
       // until end?
       return r;
@@ -314,8 +322,10 @@ inline int64_t strtol_complete(char const* s, int base = 0) {
 // returns -INT_MAX or INT_MAX if number is too large/small
 inline int strtoi_complete_bounded(char const* s, int base = 0) {
   int64_t l = strtol_complete(s, base);
-  if (l < std::numeric_limits<int>::min()) return std::numeric_limits<int>::min();
-  if (l > std::numeric_limits<int>::max()) return std::numeric_limits<int>::max();
+  if (l < std::numeric_limits<int>::min())
+    return std::numeric_limits<int>::min();
+  if (l > std::numeric_limits<int>::max())
+    return std::numeric_limits<int>::max();
   return l;
 }
 #define RANGE_STR(x) #x
@@ -342,26 +352,29 @@ inline uint64_t strtoul_complete(char const* s, int base = 0) {
     char* e;
     r = std::strtoul(s, &e, base);
     char c = *e;
-    if (!c || std::isspace(c))  // simplifying assumption: we're happy if there's other stuff in the string,
+    if (!c || std::isspace(c)) // simplifying assumption: we're happy if there's other stuff in the string,
       // so long as the number ends in a space or eos. TODO: loop consuming spaces
       // until end?
       return r;
 #else
     int nchars;
     // unsigned long r=strtol(s, &e, base); //FIXME: not usually safe
-    if (sscanf(s, "%lu%n", &r, &nchars) && s[nchars] == '\0') return r;
+    if (sscanf(s, "%lu%n", &r, &nchars) && s[nchars] == '\0')
+      return r;
 #endif
   }
   THROW_MSG(string_to_exception, "can't get integer from '" << s << "'");
-  return 0;  // quiet, warning!
+  return 0; // quiet, warning!
 }
 
 inline unsigned strtou_complete_bounded(char const* s, int base = 10) {
   uint64_t l = strtoul_complete(s, base);
 #include <graehl/shared/warning_compiler.h>
   CLANG_DIAG_OFF(tautological-compare)
-  if (l < std::numeric_limits<unsigned>::min()) return std::numeric_limits<unsigned>::min();
-  if (l > std::numeric_limits<unsigned>::max()) return std::numeric_limits<unsigned>::max();
+  if (l < std::numeric_limits<unsigned>::min())
+    return std::numeric_limits<unsigned>::min();
+  if (l > std::numeric_limits<unsigned>::max())
+    return std::numeric_limits<unsigned>::max();
   return l;
 }
 
@@ -386,16 +399,23 @@ struct StrCursor {
   bool operator!() const { return p == end; }
   operator bool() const { return p != end; }
   template <class Str>
-  StrCursor(Str const& str) : p(&*str.begin()), end(&*str.end()) {}
-  StrCursor(char const* cstr) : p(cstr), end(cstr + std::strlen(cstr)) {}
-  StrCursor(char const* begin, char const* end) : p(begin), end(end) {}
+  StrCursor(Str const& str)
+      : p(&*str.begin())
+      , end(&*str.end()) {}
+  StrCursor(char const* cstr)
+      : p(cstr)
+      , end(cstr + std::strlen(cstr)) {}
+  StrCursor(char const* begin, char const* end)
+      : p(begin)
+      , end(end) {}
 };
 
 struct CstrCursor {
   char const* p;
   bool operator!() const { return !*p; }
   operator bool() const { return *p; }
-  CstrCursor(char const* cstr) : p(cstr) {}
+  CstrCursor(char const* cstr)
+      : p(cstr) {}
 };
 
 inline bool space_or_tab(char c) {
@@ -417,24 +437,27 @@ inline bool digit_char(char c) {
    the next-fastest alternative is the heavier-to-compile Boost spirit
 */
 template <class Float, class StrCursor>
-Float scan_real_no_sign(StrCursor& c) {
+Float scan_real_no_sign(StrCursor& c, char decimal = '.') {
   // before decimal
   Float value = (Float)0;
   while (digit_char(*c.p)) {
     value = value * (Float)10 + (*c.p - '0');
     ++c.p;
-    if (!c) return value;
+    if (!c)
+      return value;
   }
 
   // optional decimal, after decimal
-  if (*c.p == '.') {
+  if (*c.p == decimal) {
     ++c.p;
-    if (!c) return value;
+    if (!c)
+      return value;
     Float value_of_digit = (Float)0.1;
     while (digit_char(*c.p)) {
       value += (*c.p - '0') * value_of_digit;
       ++c.p;
-      if (!c) return value;
+      if (!c)
+        return value;
       value_of_digit *= (Float)0.1;
     }
   }
@@ -442,23 +465,27 @@ Float scan_real_no_sign(StrCursor& c) {
   // optional exponent
   if (c && ((*c.p == 'e') || (*c.p == 'E'))) {
     ++c.p;
-    if (!c) return value;
+    if (!c)
+      return value;
 
     // optional exponent sign
     bool const negative_exponent = (*c.p == '-');
     if (negative_exponent) {
       ++c.p;
-      if (!c) return value;
+      if (!c)
+        return value;
     } else if (*c.p == '+') {
       ++c.p;
-      if (!c) return value;
+      if (!c)
+        return value;
     }
 
     unsigned exponent = 0;
     while (digit_char(*c.p)) {
       exponent = exponent * 10 + (*c.p - '0');
       ++c.p;
-      if (!c) break;
+      if (!c)
+        break;
     }
 
     if (exponent > std::numeric_limits<Float>::max_exponent)
@@ -512,22 +539,26 @@ bool cursor_at_inf(StrCursor& i) {
    optionally allowing INF or inf (but not NaN) input
 */
 template <class Float, class StrCursor>
-Float scan_real(StrCursor& c, bool skip_leading_space = false, bool parse_inf = true) {
-  if (!c) return (Float)0;
+Float scan_real(StrCursor& c, bool skip_leading_space = false, char decimal = '.', bool parse_inf = true) {
+  if (!c)
+    return (Float)0;
   if (skip_leading_space)
     while (space_or_tab(*c.p)) {
       ++c.p;
-      if (!c) return (Float)0;
+      if (!c)
+        return (Float)0;
     }
   // optional sign
   bool negative = false;
   if (*c.p == '-') {
     ++c.p;
-    if (!c) return (Float)0;
+    if (!c)
+      return (Float)0;
     negative = true;
   } else if (*c.p == '+') {
     ++c.p;
-    if (!c) return (Float)0;
+    if (!c)
+      return (Float)0;
   }
   if (parse_inf && cursor_at_inf(c))
     return negative ? -std::numeric_limits<Float>::infinity() : std::numeric_limits<Float>::infinity();
@@ -538,66 +569,69 @@ Float scan_real(StrCursor& c, bool skip_leading_space = false, bool parse_inf = 
 }
 
 template <class Float>
-Float parse_real(char const* p, char const* end, bool require_complete = true) {
+Float parse_real(char const* p, char const* end, bool require_complete = true, char decimal = '.',
+                 bool skip_leading_space = false) {
   StrCursor str(p, end);
-  if (require_complete) {
-    Float r = scan_real<Float>(str);
-    if (str)
-      THROW_MSG(string_to_exception, "conversion to real number from '" << putChars(p, end)
-                                                                        << "' leaves unused characters "
-                                                                        << putChars(str.p, end));
-    return r;
-  } else
-    return scan_real<Float>(str);
+  Float r = scan_real<Float>(str, skip_leading_space, decimal);
+  if (require_complete && str)
+    THROW_MSG(string_to_exception, "conversion to real number from '" << putChars(p, end)
+                                                                      << "' leaves unused characters "
+                                                                      << putChars(str.p, end));
+  return r;
 }
 
 template <class Float>
-Float parse_real(std::string::const_iterator p, std::string::const_iterator end, bool require_complete = true) {
-  return parse_real<Float>(&*p, &*end, require_complete);
+Float parse_real(std::string::const_iterator p, std::string::const_iterator end, bool require_complete = true,
+                 char decimal = '.', bool skip_leading_space = false) {
+  return parse_real<Float>(&*p, &*end, require_complete, decimal, skip_leading_space);
 }
 
 template <class Float>
-Float parse_real(std::string const& str, bool require_complete = true) {
+Float parse_real(std::string const& str, bool require_complete = true, char decimal = '.',
+                 bool skip_leading_space = false) {
   char const* d = str.data();
-  return parse_real<Float>(d, d + str.size(), require_complete);
+  return parse_real<Float>(d, d + str.size(), require_complete, decimal, skip_leading_space);
 }
 
-
-inline float parse_float(char const* p, char const* end, bool require_complete = true) {
-  return parse_real<float>(p, end, require_complete);
+inline float parse_float(char const* p, char const* end, bool require_complete = true, char decimal = '.',
+                         bool skip_leading_space = false) {
+  return parse_real<float>(p, end, require_complete, decimal, skip_leading_space);
 }
 
-inline double parse_double(char const* p, char const* end, bool require_complete = true) {
-  return parse_real<double>(p, end, require_complete);
+inline double parse_double(char const* p, char const* end, bool require_complete = true, char decimal = '.',
+                           bool skip_leading_space = false) {
+  return parse_real<double>(p, end, require_complete, decimal, skip_leading_space);
 }
 
-inline float parse_float(std::string const& str, bool require_complete = true) {
-  return parse_real<float>(str, require_complete);
+inline float parse_float(std::string const& str, bool require_complete = true, char decimal = '.',
+                         bool skip_leading_space = false) {
+  return parse_real<float>(str, require_complete, decimal, skip_leading_space);
 }
 
-inline double parse_double(std::string const& str, bool require_complete = true) {
-  return parse_real<double>(str, require_complete);
+inline double parse_double(std::string const& str, bool require_complete = true, char decimal = '.',
+                           bool skip_leading_space = false) {
+  return parse_real<double>(str, require_complete, decimal, skip_leading_space);
 }
 
 template <class Float>
-Float parse_real(char const* cstr, bool require_complete = true) {
+Float parse_real(char const* cstr, bool require_complete = true, char decimal = '.',
+                 bool skip_leading_space = false) {
   CstrCursor str(cstr);
-  if (require_complete) {
-    Float r = scan_real<Float>(str);
-    if (str)
-      THROW_MSG(string_to_exception,
-                "conversion to real number from '" << cstr << "' leaves unused characters " << str.p);
-    return r;
-  } else
-    return scan_real<Float>(str);
+  Float r = scan_real<Float>(str, skip_leading_space, decimal);
+  if (require_complete && str)
+    THROW_MSG(string_to_exception,
+              "conversion to real number from '" << cstr << "' leaves unused characters " << str.p);
+  return r;
 }
 
-inline float parse_float(char const* cstr, bool require_complete = true) {
-  return parse_real<float>(cstr, require_complete);
+inline float parse_float(char const* cstr, bool require_complete = true, char decimal = '.',
+                         bool skip_leading_space = false) {
+  return parse_real<float>(cstr, require_complete, decimal, skip_leading_space);
 }
 
-inline double parse_double(char const* cstr, bool require_complete = true) {
-  return parse_real<double>(cstr, require_complete);
+inline double parse_double(char const* cstr, bool require_complete = true, char decimal = '.',
+                           bool skip_leading_space = false) {
+  return parse_real<double>(cstr, require_complete, decimal, skip_leading_space);
 }
 
 #ifdef GRAEHL_TEST
@@ -619,6 +653,6 @@ BOOST_AUTO_TEST_CASE(test_scan_real) {
 #endif
 
 
-}
+} // namespace graehl
 
 #endif

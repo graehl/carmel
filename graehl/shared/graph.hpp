@@ -43,7 +43,7 @@ CLANG_DIAG_OFF(unused-variable)
 namespace {
 edge_tag const edgeT;
 vertex_tag const vertexT;
-}
+} // namespace
 CLANG_DIAG_ON(unused-variable)
 
 template <class G, class T>
@@ -63,73 +63,67 @@ struct graph_object<G, vertex_tag> {
   typedef boost::iterator_range<iterator> iterator_pair;
 };
 
-template <class Tag, class G, class E, class F>
-void visit(Tag t, G& g, F f);
+template <class Tag, class G, class F>
+void visit(Tag t, G& g, F& f);
 
 #if 0
-template <class Tag, class G, class E>
+template <class Tag, class G>
 inline typename graph_object<G, Tag>::iterator_pair begin_end(Tag t, G& g) {
   return typename graph_object<G, Tag>::iterator_pair(boost::begin(t, g), boost::end(t, g));
 }
 #endif
-template <class Tag, class G, class E>
-inline typename graph_object<G, Tag>::iterator_pair begin_end(vertex_tag, G& g) {
+template <class G>
+inline typename graph_object<G, vertex_tag>::iterator_pair begin_end(vertex_tag, G& g) {
   return vertices(g);
 }
 
-template <class Tag, class G, class E>
-inline typename graph_object<G, Tag>::iterator_pair begin_end(edge_tag, G& g) {
+template <class G>
+inline typename graph_object<G, edge_tag>::iterator_pair begin_end(edge_tag, G& g) {
   return edges(g);
 }
 
 // const g
-template <class Tag, class G, class E>
-inline typename graph_object<G, Tag>::iterator_pair begin_end(vertex_tag, G const& g) {
+template <class G>
+inline typename graph_object<G, vertex_tag>::iterator_pair begin_end(vertex_tag, G const& g) {
   return vertices(g);
 }
 
-template <class Tag, class G, class E>
-inline typename graph_object<G, Tag>::iterator_pair begin_end(edge_tag, G const& g) {
+template <class G>
+inline typename graph_object<G, edge_tag>::iterator_pair begin_end(edge_tag, G const& g) {
   return edges(g);
 }
-
 
 // TEST: does V v mean we get a chance to V &v or V const& v ???
 
-template <class G, class T, class F>
-inline void visit(T, G& g, F const& f) {
-  using namespace boost;
-  typedef graph_object<G, T> GO;
-  typename GO::iterator_pair pi = vertices(g);
-  for (typename GO::iterator i = boost::begin(pi), e = boost::end(pi); i != e; ++i) f(*i);
+template <class T, class G, class F>
+inline void visit(T t, G& g, F& f) {
+  auto const& pi = begin_end(t, g);
+  for (auto i = boost::begin(pi), e = boost::end(pi); i != e; ++i)
+    f(*i);
 }
 
-template <class G, class T, class F>
-inline void visit(T, G& g, F& f) {
-  using namespace boost;
-  typedef graph_object<G, T> GO;
-  typename GO::iterator_pair pi = vertices(g);
-  for (typename GO::iterator i = boost::begin(pi), e = boost::end(pi); i != e; ++i) f(*i);
+template <class T, class G, class F>
+inline void visit(T t, G& g, F const& f) {
+  auto const& pi = begin_end(t, g);
+  for (auto i = boost::begin(pi), e = boost::end(pi); i != e; ++i)
+    f(*i);
 }
 
-// const g
-template <class G, class T, class F>
-inline void visit(T, G const& g, F const& f) {
-  using namespace boost;
-  typedef graph_object<G, T> GO;
-  typename GO::iterator_pair pi = vertices(g);
-  for (typename GO::iterator i = boost::begin(pi), e = boost::end(pi); i != e; ++i) f(*i);
+template <class T, class G, class F>
+inline void visit(T t, G const& g, F& f) {
+  auto const& pi = begin_end(t, g);
+  for (auto i = boost::begin(pi), e = boost::end(pi); i != e; ++i)
+    f(*i);
 }
 
-template <class G, class T, class F>
-inline void visit(T, G const& g, F& f) {
-  using namespace boost;
-  typedef graph_object<G, T> GO;
-  typename GO::iterator_pair pi = vertices(g);
-  for (typename GO::iterator i = boost::begin(pi), e = boost::end(pi); i != e; ++i) f(*i);
+template <class T, class G, class F>
+inline void visit(T t, G const& g, F const& f) {
+  auto const& pi = begin_end(t, g);
+  for (auto i = boost::begin(pi), e = boost::end(pi); i != e; ++i)
+    f(*i);
 }
 
 
-}
+} // namespace graehl
 
 #endif

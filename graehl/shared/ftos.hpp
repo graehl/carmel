@@ -349,41 +349,49 @@ int main(int argc, char* argv[]) {
 #ifdef GRAEHL_TEST
 #include <graehl/shared/string_to.hpp>
 #include <graehl/shared/test.hpp>
+#include <cmath>
 
 namespace graehl {
 
+float constexpr SMALL_PERCENT = 2e-3; // 0.000002 difference, relative
+
+template <class F>
+inline void testFtoaClose(F x, bool exact = GRAEHL_FTOS_ROUNDTRIP) {
+  F y, ny;
+  string_to(ftos(x), y);
+  string_to(ftos(-x), ny);
+  if (exact) {
+    BOOST_CHECK_EQUAL(x, y);
+    BOOST_CHECK_EQUAL(-x, ny);
+  } else {
+    BOOST_CHECK_CLOSE(x, y, SMALL_PERCENT);
+    BOOST_CHECK_CLOSE(-x, ny, SMALL_PERCENT);
+  }
+}
+
 template <class F>
 inline void testFtoaExact(F x) {
-  F y;
-  string_to(ftos(x), y);
-  BOOST_CHECK_EQUAL(x, y);
+  return testFtoaClose(x, true);
 }
 
 template <class F>
 inline void testFtoaExacts() {
+  testFtoaExact((F)0);
   testFtoaExact((F)HUGE_VAL);
   testFtoaExact((F)-HUGE_VAL);
   testFtoaExact(std::numeric_limits<F>::infinity());
   testFtoaExact(-std::numeric_limits<F>::infinity());
-  BOOST_CHECK_EQUAL(ftos((F)0 / (F)0), "NAN");
-  for (int i = -1000000; i < 1000000; i += 10)
+  F nanf = (F)std::sqrt(-1.f); // 1/0 is a compiler error in MSVC
+  BOOST_CHECK_EQUAL(ftos(nanf), "NAN");
+  for (int i = -1000000; i < 1000000; i += 17) {
     testFtoaExact((F)i);
+  }
 }
 
 template <class F>
 inline void testFtoa(F x, F scale, F max = 1e30, unsigned n = 10000) {
-  for (unsigned i = 0; i < n && x <= max; x *= scale) {
-    F y, ny;
-    string_to(ftos(x), y);
-    string_to(ftos(-x), ny);
-#if GRAEHL_FTOS_ROUNDTRIP
-    BOOST_CHECK_EQUAL(x, y);
-    BOOST_CHECK_EQUAL(-x, ny);
-#else
-    BOOST_CHECK_CLOSE(x, y, 2e-3);
-    BOOST_CHECK_CLOSE(-x, ny, 2e-3);
-#endif
-  }
+  for (unsigned i = 0; i++ < n && x <= max; x *= scale)
+    testFtoaClose(x);
 }
 
 BOOST_AUTO_TEST_CASE(TestFtoaFloat) {
@@ -395,7 +403,7 @@ BOOST_AUTO_TEST_CASE(TestFtoaFloat) {
     std::stringstream ss(s);
     float y;
     ss >> y;
-    BOOST_CHECK_CLOSE(y, x, 1e-2);
+    BOOST_CHECK_CLOSE(y, x, SMALL_PERCENT);
   }
   {
     auto x = 2.35054106e-4f;
@@ -404,7 +412,7 @@ BOOST_AUTO_TEST_CASE(TestFtoaFloat) {
     std::stringstream ss(s);
     float y;
     ss >> y;
-    BOOST_CHECK_CLOSE(y, x, 1e-2);
+    BOOST_CHECK_CLOSE(y, x, SMALL_PERCENT);
   }
   {
     auto x = 2.35054106e-2f;
@@ -413,17 +421,17 @@ BOOST_AUTO_TEST_CASE(TestFtoaFloat) {
     std::stringstream ss(s);
     float y;
     ss >> y;
-    BOOST_CHECK_CLOSE(y, x, 1e-2);
+    BOOST_CHECK_CLOSE(y, x, SMALL_PERCENT);
   }
   BOOST_CHECK_EQUAL(ftos(0.235054f), "0.235054");
-  BOOST_CHECK_EQUAL(ftos(0.f), "0");
+  testFtoa((float)(13 << 20), 0.5f, 1e30f, 90);
   testFtoa((float)1e-25f, 3.1415f, 1e30f);
   testFtoa((float)1.318843e-10f, 5.3e3f, 1e30f);
 }
 
 BOOST_AUTO_TEST_CASE(TestFtoaDouble) {
   testFtoaExacts<double>();
-  BOOST_CHECK_EQUAL(ftos(0.), "0");
+  testFtoa((float)(109ull << 40), 0.5f, 1e30f, 170);
   testFtoa(1e-250, 3.143848437, 1e300);
   testFtoa(1.3188437e-10, 5.3e12, 1e300);
 }

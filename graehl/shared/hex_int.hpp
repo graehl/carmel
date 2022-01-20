@@ -56,7 +56,7 @@ struct hex_int {
   }
 
   hex_int() : i() {}
-  explicit hex_int(I i) : i(i) {}
+  constexpr hex_int(I i) : i(i) {}
   explicit hex_int(std::string const& s) { assign(s); }
   operator I const&() const { return i; }
   operator I&() { return i; }

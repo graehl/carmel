@@ -745,6 +745,12 @@ struct conf_expr_base {
   string_consumer warn_to;
   p_conf_opt opt;
 
+  // non-owning parent node whose lifetime exceeds this one's; used for propagating exceptions upwards;
+  // only throwing from the root node seems to allow for the exception to be caught since we won't throw again
+  // while stack unwinding
+  const conf_expr_base* parent;
+  mutable std::exception_ptr exception;
+
   typedef boost::optional<boost::any> validate_callback;
   mutable validate_callback validator;
 
@@ -767,7 +773,8 @@ struct conf_expr_base {
       : path(parent.path)
       , depth(parent.depth + 1)
       , warn_to(parent.warn_to)
-      , opt(new conf_opt(parent.opt.get(), conf_opt::inherit)) {
+      , opt(new conf_opt(parent.opt.get(), conf_opt::inherit))
+      , parent(&parent) {
     path.push_back(name);
   }
 
@@ -810,7 +817,7 @@ void configure_action(Backend const& c, Action const& action, RootVal* pval,
 
 struct conf_expr_destroy {
   virtual std::string what() const = 0;
-  virtual ~conf_expr_destroy() { SHOWIF1(CONFEXPR, 3, "processing sub-config ", what()); }
+  virtual ~conf_expr_destroy() noexcept(false) { SHOWIF1(CONFEXPR, 3, "processing sub-config ", what()); }
 };
 
 // template <class> class Backends
@@ -890,15 +897,35 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
 
   bool skip_help() const { return is_help(action) && Backend::too_verbose(*this); }
 
-  ~conf_expr() override  // destructor makes things happen; however, we want to take final action only in context of
+  // destructor makes things happen; however, we want to take final action only in context of
   // caller and all of caller's overrides (when name and superceding parent values are known)
-  {
+  ~conf_expr() noexcept(false) override {
     drop();
-    if (skip_help()) return;
-    if (is_init(action)) opt->apply_init(pval);  // only works on leaves for now
-    if (opt->is_todo()) return;
-    configure_policy::action(backend(), action, pval, base());
+    if (skip_help())
+      return;
+    if (is_init(action))
+      opt->apply_init(pval); // only works on leaves for now
+    if (opt->is_todo())
+      return;
+
+    try {
+      configure_policy::action(backend(), action, pval, base());
+    } catch (...) {
+      // can only properly throw from root; will terminate upon an exception if we fail to propagate it upward
+      if (!root() && parent != nullptr)
+        parent->exception = std::current_exception();
+      else
+        throw;
+    }
+
     SHOWIF1(CONFEXPR, 1, "</conf_expr>", base());
+
+    if (exception) {
+      if (root() || parent == nullptr)
+        std::rethrow_exception(exception);
+      else
+        parent->exception = exception;
+    }
   }
 
  public:
@@ -1124,7 +1151,7 @@ inline std::string parent_option_name(std::string const& s) {
 }
 
 struct configure_backend {
-  virtual ~configure_backend() {}
+  virtual ~configure_backend() noexcept(false) {}
   typedef std::shared_ptr<configure_backend const> ptr;
 };
 

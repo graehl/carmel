@@ -1,7 +1,8 @@
 // modified from r61 to prefix defines with LZ4_
+// clang-format off
 
 /*
-   LZ4 - Fast LZ compression algorithm
+   LZ4-Fast LZ compression algorithm
    Copyright (C) 2011-2012, Yann Collet.
    BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
 
@@ -183,7 +184,7 @@ typedef struct _U64_S { U64 v; } U64_S;
 
 #define LZ4_HASH_LOG LZ4_COMPRESSIONLEVEL
 #define LZ4_HASHTABLESIZE (1 << LZ4_HASH_LOG)
-#define LZ4_HASH_MASK (LZ4_HASHTABLESIZE - 1)
+#define LZ4_HASH_MASK (LZ4_HASHTABLESIZE-1)
 
 #define LZ4_SKIPSTRENGTH (LZ4_NOTCOMPRESSIBLE_CONFIRMATION>2?LZ4_NOTCOMPRESSIBLE_CONFIRMATION:2)
 #define LZ4_STACKLIMIT 13
@@ -336,7 +337,7 @@ int LZ4_compressBound(int isize)
 //******************************
 
 int LZ4_compressCtx(void** ctx,
-				 const char* source,
+				 char const* source,
 				 char* dest,
 				 int isize)
 {
@@ -443,7 +444,7 @@ _endCount:
 		if (ip > mflimit) { anchor = ip;  break; }
 
 		// Fill table
-		HashTable[LZ4_HASH_VALUE(ip-2)] = ip - 2 - base;
+		HashTable[LZ4_HASH_VALUE(ip-2)] = ip - 2-base;
 
 		// Test next position
 		ref = base + HashTable[LZ4_HASH_VALUE(ip)];
@@ -478,7 +479,7 @@ _last_literals:
 #define LZ4_HASH64K_FUNCTION(i)	(((i) * 2654435761U) >> ((LZ4_MINMATCH*8)-LZ4_HASHLOG64K))
 #define LZ4_HASH64K_VALUE(p)	LZ4_HASH64K_FUNCTION(A32(p))
 int LZ4_compress64kCtx(void** ctx,
-				 const char* source,
+				 char const* source,
 				 char* dest,
 				 int isize)
 {
@@ -584,7 +585,7 @@ _endCount:
 		if (ip > mflimit) { anchor = ip;  break; }
 
 		// Fill table
-		HashTable[LZ4_HASH64K_VALUE(ip-2)] = ip - 2 - base;
+		HashTable[LZ4_HASH64K_VALUE(ip-2)] = ip - 2-base;
 
 		// Test next position
 		ref = base + HashTable[LZ4_HASH64K_VALUE(ip)];
@@ -612,7 +613,7 @@ _last_literals:
 }
 
 
-int LZ4_compress(const char* source,
+int LZ4_compress(char const* source,
 				 char* dest,
 				 int isize)
 {
@@ -641,7 +642,7 @@ int LZ4_compress(const char* source,
 //      LZ4_uncompress_unknownOutputSize() also insures that it will never read outside of the input buffer.
 //		A corrupted input will produce an error result, a negative int, indicating the position of the error within input stream.
 
-int LZ4_uncompress(const char* source,
+int LZ4_uncompress(char const* source,
 				 char* dest,
 				 int osize)
 {
@@ -725,7 +726,7 @@ _output_error:
 
 
 int LZ4_uncompress_unknownOutputSize(
-				const char* source,
+				char const* source,
 				char* dest,
 				int isize,
 				int maxOutputSize)

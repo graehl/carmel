@@ -32,9 +32,11 @@
 #define CLANG_DIAG_IGNORE(x)
 #endif
 
-#define CLANG_NEWER                                                                        \
-  (!defined(__apple_build_version__) || __apple_build_version__ > 6020070 || __clang__ > 1 \
-   || __clang__ == 1 && __clang_major_ > 6)
+#if !defined(__apple_build_version__) || __apple_build_version__ > 6020070 || __clang__ > 1 \
+    || __clang__ == 1 && __clang_major_ > 6
+#define CLANG_NEWER 1
+#endif
+
 #if CLANG_NEWER
 #define CLANG_DIAG_IGNORE_NEWER(x) CLANG_DIAG_IGNORE(x)
 #else
