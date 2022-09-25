@@ -30,7 +30,7 @@ LIB =
 CPP_EXT=cc
 
 LDFLAGS += -lpthread -ldl -pthread
-BASECXXFLAGS = -ffast-math
+BASECXXFLAGS = -ffast-math -std=c++17 -mtune=native
 CPPFLAGS += -Wno-deprecated -Wall
 
 CXXFLAGS= $(BASECXXFLAGS) -O3

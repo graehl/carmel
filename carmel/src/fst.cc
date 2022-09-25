@@ -566,15 +566,12 @@ ostream& operator<<(ostream& o, WFST& w) {
 List<List<PathArc> >* WFST::randomPaths(unsigned k, unsigned max_len) {
   Assert(valid());
   List<List<PathArc> >* paths = NEW List<List<PathArc> >;
-  if (!valid()) {
-    // List<List<PathArc> >::iterator insertHere=paths->begin();
-    for (unsigned i = 0; i < k;) {
-      paths->push_front(List<PathArc>());
-      if (~randomPath(paths->front().back_inserter(), max_len))
-        ++i;
-      else
-        paths->pop_front();
-    }
+  for (unsigned i = 0; i < k;) {
+    paths->push_front(List<PathArc>());
+    if (randomPath(paths->front().back_inserter(), max_len))
+      ++i;
+    else
+      paths->pop_front();
   }
   return paths;
 }

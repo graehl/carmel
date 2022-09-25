@@ -191,7 +191,7 @@ void WFST::set_compose(cascade_parameters& cascade, WFST& a, WFST& b, bool named
   // to composite states in the order they are first visited
 
   List<TrioID> queue;
-  unsigned sourceState = ~0;
+  unsigned sourceState = ~0u;
 #ifdef OLDCOMPOSEARC
   unsigned* pDest;
 #endif

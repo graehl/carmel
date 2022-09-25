@@ -25,6 +25,8 @@ echo-%:
 echoraw-%:
 	@echo "$($*)"
 
+CPPFLAGS += -std=c++17
+
 ifndef BUILD_BASE
 BUILD_BASE:=.
 endif
@@ -213,7 +215,6 @@ INC += $(BOOST_INCLUDEDIR)
 list_src: $(BOOST_SERIALIZATION_SRCS)
 	echo $(BOOST_SERIALIZATION_SRCS)
 
-ARCH_FLAGS += -std=c++11
 # if you use c++11 abi for glibc, boost then comment this out
 ABI_CFLAGS = -D_GLIBCXX_USE_CXX11_ABI=0
 CXXFLAGS_COMMON += $(ARCH_FLAGS) $(CMDCXXFLAGS) $(ABI_CFLAGS)
@@ -236,7 +237,7 @@ ifdef PEDANTIC
 CPPFLAGS +=  -pedantic
 endif
 CPPFLAGS_TEST += $(CPPFLAGS) -ggdb
-CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb
+CPPFLAGS_DEBUG += $(CPPFLAGS) -fno-inline-functions -ggdb -std=c++17
 CPPFLAGS_OPT += $(CPPFLAGS) -ggdb
 #-DNDEBUG
 

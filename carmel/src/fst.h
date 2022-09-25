@@ -704,11 +704,11 @@ class WFST {
 
   void listAlphabet(ostream& out, LabelType dir = kInput);
   friend ostream& operator<<(ostream&, WFST&);  // Yaser 7-20-2000
-  // I=PathArc output iterator; returns length of path or -1 on error
-  unsigned randomPath(List<PathArc>* l, unsigned max_len = ~0) {
+  /// append random start->final path to l; \return true iff full path found
+  bool randomPath(List<PathArc>* l, unsigned max_len = ~0u) {
     return randomPath(l->back_inserter(), max_len);
   }
-  /// \return -1 if no path found or max_len exceeded; makes locally random
+  /// \return false if no path found or max_len exceeded else true; makes locally random
   /// choices; doesn't pick a path relative to sum-of-all-paths
   template <class I>
   bool randomPath(I i, unsigned max_len = -1) {
@@ -717,8 +717,8 @@ class WFST {
     unsigned len = 0;
     unsigned max = *(unsigned*)&max_len;
     for (;;) {
-      if (s == final) return len;
-      if (len > max || states[s].arcs.isEmpty()) return ~0;
+      if (s == final) return true;
+      if (len > max || states[s].arcs.isEmpty()) return false;
       // choose random arc:
       Weight arcsum;
       typedef List<FSTArc> LA;
@@ -920,7 +920,7 @@ class WFST {
   // list is dynamically allocated - delete it
   // yourself when you are done with it
   struct symbol_ids : public List<unsigned> {
-    symbol_ids(WFST& wfst, char const* buf, LabelType output = kInput, unsigned line = ~0) {
+    symbol_ids(WFST& wfst, char const* buf, LabelType output = kInput, unsigned line = ~0u) {
       wfst.symbolList(this, buf, output, line);
     }
   };
@@ -947,7 +947,7 @@ class WFST {
 
   /// takes space-separated symbols and returns a list of symbol numbers in the
   /// input or output alphabet
-  void symbolList(List<unsigned>* ret, const char* buf, LabelType output = kInput, unsigned line = ~0);
+  void symbolList(List<unsigned>* ret, const char* buf, LabelType output = kInput, unsigned line = ~0u);
 
   char const* letter_or_eps(unsigned i, LabelType dir, char const* eps = "&#949", bool use_eps = true) {
     return (use_eps && i == epsilon_index) ? eps : letter(i, dir);
@@ -1122,7 +1122,7 @@ class WFST {
   // sum, or just max if sum=false.  sum clamped to
   // max of 1 if clamp=true
   void pruneArcs(Weight thresh);  // remove all arcs with weight < thresh
-  enum { UNLIMITED = (unsigned)~0 };
+  enum { UNLIMITED = (unsigned)~0u };
   void prunePaths(unsigned max_states = UNLIMITED, Weight keep_paths_within_ratio = Weight::INF());
   // throw out rank states by the weight of the best path through them, keeping only max_states of them (or
   // all of them, if max_states<0), after removing states and arcs that do not lie on any path of weight less

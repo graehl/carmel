@@ -1041,7 +1041,7 @@ int
             else if (*pc == 'p')
               pruneFlag = 1;
             else if (*pc == 'g' || *pc == 'G')
-              nGenerate = ~0;
+              nGenerate = ~0u;
             else if (*pc == 'M')
               train_opt.max_iter = -1;
             else if (*pc == 'L')
@@ -1183,7 +1183,7 @@ int
 #ifdef MARCU
     chain += nModels;
 #endif
-    unsigned nTarget = ~0;  // chain[nTarget] is the linear acceptor built from input sequences
+    unsigned nTarget = ~0u;  // chain[nTarget] is the linear acceptor built from input sequences
     istream* line_in = NULL;
     if (flags[(unsigned)'i'] || flags[(unsigned)'b']
         || flags[(unsigned)'P']) {  // flags[(unsigned)'P'] similar to 'i' but instead of simple transducer,
@@ -1447,7 +1447,7 @@ int
               show_seed();
               for (unsigned i = 0; i < nGenerate;) {
                 List<PathArc> l;
-                if (~result->randomPath(&l)) {
+                if (result->randomPath(&l)) {
                   if (flags[(unsigned)'@']) {
                     WFST::print_training_pair(cout, l);
                   } else {
