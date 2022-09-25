@@ -22,7 +22,7 @@ const int logweight<Real>::base_index = std::ios_base::xalloc();
 template <class Real>
 const int logweight<Real>::thresh_index = std::ios_base::xalloc();
 template <class Real>
-THREADLOCAL int logweight<Real>::default_base = logweight<Real>::EXP;
+WEIGHT_THREADLOCAL int logweight<Real>::default_base = logweight<Real>::EXP;
 template <class Real>
-THREADLOCAL int logweight<Real>::default_thresh = logweight<Real>::ALWAYS_LOG;
+WEIGHT_THREADLOCAL int logweight<Real>::default_thresh = logweight<Real>::ALWAYS_LOG;
 }

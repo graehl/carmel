@@ -155,8 +155,14 @@ struct logweight {  // capable of representing nonnegative reals
   static inline Real LN_MUCH_LARGER() { return MUCH_BIGGER_LN; }
   static const int base_index;  // handle to ostream iword for LogBase enum (initialized to 0)
   static const int thresh_index;  // handle for OutThresh
-  static THREADLOCAL int default_base;
-  static THREADLOCAL int default_thresh;
+#if __clang__ && defined(__APPLE__)
+  #define WEIGHT_THREADLOCAL
+#else
+  #define WEIGHT_THREADLOCAL THREADLOCAL
+#endif
+
+  static WEIGHT_THREADLOCAL int default_base;
+  static WEIGHT_THREADLOCAL int default_thresh;
 
  public:
   // linux g++ 3.2 didn't like static self-class member
