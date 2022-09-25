@@ -1,5 +1,7 @@
 ## Carmel finite-state toolkit - J. Graehl
 
+What is this thing? See http://www.isi.edu/licensed-sw/carmel/carmel-tutorial2.pdf
+
  (carmel includes EM and gibbs-sampled (pseudo-Bayesian) training)
 
  (see `carmel/LICENSE` - free for research/non-commercial)
