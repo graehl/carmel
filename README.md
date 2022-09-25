@@ -9,14 +9,21 @@
 ## Building from source
 
 ```
-cd carmel; make -j 4 install BOOST_SUFFIX=-mt INSTALL_PREFIX=/usr/local
+# mac
+brew install boost@1.76 # other version are fine too
+cd carmel; make -j 4 carmel BOOST_SUFFIX=-mt
 # BOOST_SUFFIX= depends on how your boost libraries are installed - ls /usr/lib/libboost*.so
+
+# centos 7
+sudo yum install boost169-devel
+cd carmel; make -j 4 carmel BOOST_INCLUDEDIR=/usr/include/boost169 LDFLAGS+=" -L/usr/lib64/boost169" BOOST_SUFFIX:=
+
 ```
 
-(prerequisites: GNU Make (3.8) C++ compiler (GCC 5, clang 3.7, or
-visual studio 2015 will do) and [Boost](http://boost.org), which you
+(prerequisites: GNU Make (3.8) C++17 capable compiler (GCC 8, or
+visual studio 2017 will do) and [Boost](http://boost.org), which you
 probably already have on your linux system; for Mac, you can get them
-from [Homebrew](http://brew.sh/). For windows: MSVC2015 should work;
+from [Homebrew](http://brew.sh/). Native windows builds should work;
 you can also use cygwin or mingw.
 
 ### `make` options
