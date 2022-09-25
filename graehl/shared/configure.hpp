@@ -120,31 +120,32 @@ namespace {
 const char path_sep = '.';
 }
 
-using graehl::string_consumer;
-using graehl::warn_consumer;
-using graehl::shell_quote;
-using graehl::value_str;
-using graehl::to_string;
-using graehl::string_to;
 using graehl::function;
+using graehl::shell_quote;
+using graehl::string_consumer;
+using graehl::string_to;
+using graehl::to_string;
+using graehl::value_str;
+using graehl::warn_consumer;
 
 namespace detail {
 template <class T>
 inline std::string config_is(T const& t) {
   using graehl::type_string;
-  return type_string(t);  // unqualified for ADL
+  return type_string(t); // unqualified for ADL
 }
-}
+} // namespace detail
 
 template <class T>
 inline std::string call_config_is(T const& t) {
   using namespace detail;
-  return config_is(t);  // for ADL
+  return config_is(t); // for ADL
 }
 
 template <class O, class T, class Sep>
 inline void print_opt(O& o, std::string const& name, boost::optional<T> const& opt, Sep const& sep) {
-  if (opt) o << sep << name << '=' << *opt;
+  if (opt)
+    o << sep << name << '=' << *opt;
 }
 
 template <class O, class T>
@@ -159,22 +160,26 @@ inline void print_opt_else(O& o, std::string const& name, boost::optional<T> con
 
 inline std::string concat_optional(std::string const& a, std::string const& pre_if_b_nonempty,
                                    std::string const& b, std::string const& post_if_b_nonempty = "") {
-  if (b.empty()) return a;
-  if (a.empty()) return b;
+  if (b.empty())
+    return a;
+  if (a.empty())
+    return b;
   return a + pre_if_b_nonempty + b + post_if_b_nonempty;
 }
 
 inline std::string concat_optional(std::string const& a, std::string const& pre_if_b,
                                    boost::optional<std::string> const& maybe_b,
                                    std::string const& post_if_b = "") {
-  if (a.empty()) return maybe_b.get_value_or("");
+  if (a.empty())
+    return maybe_b.get_value_or("");
   return maybe_b ? a + pre_if_b + *maybe_b + post_if_b : a;
 }
 
 inline std::string concat_optional_skip_empty(std::string const& a, std::string const& pre_if_b,
                                               boost::optional<std::string> const& maybe_b,
                                               std::string const& post_if_b = "") {
-  if (a.empty()) return maybe_b.get_value_or("");
+  if (a.empty())
+    return maybe_b.get_value_or("");
   return maybe_b ? concat_optional(a, pre_if_b, *maybe_b, post_if_b) : a;
 }
 
@@ -199,6 +204,7 @@ typename Vec::value_type& append_default(Vec& v) {
 template <class Val>
 Val& append_default(std::set<Val>& v) {
   assert(0);
+  // cppcheck-suppress nullPointer
   return *(Val*)0;
 }
 
@@ -261,7 +267,7 @@ struct can_assign_bool
 template <class Val>
 struct can_assign_bool<boost::optional<Val>, void> : can_assign_bool<Val> {};
 
-typedef boost::optional<std::string> maybe_string;  // syntax like string*
+typedef boost::optional<std::string> maybe_string; // syntax like string*
 
 
 struct conf_opt {
@@ -292,7 +298,7 @@ struct conf_opt {
 
   template <class Val>
   std::string get_eg(Val const& val) const {
-    using graehl::example_value;  // ADL
+    using graehl::example_value; // ADL
     return eg.get_value_or(is_init() ? init_str() : example_value(val));
   }
 
@@ -300,7 +306,7 @@ struct conf_opt {
 
   template <class Val>
   std::string get_init_or_eg(Val const& val) const {
-    using graehl::example_value;  // ADL
+    using graehl::example_value; // ADL
     return is_init() ? init_str() : eg.get_value_or(example_value(val));
   }
 
@@ -346,7 +352,8 @@ struct conf_opt {
   }
 
   std::string get_is_suffix() const {
-    if (!is || is->empty()) return "";
+    if (!is || is->empty())
+      return "";
     return " (" + *is + ")";
   }
 
@@ -370,15 +377,18 @@ struct conf_opt {
   template <class Val>
   std::string get_leaf_value(Val const& val) const {
     typedef leaf_configurable<Val> leaf_val;
-    if (!leaf_val::value) return std::string();
+    if (!leaf_val::value)
+      return std::string();
     SHOWIF1(CONFEXPR, 1, "leaf_value", graehl::to_string(val));
     return graehl::to_string(val);
   }
 
   struct positional_args {
     bool enable;
-    int max;  //>0 = limited. 0=unlimited
-    positional_args(bool enable, int max) : enable(enable), max(max) {}
+    int max; //>0 = limited. 0=unlimited
+    positional_args(bool enable, int max)
+        : enable(enable)
+        , max(max) {}
     template <class O>
     void print(O& o) const {
       o << (enable ? "(on)" : "(off)");
@@ -397,16 +407,20 @@ struct conf_opt {
 
   struct allow_unrecognized_args {
     bool enable;
-    unrecognized_opts* unrecognized_storage;  // 0 means not enabled
+    unrecognized_opts* unrecognized_storage; // 0 means not enabled
     bool warn;
     std::string help;
 
     allow_unrecognized_args(bool enable = true, bool warn = false, unrecognized_opts* unrecognized_storage = 0,
                             std::string const& help = "allows unrecognized string key:val options")
-        : enable(enable), unrecognized_storage(unrecognized_storage), warn(warn), help(help) {}
+        : enable(enable)
+        , unrecognized_storage(unrecognized_storage)
+        , warn(warn)
+        , help(help) {}
     template <class O>
     void print(O& o) const {
-      if (enable) o << " allow unrecognized (";
+      if (enable)
+        o << " allow unrecognized (";
       o << (unrecognized_storage ? "save, " : "");
       o << (warn ? "quiet" : "warn");
       o << ")";
@@ -420,7 +434,9 @@ struct conf_opt {
   struct require_args {
     bool enable;
     bool just_warn;
-    require_args(bool enable, bool just_warn) : enable(enable), just_warn(just_warn) {}
+    require_args(bool enable, bool just_warn)
+        : enable(enable)
+        , just_warn(just_warn) {}
     template <class O>
     void print(O& o) const {
       o << (enable ? "(on)" : "(off)");
@@ -435,13 +451,18 @@ struct conf_opt {
   struct deprecate_args {
     bool enable;
     std::string info;
-    deprecate_args(bool enable, std::string const& info) : enable(enable), info(info) {}
+    deprecate_args(bool enable, std::string const& info)
+        : enable(enable)
+        , info(info) {}
     template <class O>
     void print(O& o) const {
-      if (enable) o << "DEPRECATED: " << info;
+      if (enable)
+        o << "DEPRECATED: " << info;
     }
     struct deprecate_callback {
-      deprecate_callback(std::string const& msg, string_consumer const& warn) : msg(msg), warn(warn) {}
+      deprecate_callback(std::string const& msg, string_consumer const& warn)
+          : msg(msg)
+          , warn(warn) {}
       std::string msg;
       string_consumer warn;
       void operator()() { warn(msg); }
@@ -460,10 +481,13 @@ struct conf_opt {
     bool enable;
     value_str value;
     template <class T>
-    implicit_args(bool enable, T const& implicit) : enable(enable), value(implicit) {}
+    implicit_args(bool enable, T const& implicit)
+        : enable(enable)
+        , value(implicit) {}
     template <class O>
     void print(O& o) const {
-      if (enable) o << " implicit value of no-argument option=" << value;
+      if (enable)
+        o << " implicit value of no-argument option=" << value;
     }
     template <class C, class T>
     friend std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T>& o, implicit_args const& self) {
@@ -475,10 +499,13 @@ struct conf_opt {
     bool enable;
     value_str value;
     template <class T>
-    init_args(bool enable, T const& init) : enable(enable), value(init) {}
+    init_args(bool enable, T const& init)
+        : enable(enable)
+        , value(init) {}
     template <class O>
     void print(O& o) const {
-      if (enable) o << " default value=" << value;
+      if (enable)
+        o << " default value=" << value;
     }
     template <class C, class T>
     friend std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T>& o, init_args const& self) {
@@ -501,17 +528,17 @@ struct conf_opt {
   boost::optional<positional_args> positional;
   boost::optional<require_args> require;
   boost::optional<deprecate_args> deprecate;
-  maybe_char charname;  // single char option
+  maybe_char charname; // single char option
   maybe_string eg, is, usage;
   maybe_bool init_default;
-  bool alias;  // TODO: allow ignoring part of the (back end managed, so tricky) pathname for backward compat
+  bool alias; // TODO: allow ignoring part of the (back end managed, so tricky) pathname for backward compat
   maybe_int verbose;
-  maybe_int limit;  // max amount of children allowed - e.g. max=1 means it's a variant
-  maybe_bool todo;  // don't actually allow parsing the option, or add it to usage
+  maybe_int limit; // max amount of children allowed - e.g. max=1 means it's a variant
+  maybe_bool todo; // don't actually allow parsing the option, or add it to usage
 // warning: keep this list current - look at above boost::optional and maybe_ typedefs
 #define CONFIGURE_OPTIONAL_MEMBERS(x)                                                                     \
   x(charname) x(eg) x(is) x(usage) x(deprecate) x(verbose) x(allow_unrecognized) x(positional) x(require) \
-      x(init_default) x(implicit) x(init) x(todo)
+    x(init_default) x(implicit) x(init) x(todo)
 
   allow_unrecognized_args get_unrecognized() const {
     return allow_unrecognized.get_value_or(allow_unrecognized_args(false));
@@ -523,7 +550,9 @@ struct conf_opt {
     alias = false;
   }
 
-  conf_opt() { clear(); }
+  conf_opt() {
+    clear();
+  }
 
   enum Inherit { inherit = 1 };
 
@@ -549,14 +578,15 @@ struct conf_opt {
   template <class Val>
   void apply_init(Val* pval) const {
     bool const do_init = is_init();
-    bool const init_default = is_init_default();
-    if (do_init || init_default)
+    bool const d = is_init_default();
+    if (do_init || d)
       select_configure_policy<Val>::type::apply_init(pval, init ? init->value : value_str(), do_init,
-                                                     init_default);
+                                                     d);
   }
 
   void warn_deprecated(std::string const& pathname, string_consumer const& warn) const {
-    if (is_deprecated()) deprecate->get_notify0(warn, pathname)();
+    if (is_deprecated())
+      deprecate->get_notify0(warn, pathname)();
   }
 
   template <class Val>
@@ -569,7 +599,8 @@ struct conf_opt {
   template <class Val>
   void apply_implicit_value(Val* pval, std::string const& pathname, string_consumer const& warn) const {
     warn_deprecated(pathname, warn);
-    if (is_implicit()) implicit->value.assign_to(*pval);
+    if (is_implicit())
+      implicit->value.assign_to(*pval);
   }
 };
 
@@ -615,12 +646,12 @@ inline std::ostream& operator<<(std::ostream& out, config_action_type type) {
 // standard actions:
 struct init_config : config_action {
   enum { action = kInitConfig };
-};  // required to call this before store etc. - actually initializes objects w/ defaults as specified
+}; // required to call this before store etc. - actually initializes objects w/ defaults as specified
 
 struct store_config : config_action {
   enum { action = kStoreConfig };
   static bool store() { return true; }
-};  // backend implementers: remember to check required() in store_config
+}; // backend implementers: remember to check required() in store_config
 
 struct validate_config : config_action {
   enum { action = kValidateConfig };
@@ -629,22 +660,28 @@ struct validate_config : config_action {
 struct help_config : config_action {
   enum { action = kHelpConfig };
   std::ostream* o;
-  help_config(std::ostream& o) : o(&o) {}
-  help_config(help_config const& o) : o(o.o) {}
+  help_config(std::ostream& o)
+      : o(&o) {}
+  help_config(help_config const& o)
+      : o(o.o) {}
 };
 
 struct show_example_config : config_action {
   enum { action = kShowExampleConfig };
   std::ostream* o;
-  show_example_config(std::ostream& o) : o(&o) {}
-  show_example_config(show_example_config const& o) : o(o.o) {}
+  show_example_config(std::ostream& o)
+      : o(&o) {}
+  show_example_config(show_example_config const& o)
+      : o(o.o) {}
 };
 
 struct show_effective_config : config_action {
   enum { action = kShowEffectiveConfig };
   std::ostream* o;
-  show_effective_config(std::ostream& o) : o(&o) {}
-  show_effective_config(show_effective_config const& o) : o(o.o) {}
+  show_effective_config(std::ostream& o)
+      : o(&o) {}
+  show_effective_config(show_effective_config const& o)
+      : o(o.o) {}
 };
 
 struct default_conf_expr_base : config_action {
@@ -652,7 +689,7 @@ struct default_conf_expr_base : config_action {
 };
 
 // optional:
-struct check_config {};  // checks protocol validity without really doing anything. e.g. would detect multiple
+struct check_config {}; // checks protocol validity without really doing anything. e.g. would detect multiple
 // options with same name
 
 template <class Action>
@@ -695,13 +732,18 @@ const int default_verbose_max = 100;
 
 using boost::detail::atomic_count;
 
-template <class FinishableCRTP  // has a .finish() member to be called whenever release() -> count 0. note:
-          // count starts at 1.
+template <class FinishableCRTP // has a .finish() member to be called whenever release() -> count 0. note:
+                               // count starts at 1.
           ,
           class R = atomic_count>
 class finish_refcount {
-  finish_refcount() : refcount(new R(1)) {}
-  finish_refcount(finish_refcount const& o) : refcount(o.refcount) { add_ref(); }
+  finish_refcount()
+      : refcount(new R(1)) {}
+  finish_refcount(finish_refcount const& o)
+      // cppcheck-suppress copyCtorPointerCopying
+      : refcount(o.refcount) {
+    add_ref();
+  }
   ~finish_refcount() { release(); }
   void add_ref() const { ++*refcount; }
   void release(FinishableCRTP const* tc) const {
@@ -715,7 +757,7 @@ class finish_refcount {
   FinishableCRTP const* derivedPtr() const { return static_cast<FinishableCRTP const*>(this); }
 
  private:
-  void operator=(finish_refcount const&) {}
+  void operator=(finish_refcount const&) = delete;
   R* refcount;
 };
 
@@ -738,9 +780,12 @@ inline std::string join_opt_path(Path const& p, std::string const& last, char se
 }
 
 struct conf_expr_base {
-  void warn_if_deprecated() const { if (warn_to) opt->warn_deprecated(path_name(), warn_to); }
+  void warn_if_deprecated() const {
+    if (warn_to)
+      opt->warn_deprecated(path_name(), warn_to);
+  }
 
-  opt_path path;  // may not be needed, but helps inform exceptions
+  opt_path path; // may not be needed, but helps inform exceptions
   unsigned depth;
   string_consumer warn_to;
   p_conf_opt opt;
@@ -748,7 +793,7 @@ struct conf_expr_base {
   // non-owning parent node whose lifetime exceeds this one's; used for propagating exceptions upwards;
   // only throwing from the root node seems to allow for the exception to be caught since we won't throw again
   // while stack unwinding
-  const conf_expr_base* parent;
+  const conf_expr_base* parent = 0;
   mutable std::exception_ptr exception;
 
   typedef boost::optional<boost::any> validate_callback;
@@ -760,13 +805,17 @@ struct conf_expr_base {
       ::adl::adl_validate(*pval);
     } catch (std::exception& e) {
       graehl::string_builder msg;
-      if (!path.empty()) msg("key '")(path_name())("' ");
+      if (!path.empty())
+        msg("key '")(path_name())("' ");
       msg("failed validation: ")(e.what());
       throw config_exception(msg.str());
     }
   }
   explicit conf_expr_base(string_consumer const& warn_to = warn_consumer(), opt_path const& root_path = opt_path())
-      : path(root_path), depth(), warn_to(warn_to), opt(new conf_opt()) {}
+      : path(root_path)
+      , depth()
+      , warn_to(warn_to)
+      , opt(new conf_opt()) {}
 
   /// parent is cloned with inheritance of (used to be require, now nothing)
   conf_expr_base(conf_expr_base const& parent, std::string const& name)
@@ -797,9 +846,9 @@ struct conf_expr_base {
   }
 
  protected:
-  typedef conf_opt::require_args require_args;  // TODO
+  typedef conf_opt::require_args require_args; // TODO
 
-  mutable std::set<std::string> subnames;  // duplicate checking
+  mutable std::set<std::string> subnames; // duplicate checking
   void check_name(std::string const& name) const {
     if (!subnames.insert(name).second)
       throw config_exception("duplicate configuration option: " + join_opt_path(path, name, path_sep));
@@ -865,8 +914,8 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
     bool const infiniteRecursion = depth > kMaxExpandDepth;
     if (infiniteRecursion)
       throw config_exception(
-          "configuration reached depth more than maximum - infinite recursion in configure() methods?");
-    return !infiniteRecursion && init_tree_return && Action::store();
+        "configuration reached depth more than maximum - infinite recursion in configure() methods?");
+    return init_tree_return && Action::store();
   }
 
   conf_expr_base const& base() const { return (conf_expr_base const&)*this; }
@@ -887,10 +936,10 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
   // requirement: Backend(Backend const&)
   {
     if (!opt->is && is_config_leaf(*pval))
-      opt->is = call_config_is(*pval);  // for tree this handled in configure(...) below
+      opt->is = call_config_is(*pval); // for tree this handled in configure(...) below
     Backend::do_init(action, pval, base());
     init_tree_return = configure_policy::init_tree(backend(), action, pval, base());
-    configure_policy::configure(pval, *this);  // unless leaf, call pval->configure(*this);
+    configure_policy::configure(pval, *this); // unless leaf, call pval->configure(*this);
     // requirement: template<class action> Backend.init(action, Val *pval, conf_opt_base &conf)
     SHOWIF1(CONFEXPR, 1, "<conf_expr>", base());
   }
@@ -915,6 +964,7 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
       if (!root() && parent != nullptr)
         parent->exception = std::current_exception();
       else
+        // cppcheck-suppress exceptThrowInDestructor
         throw;
     }
 
@@ -934,7 +984,7 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
   void hold(conf_expr_destroy* destroyOnDrop) const { subconfig_deleter.reset(destroyOnDrop); }
 
   void drop() const {
-    subconfig_deleter.reset();  // trigger previous action
+    subconfig_deleter.reset(); // trigger previous action
   }
 
   // requirement: Backend(Backend const&, string subname)
@@ -1003,7 +1053,8 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
     return *this;
   }
   conf_expr const& alias(bool enable = true) const {
-    if (enable) opt->verbose = 99;
+    if (enable)
+      opt->verbose = 99;
     opt->alias = enable;
     return *this;
   }
@@ -1040,8 +1091,9 @@ struct conf_expr : Backend, conf_expr_base, boost::noncopyable, conf_expr_destro
 
   // similar concept to implicit except that you have the --key implicit true, and --no-key implicit false
   conf_expr const& flag(bool init_to = false) const {
-    if (!can_assign_bool<Val>::value) throw config_exception("flag specified for non-boolean option");
-    Val v = init_to;  // so we store the right type of boost::any
+    if (!can_assign_bool<Val>::value)
+      throw config_exception("flag specified for non-boolean option");
+    Val v = init_to; // so we store the right type of boost::any
     init(true, v);
     Val notv = !init_to;
     implicit(notv);
@@ -1096,7 +1148,8 @@ void configure_action(Backend const& backend, Action const& action, RootVal* pva
 template <class Backend, class Action, class RootVal>
 void configure_action_from_base(Backend const& backend, Action const& action, RootVal* pval,
                                 conf_expr_base const& base) {
-  if (backend.do_init_action(action)) conf_expr<Backend, Action, RootVal> rc(backend, action, pval, base);
+  if (backend.do_init_action(action))
+    conf_expr<Backend, Action, RootVal> rc(backend, action, pval, base);
 }
 
 /**
@@ -1104,7 +1157,9 @@ void configure_action_from_base(Backend const& backend, Action const& action, Ro
 */
 template <class Backend, class RootVal>
 void configure_store_init_from_base(Backend const& backend, RootVal* pval, conf_expr_base const& base) {
-  conf_expr<Backend, init_config, RootVal> b1(backend, init_config(), pval, base);
+  { // first
+    conf_expr<Backend, init_config, RootVal> b1(backend, init_config(), pval, base);
+  }
   conf_expr<Backend, store_config, RootVal> b2(backend, store_config(), pval, base);
 }
 
@@ -1121,16 +1176,16 @@ unsigned indent_line(O& o, unsigned depth) {
   }
   return indent;
 }
-}
+} // namespace
 
 template <class ConfigureBackend>
 inline unsigned max_column(ConfigureBackend const& conf) {
   return 80;
-}  // override this if you like
+} // override this if you like
 template <class ConfigureBackend>
 inline unsigned hanging_column_offset(ConfigureBackend const& conf) {
   return 4;
-}  // override this if you like
+} // override this if you like
 
 inline unsigned indent_line_len(unsigned ntabs) {
   return (unsigned)tab.size() * ntabs;
@@ -1200,11 +1255,13 @@ struct get_default_conf_backend : null_backend {
   bool done(conf_expr_base const& conf) const { return conf.depth == start_depth; }
 
   void finish(default_conf_expr_base const& a, conf_expr_base const& conf) const {
-    if (done(conf)) *a.pconf = conf;
+    if (done(conf))
+      *a.pconf = conf;
   }
 
  public:
-  get_default_conf_backend(default_conf_expr_base& a, conf_expr_base const& conf) : start_depth(conf.depth) {
+  get_default_conf_backend(default_conf_expr_base& a, conf_expr_base const& conf)
+      : start_depth(conf.depth) {
     a.pconf.reset(new conf_expr_base());
   }
 
@@ -1295,10 +1352,13 @@ struct configure_backend_base : configure_backend {
   // allow unknown
 
   explicit configure_backend_base(string_consumer const& warn, int verbose_max = default_verbose_max)
-      : warn(warn), verbose_max(verbose_max) {}
+      : warn(warn)
+      , verbose_max(verbose_max) {}
   bool too_verbose(conf_expr_base const& conf) const { return conf.opt->is_too_verbose(verbose_max); }
 
-  configure_backend_base(configure_backend_base const& o) : warn(o.warn), verbose_max(o.verbose_max) {}
+  configure_backend_base(configure_backend_base const& o)
+      : warn(o.warn)
+      , verbose_max(o.verbose_max) {}
 
   // return false iff you handled the action completely, without needing the below 4 tree walking callbacks:
   template <class Action>
@@ -1318,15 +1378,16 @@ struct configure_backend_base : configure_backend {
   }
   template <class Val>
   void do_leaf_action(help_config const& a, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     sub().leaf_action(a, pval, conf);
   }
 
-  template <class Action, class Val>  // called after leaves and sub-configs
+  template <class Action, class Val> // called after leaves and sub-configs
   void do_tree_action(Action const& a, Val* pval, conf_expr_base const& conf) const {
     sub().tree_action(a, pval, conf);
   }
-  template <class Action, class Val>  // called before configure. init() is still called
+  template <class Action, class Val> // called before configure. init() is still called
   bool do_init_tree(Action const& a, Val* pval, conf_expr_base const& conf) const {
     sub().print_action_open(a, pval, conf);
     // we don't have usage, etc set at this point - see tree_action which happens after. if you wanted to
@@ -1336,20 +1397,21 @@ struct configure_backend_base : configure_backend {
 
   template <class Action, class Val>
   void print_action_open(Action const& a, Val* pval, conf_expr_base const& conf) const {}
-  template <class Action, class Val>  // called after leaves and sub-configs
+  template <class Action, class Val> // called after leaves and sub-configs
   void print_action_close(Action, Val* pval, conf_expr_base const& conf) const {}
   template <class Action, class Val>
   void print_map_sequence_action_close(Action, Val* pval, conf_expr_base const& conf) const {}
   template <class Action, class Val>
   void do_print_action_open(Action const& a, Val* pval, conf_expr_base const& conf) const {}
-  template <class Action, class Val>  // called after leaves and sub-configs
+  template <class Action, class Val> // called after leaves and sub-configs
   void do_print_action_close(Action, Val* pval, conf_expr_base const& conf) const {}
   template <class Action, class Val>
   void do_print_map_sequence_action_close(Action, Val* pval, conf_expr_base const& conf) const {}
 
   template <class Val>
   void print_action_open(help_config const& a, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     sub().default_print_action_open(a, pval, conf);
   }
   template <class Val>
@@ -1362,7 +1424,8 @@ struct configure_backend_base : configure_backend {
   }
   template <class Val>
   void do_print_action_open(help_config const& a, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     sub().print_action_open(a, pval, conf);
   }
   template <class Val>
@@ -1376,7 +1439,8 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void do_print_action_close(help_config const& a, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     sub().print_action_close(a, pval, conf);
   }
   template <class Val>
@@ -1390,7 +1454,8 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void do_print_map_sequence_action_close(help_config const& a, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     sub().print_map_sequence_action_close(a, pval, conf);
   }
   template <class Val>
@@ -1405,10 +1470,11 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void print_map_sequence_action_close(help_config const& a, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
-    maybe_string const& usage = conf.opt->usage;
-    if (usage) {
-      sub().print_usage(*a.o, *usage, 0, indent_line_len(conf));
+    if (too_verbose(conf))
+      return;
+    maybe_string const& cusage = conf.opt->usage;
+    if (cusage) {
+      sub().print_usage(*a.o, *cusage, 0, indent_line_len(conf));
       *a.o << '\n';
     }
   }
@@ -1442,7 +1508,7 @@ struct configure_backend_base : configure_backend {
 
   template <class Action>
   bool init_action(Action) const {
-    return true;  // return false iff you handled the action completely, without needing the below 4 tree
+    return true; // return false iff you handled the action completely, without needing the below 4 tree
     // walking callbacks:
   }
 
@@ -1450,18 +1516,18 @@ struct configure_backend_base : configure_backend {
   /// init happens before anything:
   template <class Action, class Val>
   void init(Action, Val* pval, conf_expr_base const& conf) const {
-  }  // e.g. conf.name(), conf.path_name(), conf.warn_to
-  template <class Action, class Val>  // called after init() (still before pval->configure())
+  } // e.g. conf.name(), conf.path_name(), conf.warn_to
+  template <class Action, class Val> // called after init() (still before pval->configure())
   bool init_tree(Action, Val* pval, conf_expr_base const& conf) const {
     return true;
   }
-  template <class Val>  // called after init() (still before pval->configure())
+  template <class Val> // called after init() (still before pval->configure())
   bool init_tree(help_config, Val* pval, conf_expr_base const& conf) const {
     return !too_verbose(conf);
   }
   template <class Action, class Val>
   void leaf_action(Action, Val* pval, conf_expr_base const& conf) const {}
-  template <class Action, class Val>  // called after leaves and sub-configs
+  template <class Action, class Val> // called after leaves and sub-configs
   void tree_action(Action, Val* pval, conf_expr_base const& conf) const {}
 
   bool show_tree_header(conf_expr_base const& conf) const { return conf.depth > 0; }
@@ -1469,12 +1535,13 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void help_action_open(std::ostream& out, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     sub().default_help_action_open(out, pval, conf);
   }
 
 
-  template <class Action, class Val>  // called after leaves and sub-configs
+  template <class Action, class Val> // called after leaves and sub-configs
   void default_print_action_open(Action const& action, Val* pval, conf_expr_base const& conf) const {
     if (is_help(action)) {
       sub().help_action_open(*action.o, pval, get_default_conf(pval, conf));
@@ -1488,19 +1555,21 @@ struct configure_backend_base : configure_backend {
     }
   }
 
-  template <class Val>  // called after leaves and sub-configs
+  template <class Val> // called after leaves and sub-configs
   void help_header_conf(std::ostream& o, Val const& val, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     sub().header_conf(o, conf);
   }
 
   void warning(std::string const& s) const {
-    if (warn) warn(s);
+    if (warn)
+      warn(s);
   }
 
   template <class Val>
   void check_leaf_impl(Val* pval, conf_expr_base const& conf)
-      const {  // this might have to be called explicitly by child due to name hiding. you can call it inside
+    const { // this might have to be called explicitly by child due to name hiding. you can call it inside
     // other actions, too (but check_config is the only place you must)
     conf_opt const& opt = *conf.opt;
     if (opt.is_required_err() && opt.is_init())
@@ -1545,18 +1614,22 @@ struct configure_backend_base : configure_backend {
   void header_line_end(help_config const& help, Val* pval, conf_expr_base const& conf) const {
     *help.o << prefix_optional("-", conf.opt->get_usage_optional());
   }
-  std::string unrecognized() const { return "[*]"; }
-  enum { SHOW_ROOT_USAGE_CODA = 0 };  // if you want usage to show also at end of root help
+  std::string unrecognized() const {
+    return "[*]";
+  }
+  enum { SHOW_ROOT_USAGE_CODA = 0 }; // if you want usage to show also at end of root help
   template <class Val>
   void tree_action(help_config const& help, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     conf_opt const& opt = *conf.opt;
     if (opt.allows_unrecognized()) {
       conf_expr_base unrecognized_conf(conf, sub().unrecognized());
       sub().print_conf_val_line(help, opt.allow_unrecognized->help, unrecognized_conf);
     }
     if (SHOW_ROOT_USAGE_CODA && conf.depth == 0) {
-      if (opt.usage) *help.o << "\n " << *opt.usage << "\n\n";
+      if (opt.usage)
+        *help.o << "\n " << *opt.usage << "\n\n";
     }
   }
 
@@ -1614,15 +1687,18 @@ struct configure_backend_base : configure_backend {
 
   void help_action(std::ostream& out, conf_expr_base const& conf, std::string const& suffix,
                    maybe_string const& usage) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     unsigned indent_column = indent_conf_line(out, conf);
     std::string header = sub().option_name(conf);
-    if (!header.empty()) header += ":";
+    if (!header.empty())
+      header += ":";
     out << header;
     unsigned column = indent_column + (unsigned)header.size();
     out << suffix;
     column += (unsigned)suffix.size();
-    if (usage) column = sub().print_usage(out, *usage, column, indent_column);
+    if (usage)
+      sub().print_usage(out, *usage, column, indent_column);
     out << '\n';
   }
 
@@ -1637,7 +1713,8 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void leaf_action(help_config const& help, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     help_leaf_action(*help.o, conf);
   }
 
@@ -1669,9 +1746,13 @@ struct configure_backend_base : configure_backend {
     return indent_conf_line(*action.o, conf);
   }
 
-  void header(std::ostream& o, std::string const& name) const { o << name << ":"; }
+  void header(std::ostream& o, std::string const& name) const {
+    o << name << ":";
+  }
 
-  void header_conf(std::ostream& o, conf_expr_base const& conf) const { sub().header(o, header_name(conf)); }
+  void header_conf(std::ostream& o, conf_expr_base const& conf) const {
+    sub().header(o, header_name(conf));
+  }
 
   template <class Action>
   void print_name_val_line(Action const& action, std::string const& name, std::string const& val,
@@ -1681,11 +1762,19 @@ struct configure_backend_base : configure_backend {
     sub().print_name_val(o, name, val);
     o << '\n';
   }
-  std::string option_name(conf_expr_base const& conf) const { return conf.path_name(); }
-  std::string header_name(conf_expr_base const& conf) const { return conf.name(); }
+  std::string option_name(conf_expr_base const& conf) const {
+    return conf.path_name();
+  }
+  std::string header_name(conf_expr_base const& conf) const {
+    return conf.name();
+  }
   friend struct conf_opt;
-  std::string help_quote(std::string const& s) const { return sub().quote(s); }
-  std::string quote(std::string const& s) const { return shell_quote(s); }
+  std::string help_quote(std::string const& s) const {
+    return sub().quote(s);
+  }
+  std::string quote(std::string const& s) const {
+    return shell_quote(s);
+  }
   template <class Val>
   std::string effective_str(Val const& val, conf_expr_base const& conf) const {
     return sub().quote(conf.opt->get_leaf_value(val));
@@ -1699,13 +1788,15 @@ struct configure_backend_base : configure_backend {
  public:
   template <class Val>
   void tree_action(show_example_config example, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     sub().tree_action_unrecognized(example, pval, conf);
     sub().print_action_close(example, pval, conf);
   }
   template <class Val>
   void tree_action(show_effective_config effective, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     sub().tree_action_unrecognized(effective, pval, conf);
     sub().print_action_close(effective, pval, conf);
   }
@@ -1729,14 +1820,17 @@ struct configure_backend_base : configure_backend {
 
   template <class Val>
   void leaf_action(show_effective_config effective, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     sub().print_conf_val_line(effective, sub().effective_str(*pval, conf), conf);
   }
   template <class Val>
   void leaf_action(show_example_config example, Val* pval, conf_expr_base const& conf) const {
-    if (too_verbose(conf)) return;
+    if (too_verbose(conf))
+      return;
     std::string const& s = conf.opt->get_eg(*pval);
-    if (!s.empty()) sub().print_conf_val_line(example, s, conf);
+    if (!s.empty())
+      sub().print_conf_val_line(example, s, conf);
   }
 };
 
@@ -1797,6 +1891,6 @@ struct configure_defaulted {
 };
 
 
-}
+} // namespace configure
 
 #endif

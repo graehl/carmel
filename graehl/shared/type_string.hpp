@@ -34,23 +34,24 @@
 #include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/unordered.hpp>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
-#include <memory>
 
 namespace graehl {
 template <class T>
 std::string type_string_impl(T const&) {
   return std::string();
 }
-}
+} // namespace graehl
 
 namespace adl {
 template <class T, class Enable = void>
 struct TypeString {
   static std::string get() {
     using namespace graehl;
+    // cppcheck-suppress nullPointer
     return type_string_impl(*(T*)0); // NOLINT
   }
 };
@@ -127,7 +128,7 @@ GRAEHL_PRIMITIVE_TYPE_STRING(unsigned long, "large non-negative integer");
 GRAEHL_PRIMITIVE_TYPE_STRING(float, "real number");
 GRAEHL_PRIMITIVE_TYPE_STRING(double, "double-precision real number");
 GRAEHL_PRIMITIVE_TYPE_STRING(long double, "long-double-precision real number");
-}
+} // namespace adl
 
 
 namespace graehl {
@@ -161,7 +162,7 @@ std::string type_name(T const& t) {
   std::string const& n = type_string(t);
   return n.empty() ? unnamed_type : n;
 }
-}
+} // namespace graehl
 
 
 #ifdef GRAEHL_TEST
@@ -190,7 +191,7 @@ BOOST_AUTO_TEST_CASE(TEST_type_string) {
   pair<II, SI> p;
   BOOST_CHECK_EQUAL(type_string(p), "pair of (map from integer to integer, map to integer)");
 }
-}
+} // namespace graehl
 
 #endif
 

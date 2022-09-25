@@ -657,7 +657,7 @@ int LZ4_uncompress(char const* source,
 	BYTE token;
 
 	int	len, length;
-	size_t dec[] ={0, 3, 2, 3, 0, 0, 0, 0};
+	size_t const dec[] ={0, 3, 2, 3, 0, 0, 0, 0};
 
 
 	// Main Loop
@@ -740,7 +740,7 @@ int LZ4_uncompress_unknownOutputSize(
 	BYTE* const oend = op + maxOutputSize;
 	BYTE* cpy;
 
-	size_t dec[] ={0, 3, 2, 3, 0, 0, 0, 0};
+	size_t const dec[] ={0, 3, 2, 3, 0, 0, 0, 0};
 
 
 	// Main Loop

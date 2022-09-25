@@ -259,7 +259,7 @@ inline I atoi_fast_advance(It& i, It end) {
   for (; i != end; ++i) {
     const Char c = *i;
     if (c < '0' || c > '9')
-      return x;
+      break;
     x *= 10;
     x += c - '0';
   }
@@ -370,7 +370,7 @@ inline uint64_t strtoul_complete(char const* s, int base = 0) {
 inline unsigned strtou_complete_bounded(char const* s, int base = 10) {
   uint64_t l = strtoul_complete(s, base);
 #include <graehl/shared/warning_compiler.h>
-  CLANG_DIAG_OFF(tautological-compare)
+  CLANG_DIAG_OFF(tautological - compare)
   if (l < std::numeric_limits<unsigned>::min())
     return std::numeric_limits<unsigned>::min();
   if (l > std::numeric_limits<unsigned>::max())
@@ -389,7 +389,7 @@ inline unsigned strtou_complete_exact(char const* s, int base = 10) {
   uint64_t l = strtoul_complete(s, base);
   if (l < std::numeric_limits<unsigned>::min() || l > std::numeric_limits<unsigned>::max())
     THROW_MSG(string_to_exception, "Out of range for unsigned " UINTRANGE_STR ": '" << s << "'");
-  CLANG_DIAG_ON(tautological-compare)
+  CLANG_DIAG_ON(tautological - compare)
   return l;
 }
 

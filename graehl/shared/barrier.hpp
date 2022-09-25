@@ -40,7 +40,10 @@ struct barrier {
   barrier(barrier const& o) = delete;
 
   /// require = # of calls to wait() that must occur before any of those calls return
-  barrier(unsigned require) : require_(require), next_gen_require_(require), generation_(0) {
+  barrier(unsigned require)
+      : require_(require)
+      , next_gen_require_(require)
+      , generation_(0) {
     assert(require);
   }
 
@@ -57,7 +60,10 @@ struct barrier {
       condition_.notify_all();
       return true;
     }
-    while (g == generation_) condition_.wait(lock);
+    do {
+      condition_.wait(lock);
+      // cppcheck-suppress knownConditionTrueFalse
+    } while (g == generation_);
     return false;
   }
 
@@ -71,7 +77,7 @@ struct barrier {
   unsigned next_gen_require_;
   unsigned generation_;
 };
-}
+} // namespace graehl
 
 #endif
 

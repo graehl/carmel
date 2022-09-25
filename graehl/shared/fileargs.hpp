@@ -606,9 +606,9 @@ struct file_arg {
   }
   template <class I>
   void read(I& i) {
-    std::string name;
-    i >> name;
-    set(name);
+    std::string n;
+    i >> n;
+    set(n);
   }
   TO_OSTREAM_PRINT
   FROM_ISTREAM_READ
@@ -832,6 +832,7 @@ inline std::shared_ptr<std::string> fileContents(file_arg<Istream> const& file) 
   if (sz) {
     std::shared_ptr<std::string> r(new std::string(sz, '\0'));
     file->rdbuf()->sgetn(&(*r)[0], sz);
+    return r;
   } else
     return streamContents(*file);
 }

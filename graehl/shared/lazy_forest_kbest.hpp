@@ -302,7 +302,7 @@ struct permissive_kbest_filter {
   permissive_kbest_filter(init_type const& g) {}
 
   unsigned size() const { return 0; }
-  bool empty() const { return !size(); }
+  bool empty() const { return true; }
 
   template <class E>
   bool permit(E const& e) const {
@@ -632,7 +632,7 @@ struct lazy_forest : FilterFactory::filter_type  // empty base class opt (see pr
       o << pq[i];
       o << "}}}";
     }
-    if (s > (nqueue ? 0u : 0u)) {
+    if (s > 0u) {
       o << "\n first={{{";
       o << first_best();
       o << "}}}";
@@ -804,7 +804,6 @@ struct lazy_forest : FilterFactory::filter_type  // empty base class opt (see pr
       unsigned i = pq.size();
       assert(i > 0);
       unsigned p = (i - 1);
-      assert(p >= 0);
       assert(call_derivation_better_than(pq[p].derivation, r));  // heap property
     }
 #endif

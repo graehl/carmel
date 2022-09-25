@@ -33,13 +33,13 @@ typedef union {
   uint32_t i;
 } Float32Bits;
 
-inline int32_t bits4float(float f) {
+inline uint32_t bits4float(float f) {
   Float32Bits b;
   b.f = f;
   return b.i;
 }
 
-inline float float4bits(int32_t i) {
+inline float float4bits(uint32_t i) {
   Float32Bits b;
   b.i = i;
   return b.f;
@@ -47,12 +47,12 @@ inline float float4bits(int32_t i) {
 
 /// compare floats by comparing ints (cheaper in sorting an array of floats?)
 
-inline int32_t float_int_bijection(int32_t t) {
-  return t ^ t >> 31 & 0x7fffffff;
+inline uint32_t float_int_bijection(uint32_t t) {
+  return t ^ t >> 31 & 0x7fffffffu;
   // recall: >> (like exponentiation) over & (like times) over ^,| (like plus)
 }
 
-inline int32_t order_preserving(float x) {
+inline uint32_t order_preserving(float x) {
   return float_int_bijection(bits4float(x));
 }
 
@@ -67,7 +67,7 @@ inline int32_t order_preserving(uint32_t x) {
 }
 
 inline uint32_t order_preserving_u(int32_t x) {
-  return x ^ 1 << 31;
+  return x ^ 1u << 31;
 }
 
 
@@ -79,7 +79,7 @@ inline uint32_t bits4float_u(float f) {
 
 inline uint32_t order_preserving_u(float x) {
   uint32_t t = bits4float_u(x);
-  return t ^ ((int32_t)t >> 31 | 1 << 31);
+  return t ^ ((uint32_t)t >> 31 | 1u << 31);
 }
 
 inline float float_from_order_preserving_u(uint32_t x) {

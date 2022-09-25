@@ -21,7 +21,6 @@
 #define GRAEHL_SHARED__MAX_WIDTH_HPP
 #pragma once
 
-#include <graehl/shared/print_read.hpp>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
@@ -60,6 +59,7 @@ template <class C, class T>
 std::basic_ostream<C, T>& print_width_small(std::basic_ostream<C, T>& o, double d, int width = 4) {
   typedef std::basic_ostream<C, T> stream_t;
   local_stream_format<stream_t> save(o);
+  (void)save;
   int p = 0;
   if (width > 0) {
     if (d >= 0 && d < 10000) {
@@ -105,6 +105,7 @@ std::basic_ostream<C, T>& print_width(std::basic_ostream<C, T>& o, double d, int
   if (minprec < 0) minprec = width / 3;
   typedef std::basic_ostream<C, T> stream_t;
   local_stream_format<stream_t> save(o);
+  (void)save;
   double p = d;
   if (d < 0) {
     p = -d;
@@ -152,6 +153,7 @@ std::basic_ostream<C, T>& print_max_width(std::basic_ostream<C, T>& o, double d,
 #else
   typedef std::basic_ostream<C, T> stream_t;
   local_stream_format<stream_t> save(o);
+  (void)save;
   if (width > 0) {
     double p = std::fabs(d);
     if (d < 0) --width;
@@ -177,6 +179,7 @@ template <class C, class T>
 std::basic_ostream<C, T>& print_max_width_small(std::basic_ostream<C, T>& o, double d, int width = 4) {
   typedef std::basic_ostream<C, T> stream_t;
   local_stream_format<stream_t> save(o);
+  (void)save;
   int p = 0;
   if (width > 0) {
     if (d >= 0 && d < 10000) {

@@ -185,34 +185,34 @@ char* itoa_left_pad(char* buf, char* bufend, Int i, bool positive_sign = false, 
 template <class Int>
 inline std::string itos(Int n) {
   char buf[signed_for_int<Int>::toa_bufsize];
-  char* end = buf + signed_for_int<Int>::toa_bufsize;
-  char* p = itoa(end, n);
-  return std::string(p, end);
+  char* e = buf + signed_for_int<Int>::toa_bufsize;
+  char* p = itoa(e, n);
+  return std::string(p, e);
 }
 
 template <class Int>
 inline std::string utos(Int n) {
   char buf[signed_for_int<Int>::toa_bufsize];
-  char* end = buf + signed_for_int<Int>::toa_bufsize;
-  char* p = utoa(end, n);
-  return std::string(p, end);
+  char* e = buf + signed_for_int<Int>::toa_bufsize;
+  char* p = utoa(e, n);
+  return std::string(p, e);
 }
 
 template <class String, class Int>
 inline void utos_append(String& str, Int n) {
   char buf[signed_for_int<Int>::toa_bufsize];
-  char* end = buf + signed_for_int<Int>::toa_bufsize;
-  char* p = utoa(end, n);
-  append(str, p, end);
+  char* e = buf + signed_for_int<Int>::toa_bufsize;
+  char* p = utoa(e, n);
+  append(str, p, e);
 }
 
 // returns position of '\0' terminating number written starting at to
 template <class Int>
 inline char* append_utoa(char* to, typename signed_for_int<Int>::unsigned_t n) {
   char buf[signed_for_int<Int>::toa_bufsize];
-  char* end = buf + signed_for_int<Int>::toa_bufsize;
-  char* p = itoa(end, n);
-  int ns = end - p;
+  char* e = buf + signed_for_int<Int>::toa_bufsize;
+  char* p = itoa(e, n);
+  int ns = e - p;
   std::memcpy(to, p, ns);
   to += ns;
   *to = 0;
@@ -223,9 +223,9 @@ inline char* append_utoa(char* to, typename signed_for_int<Int>::unsigned_t n) {
 template <class Int>
 inline char* append_itoa(char* to, typename signed_for_int<Int>::signed_t n) {
   char buf[signed_for_int<Int>::toa_bufsize];
-  char* end = buf + signed_for_int<Int>::toa_bufsize;
-  char* p = utoa(end, n);
-  int ns = end - p;
+  char* e = buf + signed_for_int<Int>::toa_bufsize;
+  char* p = utoa(e, n);
+  int ns = e - p;
   std::memcpy(to, p, ns);
   to += ns;
   *to = 0;

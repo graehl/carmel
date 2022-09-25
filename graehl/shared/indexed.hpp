@@ -118,6 +118,7 @@ struct indexed : HashEqualsTraits {
 
   indexed(indexed const& o) : mask_(o.mask_), vals_(o.vals_), index_(), growAt_(o.growAt_) {
     if (o.index_) {
+      // cppcheck-suppress unreadVariable
       std::size_t bytes = (mask_ + 1) * sizeof(I);
       std::memcpy((index_ = (Indices)std::malloc(bytes)), o.index_, bytes);
     }

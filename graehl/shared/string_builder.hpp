@@ -42,13 +42,19 @@ struct nonempty {
 };
 
 struct string_builder : string_buffer {
+  using string_buffer::append;
+  template <class C>
+  string_builder& append(C const& c) {
+    return operator()(c);
+  }
+
   template <class Pair>
   string_builder& appendPair(Pair const& p) {
-    this->insert(string_buffer::end(), p.first, p.second);
+    append(p.first, p.second);
     return *this;
   }
   string_builder& operator()(std::pair<std::string::const_iterator, std::string::const_iterator> word) {
-    this->insert(string_buffer::end(), word.first, word.second);
+    append(word.first, word.second);
     return *this;
   }
   template <class Int>
@@ -91,7 +97,6 @@ struct string_builder : string_buffer {
     return std::pair<char const*, char const*>(begin(), end());
   }
 
-
   /**
      for backtracking.
   */
@@ -122,17 +127,11 @@ struct string_builder : string_buffer {
   string_builder(unsigned reserveChars) { this->reserve(reserveChars); }
   explicit string_builder(std::string const& str)
       : string_buffer(str.begin(), str.end()) {}
+  explicit string_builder(std::pair<char const*, char const*> slice)
+      : string_buffer(slice.first, slice.second) {}
   string_builder& clear() {
     string_buffer::clear();
     return *this;
-  }
-  template <class S>
-  string_builder& append(S const& s) {
-    return (*this)(s);
-  }
-  template <class S>
-  string_builder& append(S const& s1, S const& s2) {
-    return (*this)(s1, s2);
   }
   template <class S>
   string_builder& range(S const& s, word_spacer& sp) {
@@ -233,11 +232,11 @@ struct string_builder : string_buffer {
   }
   template <class CharIter>
   string_builder& operator()(CharIter i, CharIter end) {
-    this->insert(string_buffer::end(), i, end);
+    append(i, end);
     return *this;
   }
   string_builder& operator()(std::pair<char const*, char const*> word) {
-    this->insert(string_buffer::end(), word.first, word.second);
+    append(word.first, word.second);
     return *this;
   }
   string_builder& operator()(std::string const& s) {
@@ -299,7 +298,7 @@ struct string_builder : string_buffer {
     clear();
     return r;
   }
-  std::string const& strcopy() const { return std::string(this->begin(), this->end()); }
+  std::string strcopy() const { return std::string(this->begin(), this->end()); }
   std::string* new_str() const { return new std::string(this->begin(), this->end()); }
   string_builder& append(std::string const& str, std::string::size_type from,
                          std::string::size_type len = std::string::npos) {
@@ -330,6 +329,22 @@ struct string_builder : string_buffer {
     const_iterator b = this->begin();
     return std::string(b, b + (n - drop_suffix_chars));
   }
+
+  string_builder& space_sep(char space = ' ') {
+    if (!this->empty() && this->back() != space)
+      operator()(space);
+    return *this;
+  }
+
+  string_builder& space_sep(char const* begin, char const* end, char space = ' ') {
+    if (begin != end) {
+      if (*begin != space)
+        operator()(space);
+      operator()(begin, end);
+    }
+    return *this;
+  }
+
 
   /**
      append space the second and subsequent times this is called with each
@@ -470,6 +485,12 @@ struct string_builder : string_buffer {
   template <class Seq>
   string_builder& join(Seq const& seq) {
     return join(seq, ' ');
+  }
+  template <class Sep, class MaybeEmpty>
+  string_builder& sepIfNonempty(Sep const& sep, MaybeEmpty const& maybeEmpty) {
+    if (!maybeEmpty.empty())
+      (*this)(sep)(maybeEmpty);
+    return *this;
   }
 
   template <class Seq, class After, class Sep>

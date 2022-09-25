@@ -46,11 +46,6 @@
 #define GRAEHL_SHARED__HYPERGRAPH_HPP
 #pragma once
 
-
-#ifndef GRAEHL_EXTENDED_HYPERGRAPH_TRAITS
-#define GRAEHL_EXTENDED_HYPERGRAPH_TRAITS 1
-#endif
-
 #include <graehl/shared/graph.hpp>  // graph_object
 
 #include <boost/graph/graph_traits.hpp>
@@ -70,7 +65,6 @@ hyperarc_tag const hyperarcT;
 
 template <class T>
 struct hypergraph_traits : boost::graph_traits<T>, edge_traits<T> {
-//  typedef typename graph::hyperarc_index_map hyperarc_index_map;
   typedef T graph;
   typedef boost::graph_traits<graph> GT;
   typedef typename graph::hyperarc_descriptor hyperarc_descriptor;

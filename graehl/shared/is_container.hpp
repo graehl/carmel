@@ -25,6 +25,9 @@
 #pragma once
 
 #include <graehl/shared/type_traits.hpp>
+#if __cplusplus >= 202000L
+#include <span>
+#endif
 
 namespace graehl {
 
@@ -36,6 +39,10 @@ struct is_nonstring_container<std::basic_string<charT, Traits>, void> {
   enum { value = 0 };
 };
 
+#if __cplusplus >= 202000L
+template <class T, std::size_t E>
+struct is_nonstring_container<std::span<T, E>, void> : std::true_type {};
+#endif
 
 template <class Val, class Enable = void>
 struct print_maybe_container {
@@ -52,9 +59,9 @@ struct print_maybe_container<Val, typename enable_if<is_nonstring_container<Val>
   void print(O& o, Val const& val, bool bracket = false) {
     bool first = true;
     if (bracket) o << '[';
-    for (typename Val::const_iterator i = val.begin(), e = val.end(); i != e; ++i) {
+    for (auto const& x : val) {
       if (!first) o << ' ';
-      o << *i;
+      o << x;
       first = false;
     }
     if (bracket) o << ']';

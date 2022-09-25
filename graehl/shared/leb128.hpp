@@ -40,8 +40,8 @@ template <class Uint>
 const_byteptr decode_leb128(Uint& result, const_byteptr p) {
   Uint x = 0;
   for (;;) {
-    byte const c = *p;
-    byte const sig = c & 0x7f;
+    graehl::byte const c = *p;
+    graehl::byte const sig = c & 0x7f;
     x <<= 7;
     x |= sig;
     ++p;
@@ -57,8 +57,8 @@ const_byteptr decode_leb128(Uint& result, const_byteptr p, const_byteptr end) {
   // TODO: test
   Uint x = 0;
   for (;;) {
-    byte const c = *p;
-    byte const sig = c & 0x7f;
+    graehl::byte const c = *p;
+    graehl::byte const sig = c & 0x7f;
     x <<= 7;
     x |= sig;
     ++p;
@@ -81,7 +81,7 @@ template <class Uint>
 byteptr encode_leb128(byteptr p, Uint x) {
   // TODO: test
   for (;;) {
-    byte c = x;
+    graehl::byte c = x;
     x >>= 7;
     if (x)
       *p++ = c | 0x80;
@@ -116,6 +116,7 @@ template <class Uint>
 inline unsigned char need_fixed_bytes(Uint x) {
   if (sizeof(x) == 8)
     return (x & 0xffffffff00000000ull)
+        // cppcheck-suppress clarifyCalculation
              ? (x & 0xffff000000000000ull ? (x & 0xff00000000000000ull ? 8 : 7) : (x & 0xff0000000000ull ? 6 : 5))
              : (x & 0xffff0000u ? (x & 0xff000000u ? 4 : 3) : (x & 0xff00u ? 2 : 1));
   else if (sizeof(x) == 4)
@@ -152,6 +153,7 @@ struct fixed_codec {
   }
   const_byteptr decode(Uint& x, const_byteptr p) const {
     x = 0;
+    // cppcheck-suppress nullPointer
     std::memcpy((byteptr)&x, p, fixed_bytes);
     return p + fixed_bytes;
   }

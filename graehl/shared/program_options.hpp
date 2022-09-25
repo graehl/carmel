@@ -48,7 +48,6 @@ DECLARE_DBG_LEVEL(GPROGOPT)
 #define BOOST_SYSTEM_NO_DEPRECATED 1
 #endif
 #include <boost/function.hpp>
-#include <boost/function.hpp>
 #include <boost/pool/object_pool.hpp>
 #include <boost/program_options.hpp>
 #include <boost/program_options/value_semantic.hpp>
@@ -78,7 +77,8 @@ namespace graehl {
 /// (supplying '' as the missing value).
 inline bool cmdline_parser_fix_empty_equals(int argc, char const* const* argv, std::vector<std::string>& fixed,
                                             std::string const& forMissingValue = "''") {
-  if (!argc) return false;
+  if (!argc)
+    return false;
   bool any = false;
   --argc;
   ++argv;
@@ -99,20 +99,27 @@ SIMPLE_EXCEPTION_PREFIX(program_options_exception, "program options: ");
 
 struct option_options_base {
   boost::optional<bool> composing, multitoken, zero_tokens,
-      required;  // would be bool except then i'd have to init.
-  bool hidden, defaulted;  // affect options desc, not po::typed_value
-  option_options_base() : hidden(), defaulted() {}
+    required; // would be bool except then i'd have to init.
+  bool hidden, defaulted; // affect options desc, not po::typed_value
+  option_options_base()
+      : hidden()
+      , defaulted() {}
   boost::optional<std::string> is;
   static inline bool on(boost::optional<bool> x) { return x && *x; }
   template <class typed_value>
   typed_value* apply(typed_value* tv) const {
 #if BOOST_VERSION >= 105000
-    if (is) tv->value_name("[" + *is + "]");
+    if (is)
+      tv->value_name("[" + *is + "]");
 #endif
-    if (on(composing)) tv->composing();
-    if (on(multitoken)) tv->multitoken();
-    if (on(zero_tokens)) tv->zero_tokens();
-    if (on(required)) tv->required();
+    if (on(composing))
+      tv->composing();
+    if (on(multitoken))
+      tv->multitoken();
+    if (on(zero_tokens))
+      tv->zero_tokens();
+    if (on(required))
+      tv->required();
     return tv;
   }
 };
@@ -124,8 +131,10 @@ struct notify_base {
   std::string log_prefix;
   void call(Val const& final_value) const {
     SHOWIF1(GPROGOPT, 1, "notify_base::call", to_string(final_value));
-    if (notify) notify(final_value);
-    if (notify0) notify0();
+    if (notify)
+      notify(final_value);
+    if (notify0)
+      notify0();
   }
 };
 
@@ -136,9 +145,11 @@ struct option_options : option_options_base, notify_base<V> {
   boost::optional<value_str> implicit_value_str, default_value_str;
   template <class typed_value>
   typed_value* apply(typed_value* tv) const {
-    if (implicit_value_str) tv->implicit_value(implicit_value_str->get<V>(), implicit_value_str->str);
+    if (implicit_value_str)
+      tv->implicit_value(implicit_value_str->get<V>(), implicit_value_str->str);
 
-    if (default_value_str) tv->default_value(default_value_str->get<V>(), default_value_str->str);
+    if (default_value_str)
+      tv->default_value(default_value_str->get<V>(), default_value_str->str);
 
     option_options_base::apply(tv);
     return tv;
@@ -146,11 +157,13 @@ struct option_options : option_options_base, notify_base<V> {
 
   template <class V2>
   static inline void optional_to(boost::optional<value_str> const& from, boost::optional<value_str>& to) {
-    if (from) to = value_str(to_string_or_strings(from->get<V2>()), from->str);
+    if (from)
+      to = value_str(to_string_or_strings(from->get<V2>()), from->str);
   }
 
   template <class V2>
-  explicit option_options(option_options<V2> const& o) : option_options_base((option_options_base const&)o) {
+  explicit option_options(option_options<V2> const& o)
+      : option_options_base((option_options_base const&)o) {
     // cannot copy notifier
     optional_to<V2>(o.implicit_value_str, implicit_value_str);
     optional_to<V2>(o.default_value_str, default_value_str);
@@ -163,7 +176,9 @@ struct notify_from_strings : notify_base<Val> {
   typedef select_from_strings<Val> convert;
   typedef typename convert::string_or_strings from_type;
   Val* pv;
-  notify_from_strings(Val* pv, notify const& base) : notify(base), pv(pv) {}
+  notify_from_strings(Val* pv, notify const& base)
+      : notify(base)
+      , pv(pv) {}
   void operator()(std::vector<std::string> const& finals) const {
     try {
       convert::from_strings(finals, *pv);
@@ -213,11 +228,14 @@ inline std::string get_string(boost::program_options::variables_map const& vm, s
 // change --opt-name=x --opt_name=x for all strings x.  danger: probably the argv from int main isn't supposed
 // to be modified?
 inline int arg_minusto_underscore(char* s) {
-  if (!*s || *s++ != '-') return 0;
-  if (!*s || *s++ != '-') return 0;
+  if (!*s || *s++ != '-')
+    return 0;
+  if (!*s || *s++ != '-')
+    return 0;
   int chars_replaced = 0;
   for (; *s; ++s) {
-    if (*s == '=') break;
+    if (*s == '=')
+      break;
     if (*s == '-') {
       *s = '_';
       ++chars_replaced;
@@ -247,18 +265,19 @@ boost::program_options::typed_value<std::vector<std::string>>*
 multiple_strings_defaulted(Container* v, notify_base<Container> const& notify) {
   notify_from_strings<Container> notify_str(v, notify);
   return boost::program_options::value<std::vector<std::string>>()
-      ->composing()
-      ->multitoken()
-      ->notifier(notify_str)
-      ->default_value(notify_str.inverse(), notify_str.inverse_string());
+    ->composing()
+    ->multitoken()
+    ->notifier(notify_str)
+    ->default_value(notify_str.inverse(), notify_str.inverse_string());
 }
 
 template <class Value>
 boost::program_options::typed_value<std::vector<std::string>>*
 multiple_strings(Value* v, bool defaulted, notify_base<Value> const& notify, bool allow_zero_tokens = true) {
   boost::program_options::typed_value<std::vector<std::string>>* r
-      = defaulted ? multiple_strings_defaulted(v, notify) : multiple_strings(v, notify);
-  if (allow_zero_tokens) r->zero_tokens();
+    = defaulted ? multiple_strings_defaulted(v, notify) : multiple_strings(v, notify);
+  if (allow_zero_tokens)
+    r->zero_tokens();
   return r;
 }
 
@@ -272,8 +291,8 @@ boost::program_options::typed_value<std::string>* single_string_defaulted(Value*
                                                                           notify_base<Value> const& notify) {
   notify_from_strings<Value> notify_str(val, notify);
   return boost::program_options::value<std::string>()
-      ->notifier(notify_str)
-      ->default_value(notify_str.inverse(), notify_str.inverse_string());
+    ->notifier(notify_str)
+    ->default_value(notify_str.inverse(), notify_str.inverse_string());
 }
 
 template <class Val>
@@ -315,7 +334,7 @@ typename multiple_for_container<T>::typed_value* via_strings_value(std::string c
   opt.log_prefix = "--" + name + " ";
   option_options<typename select_from_strings<T>::string_or_strings> po(opt);
   typename multiple_for_container<T>::typed_value* tv
-      = multiple_for_container<T>::strings(v, defaulted, opt.notifier());
+    = multiple_for_container<T>::strings(v, defaulted, opt.notifier());
   po.apply(tv);
   return tv;
 }
@@ -346,8 +365,10 @@ inline std::string const& get_single_arg(boost::any& v, std::vector<std::string>
 template <class I>
 void must_complete_read(I& in, std::string const& msg = "Couldn't parse") {
   char c;
-  if (in.bad()) program_options_fatal(msg + " - failed input");
-  if (in >> c) program_options_fatal(msg + " - got extra char: " + std::string(c, 1));
+  if (in.bad())
+    program_options_fatal(msg + " - failed input");
+  if (in >> c)
+    program_options_fatal(msg + " - got extra char: " + std::string(c, 1));
 }
 
 // TODO: std function ok?
@@ -369,14 +390,16 @@ struct any_printer : public boost::function<void(Ostream&, boost::any const&)> {
 
   any_printer() {}
 
-  any_printer(any_printer const& x) : F(static_cast<F const&>(x)) {}
+  any_printer(any_printer const& x)
+      : F(static_cast<F const&>(x)) {}
 
   template <class T>
-  explicit any_printer(T const* tag) : F(typed_print<T>()) {}
+  explicit any_printer(T const* tag)
+      : F(typed_print<T>()) {}
 
   template <class T>
   void set() {
-    F f((typed_print<T>()));  // extra parens necessary
+    F f((typed_print<T>())); // extra parens necessary
     swap(f);
   }
 };
@@ -416,18 +439,24 @@ struct printable_options_description : boost::program_options::options_descripti
 
     std::string const& vmkey() const { return od->key(name()); }
     template <class T>
-    printable_option(T* tag, OD const& od_) : print(tag), od(od_), in_group(false) {}
-    printable_option() : in_group(false) {}
+    printable_option(T* tag, OD const& od_)
+        : print(tag)
+        , od(od_)
+        , in_group(false) {}
+    printable_option()
+        : in_group(false) {}
   };
   typedef std::vector<printable_option> options_type;
-  BOOST_STATIC_CONSTANT(unsigned, default_linewrap = 80);  // options_description::default_line_length_
-  printable_options_description(unsigned line_length = default_linewrap) : options_description(line_length) {
+  BOOST_STATIC_CONSTANT(unsigned, default_linewrap = 80); // options_description::default_line_length_
+  printable_options_description(unsigned line_length = default_linewrap)
+      : options_description(line_length) {
     init();
   }
 
   typedef boost::object_pool<std::string> string_pool;
   printable_options_description(std::string const& caption, unsigned line_length = default_linewrap)
-      : options_description(caption, line_length), caption(caption) {
+      : options_description(caption, line_length)
+      , caption(caption) {
     init();
   }
 
@@ -442,38 +471,38 @@ struct printable_options_description : boost::program_options::options_descripti
   typedef std::string option_name;
 
   template <class V>
-  self_type& option(option_name name, V* val, std::string const& description, bool hidden = false,
+  self_type& option(option_name const& name, V* val, std::string const& description, bool hidden = false,
                     bool defaulted = false, option_options<V> const& opt = option_options<V>()) {
     return (*this)(name, via_strings_value(name, val, opt, defaulted), description);
   }
 
   template <class V>
-  self_type& option(option_name name, V* val, std::string const& description, option_options<V> const& opt) {
+  self_type& option(option_name const& name, V* val, std::string const& description, option_options<V> const& opt) {
     return (*this)(name, via_strings_value(name, val, opt, opt.defaulted), description, opt.hidden);
   }
 
 
   template <class V>
-  self_type& defaulted(option_name name, V* val, std::string const& description, bool hidden = false,
+  self_type& defaulted(option_name const& name, V* val, std::string const& description, bool hidden = false,
                        option_options<V> const& opt = option_options<V>()) {
     return option(name, val, description, hidden, true, opt);
   }
 
   template <class V>
-  self_type& required(option_name name, V* val, std::string const& description, bool hidden = false,
+  self_type& required(option_name const& name, V* val, std::string const& description, bool hidden = false,
                       bool defaulted = false) {
     return required_flag(true, name, val, description, hidden, defaulted);
   }
 
   template <class V>
-  self_type& required_flag(bool required, option_name name, V* val, std::string const& description,
+  self_type& required_flag(bool required, option_name const& name, V* val, std::string const& description,
                            bool hidden = false, bool defaulted = false) {
     option_options<V> opt;
     opt.required = required;
     return option(name, val, description, hidden, defaulted, opt);
   }
 
-  std::shared_ptr<string_pool> descs;  // because opts lib only takes char *, hold them here.
+  std::shared_ptr<string_pool> descs; // because opts lib only takes char *, hold them here.
   template <class T, class C>
   self_type& operator()(char const* name, boost::program_options::typed_value<T, C>* val,
                         std::string const& description, bool hidden = false) {
@@ -498,7 +527,8 @@ struct printable_options_description : boost::program_options::options_descripti
     boost::shared_ptr<OD> od((description ? new OD(name, val, description) : new OD(name, val)));
     options_description::add(od);
     printable_option opt((T*)0, od);
-    if (!hidden) pr_options.push_back(opt);
+    if (!hidden)
+      pr_options.push_back(opt);
     return *this;
   }
 
@@ -506,7 +536,8 @@ struct printable_options_description : boost::program_options::options_descripti
   // options tree (affects printing only, not option names)
   self_type& add(self_type const& desc, bool hidden = false) {
     options_description::add(desc);
-    if (hidden) return *this;
+    if (hidden)
+      return *this;
     groups.push_back(group_type(new self_type(desc)));
     if (desc.size()) {
       for (typename options_type::const_iterator i = desc.pr_options.begin(), e = desc.pr_options.end();
@@ -514,7 +545,7 @@ struct printable_options_description : boost::program_options::options_descripti
         pr_options.push_back(*i);
         pr_options.back().in_group = true;
       }
-      ++n_nonempty_groups;  // could just not add an empty group. but i choose to allow that.
+      ++n_nonempty_groups; // could just not add an empty group. but i choose to allow that.
     }
 
     return *this;
@@ -525,8 +556,10 @@ struct printable_options_description : boost::program_options::options_descripti
     std::string const& name = opt.name();
     if (!only_value) {
       boost::program_options::value_semantic const* psemantic = opt.od->semantic().get();
-      if (psemantic && psemantic->is_required()) o << "#REQUIRED# ";
-      if (var.defaulted()) o << "#DEFAULTED# ";
+      if (psemantic && psemantic->is_required())
+        o << "#REQUIRED# ";
+      if (var.defaulted())
+        o << "#DEFAULTED# ";
       if (var.empty()) {
         o << "#EMPTY# " << name;
         return;
@@ -544,7 +577,8 @@ struct printable_options_description : boost::program_options::options_descripti
   void collect_defaulted(boost::program_options::variables_map& vm, option_set& defaults) {
     for (typename options_type::iterator i = pr_options.begin(), e = pr_options.end(); i != e; ++i) {
       printable_option& opt = *i;
-      if (vm[opt.vmkey()].defaulted()) defaults.push_back(opt);
+      if (vm[opt.vmkey()].defaulted())
+        defaults.push_back(opt);
     }
     for (typename groups_type::iterator i = groups.begin(), e = groups.end(); i != e; ++i) {
       (*i)->collect_defaulted(vm, defaults);
@@ -568,46 +602,56 @@ struct printable_options_description : boost::program_options::options_descripti
 
     using namespace boost::program_options;
     using namespace std;
-    if (show_empty_groups || n_this_level || n_nonempty_groups > 1) o << "### " << caption << '\n';
+    if (show_empty_groups || n_this_level || n_nonempty_groups > 1)
+      o << "### " << caption << '\n';
     for (typename options_type::const_iterator i = pr_options.begin(), e = pr_options.end(); i != e; ++i) {
       printable_option const& opt = *i;
-      if (!show_help && opt.name() == "help") continue;
-      if (hierarchy and opt.in_group) continue;
+      if (!show_help && opt.name() == "help")
+        continue;
+      if (hierarchy and opt.in_group)
+        continue;
       variable_value const& var = vm[opt.vmkey()];
-      if (var.defaulted() && !show_defaulted) continue;
-      if (var.empty() && !show_empty) continue;
-      if (show_description) o << "# " << opt.description() << '\n';
+      if (var.defaulted() && !show_defaulted)
+        continue;
+      if (var.empty() && !show_empty)
+        continue;
+      if (show_description)
+        o << "# " << opt.description() << '\n';
       print_option(o, opt, var);
       o << '\n';
     }
     o << '\n';
     if (hierarchy)
       for (typename groups_type::const_iterator i = groups.begin(), e = groups.end(); i != e; ++i)
-        if (show_empty_groups || (*i)->size()) (*i)->print(o, vm, show_flags);
+        if (show_empty_groups || (*i)->size())
+          (*i)->print(o, vm, show_flags);
   }
 
   typedef std::vector<std::string> unparsed_args;
 
   boost::program_options::parsed_options parse_options(
-      std::vector<std::string> const& args, boost::program_options::positional_options_description* po = NULL,
-      unparsed_args* unparsed_out = NULL, bool allow_unrecognized_positional = false,
-      bool allow_unrecognized_opts = false, std::string const& argv0 = "command-line-options") {
+    std::vector<std::string> const& args, boost::program_options::positional_options_description* po = NULL,
+    unparsed_args* unparsed_out = NULL, bool allow_unrecognized_positional = false,
+    bool allow_unrecognized_opts = false, std::string const& argv0 = "command-line-options") {
     using namespace std;
     int n = (int)args.size();
     int argc = n + 1;
 #if GRAEHL_CPP11
-    unique_ptr<char* []>
+    unique_ptr<char*[]>
 #else
     boost::scoped_array<char*>
 #endif
-    argv((new char*[argc]));
+      argv((new char*[argc]));
     argv[0] = (char*)argv0.c_str();
     SHOWIF1(GPROGOPT, 1, "parse_options", to_string(args));
-    for (int i = 0; i < n; ++i) argv[i + 1] = (char*)(args[i].c_str());
+    for (int i = 0; i < n; ++i)
+      argv[i + 1] = (char*)(args[i].c_str());
     return parse_options(argc, argv.get(), po, unparsed_out, allow_unrecognized_opts);
   }
 
-  static inline bool is_option(std::string const& arg) { return !arg.empty() && arg[0] == '-'; }
+  static inline bool is_option(std::string const& arg) {
+    return !arg.empty() && arg[0] == '-';
+  }
 
   // remember to call store(return, vm) and notify(vm)
   boost::program_options::parsed_options
@@ -617,8 +661,10 @@ struct printable_options_description : boost::program_options::options_descripti
     using namespace boost::program_options;
     command_line_parser cl(argc, const_cast<char**>(argv));
     cl.options(*this);
-    if (po) cl.positional(*po);
-    if (allow_unrecognized_opts) cl.allow_unregistered();
+    if (po)
+      cl.positional(*po);
+    if (allow_unrecognized_opts)
+      cl.allow_unregistered();
     parsed_options parsed = cl.run();
     std::vector<std::string> unparsed_no_positional = collect_unrecognized(parsed.options, exclude_positional);
     // this is broken in that it includes *registered* positional options. workaround is to check for first
@@ -627,7 +673,8 @@ struct printable_options_description : boost::program_options::options_descripti
     std::vector<std::string> just_positional;
     for (std::size_t i = 0, n = unparsed_with_positional.size(); i < n; ++i) {
       std::string const& arg = unparsed_with_positional[i];
-      if (arg.empty() || arg[0] != '-') just_positional.push_back(arg);
+      if (arg.empty() || arg[0] != '-')
+        just_positional.push_back(arg);
       if (!allow_unrecognized_positional) {
         if (!po || po->max_total_count() < just_positional.size())
           program_options_fatal("Excessive positional (non-option) arguments: " + to_string(just_positional));
@@ -636,8 +683,10 @@ struct printable_options_description : boost::program_options::options_descripti
 
     if (!allow_unrecognized_opts && !unparsed_no_positional.empty())
       program_options_fatal("Unrecognized option in: " + to_string(unparsed_no_positional));
-    if (unparsed_out) unparsed_out->swap(unparsed_no_positional);
-    if (all_positional_out) all_positional_out->swap(just_positional);
+    if (unparsed_out)
+      unparsed_out->swap(unparsed_no_positional);
+    if (all_positional_out)
+      all_positional_out->swap(just_positional);
     return parsed;
   }
 
@@ -649,14 +698,19 @@ struct printable_options_description : boost::program_options::options_descripti
                            boost::program_options::positional_options_description* po = NULL,
                            bool allow_unrecognized_positional = false, bool allow_unrecognized_opts = false) {
     unparsed_args r;
-    boost::program_options::store(
-        parse_options(argc, argv, po, &r, allow_unrecognized_positional, allow_unrecognized_opts), vm);
+    boost::program_options::store(parse_options(argc, argv, po, &r, allow_unrecognized_positional,
+                                                allow_unrecognized_opts),
+                                  vm);
     notify(vm);
     return r;
   }
 
-  std::size_t ngroups() const { return groups.size(); }
-  std::size_t size() const { return pr_options.size(); }
+  std::size_t ngroups() const {
+    return groups.size();
+  }
+  std::size_t size() const {
+    return pr_options.size();
+  }
 
  private:
   groups_type groups;
@@ -670,7 +724,8 @@ typedef printable_options_description<std::ostream> printable_opts;
 // PROGRAM_OPTIONS_FOR_CONTAINER_TEMPLATE(container<X>) below to place it as boost::program_options::validate
 template <class C, class charT>
 void validate_collection(boost::any& v, const std::vector<std::basic_string<charT>>& s, C*, int) {
-  if (v.empty()) v = boost::any(C());
+  if (v.empty())
+    v = boost::any(C());
   C* tv = boost::any_cast<C>(&v);
   assert(tv);
   for (std::size_t i = 0, e = s.size(); i < e; ++i) {
@@ -687,7 +742,7 @@ void validate_collection(boost::any& v, const std::vector<std::basic_string<char
   }
 }
 
-}  // graehl
+} // namespace graehl
 
 
 /** Validates sequences. Allows multiple values per option occurrence
@@ -697,8 +752,7 @@ void validate_collection(boost::any& v, const std::vector<std::basic_string<char
 // you may need to use extra parens or a comma macro
 // e.g. PROGRAM_OPTIONS_FOR_CONTAINER((std::map<int, int>))
 #define PROGRAM_OPTIONS_FOR_CONTAINER(ContainerFullyQualified)                                             \
-  namespace boost {                                                                                        \
-  namespace program_options {                                                                              \
+  namespace boost { namespace program_options {                                                            \
   template <class charT>                                                                                   \
   void validate(boost::any& v, const std::vector<std::basic_string<charT>>& s, ContainerFullyQualified* f, \
                 int i) {                                                                                   \
@@ -709,8 +763,7 @@ void validate_collection(boost::any& v, const std::vector<std::basic_string<char
 
 // e.g. PROGRAM_OPTIONS_FOR_CONTAINER_TEMPLATE(class T, std::vector<T>)
 #define PROGRAM_OPTIONS_FOR_CONTAINER_TEMPLATE(TemplateArgs, ContainerTemplate)                               \
-  namespace boost {                                                                                           \
-  namespace program_options {                                                                                 \
+  namespace boost { namespace program_options {                                                               \
   template <TemplateArgs, class charT>                                                                        \
   void validate(boost::any& v, const std::vector<std::basic_string<charT>>& s, ContainerTemplate* f, int i) { \
     graehl::validate_collection(v, s, f, i);                                                                  \

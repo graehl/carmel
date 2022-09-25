@@ -40,7 +40,8 @@ inline outputstream& print_size(outputstream& o, size_type size, bool decimal_th
                                 int max_width = -1) {
   typedef double size_compute_type;
   size_compute_type thousand = decimal_thousand ? 1000 : 1024;
-  if (size < thousand) return o << size;
+  if (size < thousand)
+    return o << size;
   size_compute_type base = thousand;
   char const* suffixes = decimal_thousand ? "kmgt" : "KMGT";
   char const* suff = suffixes;
@@ -55,7 +56,7 @@ inline outputstream& print_size(outputstream& o, size_type size, bool decimal_th
     base = nextbase;
     ++suff;
   }
-  return o;  // unreachable
+  return o; // unreachable
 }
 
 template <class size_type>
@@ -79,19 +80,21 @@ size_type scale_mega(char suffix, size_type number = 1) {
 template <class size_type, class inputstream>
 inline size_type parse_size(inputstream& i) {
   double number;
-  if (!(i >> number)) goto fail;
+  if (!(i >> number))
+    goto fail;
   char c;
-  if (i.get(c)) return (size_type)scale_mega(c, number);
+  if (i.get(c))
+    return (size_type)scale_mega(c, number);
   if (number - (size_type)number > 100) {
     char buf[100];
-    int len = std::sprintf(buf, "Overflow-size too big to fit: %g", number);  // NOLINT
+    int len = std::sprintf(buf, "Overflow-size too big to fit: %g", number); // NOLINT
     throw std::runtime_error(std::string(buf, len));
   }
   return (size_type)number;
 fail:
   throw std::runtime_error(std::string(
-      "Expected nonnegative number followed by optional k, m, g, or t (10^3,10^6,10^9,10^12) suffix, or K, "
-      "M, G, or T (2^10,2^20,2^30,2^40), e.g. 1.5G"));
+    "Expected nonnegative number followed by optional k, m, g, or t (10^3,10^6,10^9,10^12) suffix, or K, "
+    "M, G, or T (2^10,2^20,2^30,2^40), e.g. 1.5G"));
 }
 
 template <class size_type>
@@ -110,22 +113,28 @@ inline void size_from_str(std::string const& str, size_type& sz) {
 
 template <bool decimal_thousand = true, class size_type = double>
 struct size_mega {
-  typedef size_mega<decimal_thousand, size_type> self_type;
   size_type size;
   operator size_type&() { return size; }
   operator size_type() const { return size; }
-  size_mega() : size() {}
-  size_mega(self_type const& o) : size(o.size) {}
-  size_mega(size_type size_) : size(size_) {}
+  size_mega()
+      : size() {}
+  size_mega(size_mega const& o)
+      : size(o.size) {}
+  size_mega(size_type size_)
+      : size(size_) {}
   size_mega(std::string const& str, bool unused) { init(str); }
   void init(std::string const& str) { size = (size_type)size_from_str<size_type>(str); }
 
-  self_type& operator=(std::string const& s) { init(s); }
+  size_mega& operator=(std::string const& s) {
+    init(s);
+    return *this;
+  }
 
   template <class Ostream>
   void print(Ostream& o) const {
     print_size(o, size, decimal_thousand, 5);
   }
+  typedef size_mega self_type;
   TO_OSTREAM_PRINT
   FROM_ISTREAM_READ
   template <class I>
@@ -157,19 +166,15 @@ typedef size_mega<true, std::size_t> size_t_metric;
 typedef size_mega<true, double> size_metric;
 
 
-}  // graehl
+} // namespace graehl
 
-namespace boost {
-namespace program_options {
+namespace boost { namespace program_options {
 inline void validate(boost::any& v, std::vector<std::string> const& values, size_t* target_type, int) {
   typedef size_t value_type;
   using namespace graehl;
 
   v = boost::any(graehl::size_from_str<value_type>(get_single_arg(v, values)));
 }
-}
-
-
-}
+}} // namespace boost::program_options
 
 #endif

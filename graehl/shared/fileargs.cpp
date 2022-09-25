@@ -76,12 +76,10 @@ template <class Stream>
 void file_arg<Stream>::set_gzfile(std::string const& s, bool /*large_buf*/)
 // gzstream has a static 256k buffer already. big enough. //TODO: what about USE_BOOST_GZSTREAM buffer?
 {
-  std::string fail_msg;
   try {
     call_set_new_gz<Stream>::gz(*this, s);
   } catch (std::exception& e) {
-    fail_msg.append("-exception: ").append(e.what());
-    throw_fail(s, fail_msg);
+    throw_fail(s, std::string("-exception: ") + e.what());
   }
 }
 
@@ -90,12 +88,10 @@ template <class Stream>
 void file_arg<Stream>::set_gzfile(std::string const& s, bool /*large_buf*/)
 // gzstream has a static 256k buffer already. big enough. //TODO: what about USE_BOOST_GZSTREAM buffer?
 {
-  std::string fail_msg;
   try {
     call_set_new_gz<Stream>::bz2(*this, s);
   } catch (std::exception& e) {
-    fail_msg.append("-exception: ").append(e.what());
-    throw_fail(s, fail_msg);
+    throw_fail(s, std::string("-exception: ") + e.what());
   }
 }
 #endif

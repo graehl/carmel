@@ -58,7 +58,7 @@ struct band_matrix {
   char* data_;  // data_ + (stride_ * row) + col
   size_type stride_;
   size_type rows_;
-  size_type band_;
+  size_type band_ = 0;
   std::size_t bytes() const { return size() * sizeof(T); }
   band_matrix() { init(); }
   /// contents are 0-bytes
@@ -163,12 +163,12 @@ template <class T>
 inline void test_band_matrix() {
   typedef band_matrix<T> M;
   T k = 13;
-  for (T rows = 1; rows <= 3; ++rows) {
-    for (T band = 1; band <= 4; ++band) {
+  for (unsigned rows = 1; rows <= 3; ++rows) {
+    for (unsigned band = 1; band <= 4; ++band) {
       M m(rows, band, k);
       BOOST_CHECK_EQUAL(m(rows-1, rows - 1), k);
-      for (T i = 0; i < rows; ++i)
-        for (T j = 0; j < band; ++j) {
+      for (unsigned i = 0; i < rows; ++i)
+        for (unsigned j = 0; j < band; ++j) {
           BOOST_CHECK_EQUAL(m[i][i + j], k);
           BOOST_CHECK_EQUAL(m(i, i + j), k);
           m(i, i + j) = i + j;
@@ -176,8 +176,8 @@ inline void test_band_matrix() {
           BOOST_CHECK_EQUAL(m(i, i + j), i + j);
         }
       BOOST_CHECK_EQUAL(m(rows-1, rows - 1), rows - 1);
-      for (T i = 0; i < rows; ++i)
-        for (T j = 0; j < band; ++j) BOOST_CHECK_EQUAL(m[i][i + j], i + j);
+      for (unsigned i = 0; i < rows; ++i)
+        for (unsigned j = 0; j < band; ++j) BOOST_CHECK_EQUAL(m[i][i + j], i + j);
     }
   }
 }
@@ -186,6 +186,7 @@ BOOST_AUTO_TEST_CASE(band_matrix_test_case) {
   test_band_matrix<char>();
   test_band_matrix<int>();
   test_band_matrix<double>();
+}
 }
 
 #endif

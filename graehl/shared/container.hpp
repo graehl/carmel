@@ -64,19 +64,22 @@ bool contains(Findable const& set, Key const& key) {
 template <class R, class C, class F>
 R map(C const& c, F f) {
   R ret;
-  for (typename C::const_iterator i = c.begin(), e = c.end(); i != e; ++i) ret.push_back(f(*i));
+  for (auto& x : c)
+    ret.push_back(f(x));
   return ret;
 }
 
 template <class Tag, class M, class F>
 void nested_enumerate(M& m, F& f, Tag t) {
   for (typename M::iterator i = m.begin(); i != m.end(); ++i)
-    for (typename M::value_type::iterator j = i->begin(); j != i->end(); ++j) f.visit(*j, t);
+    for (typename M::value_type::iterator j = i->begin(); j != i->end(); ++j)
+      f.visit(*j, t);
 }
 
 template <class Tag, class M, class F>
 void enumerate(M& m, F& f, Tag t) {
-  for (typename M::iterator i = m.begin(); i != m.end(); ++i) f.visit(*i, t);
+  for (typename M::iterator i = m.begin(); i != m.end(); ++i)
+    f.visit(*i, t);
 }
 
 template <class V, class K>
@@ -92,9 +95,11 @@ inline typename std::map<K, V>::mapped_type* find_second(const std::map<K, V>& h
 
 template <class T>
 inline bool container_equal(T const& v1, T const& v2, typename T::const_iterator* /*SFINAE*/ = 0) {
-  if (v1.size() != v2.size()) return false;
+  if (v1.size() != v2.size())
+    return false;
   for (typename T::const_iterator i1 = v1.begin(), i2 = v2.begin(), e1 = v1.end(); i1 != e1; ++i1, ++i2)
-    if (!(*i1 == *i2)) return false;
+    if (!(*i1 == *i2))
+      return false;
   return true;
 }
 
@@ -113,7 +118,7 @@ void maptest() {
   BOOST_CHECK(find_second(m, 1) != NULL);
   BOOST_CHECK(*(find_second(m, 1)) == 0);
   BOOST_CHECK(!insert(m, 1, 2).second);
-  BOOST_CHECK(insert(m, 1, 2).first != m.end());  // == m.find(m,1)
+  BOOST_CHECK(insert(m, 1, 2).first != m.end()); // == m.find(m,1)
   BOOST_CHECK(insert(m, 3, 4).second);
   BOOST_CHECK(m.find(1)->first == 1);
   BOOST_CHECK(m.find(3)->first == 3);
@@ -178,6 +183,6 @@ BOOST_AUTO_TEST_CASE(TEST_CONTAINER) {
 #endif
 
 
-}
+} // namespace graehl
 
 #endif

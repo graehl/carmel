@@ -36,7 +36,57 @@
 
 namespace graehl {
 
-template <class I>
+inline char nibble(unsigned char x) {
+  return x < 10 ? '0' + x : 'A' + (x - 10);
+}
+
+template <unsigned N, bool PrintLeading0 = true>
+struct nibbles {
+  char n[N];
+  /// U unsigned
+  template <class U>
+  nibbles(U x) {
+    for (unsigned i = N; i--;) {
+      n[i] = nibble(x & 0x0F);
+      x >>= 4;
+    }
+  }
+  friend inline std::ostream& operator<<(std::ostream& out, nibbles const& self) {
+    self.print(out);
+    return out;
+  }
+  void print(std::ostream& out) const {
+    if (PrintLeading0)
+      out.write(n, N);
+    else {
+      char const* p = n;
+      for (auto last = p + N - 1; p < last; ++p)
+        if (*p != '0')
+          break;
+      out.write(p, (n + N - p));
+    }
+  }
+};
+
+template <class U>
+void printNibbles(std::ostream& out, U x) {
+  nibbles<sizeof(U) * 2>(x).print(out);
+}
+
+template <unsigned ShorterNibbles, bool PrintLeading0Shorter = true, bool PrintLeading0Longer = false>
+struct PrintNibbles {
+  template <class U>
+  static void printShorter(std::ostream& out, U x) {
+    constexpr unsigned MaxNibbles = sizeof(U) * 2;
+    if (ShorterNibbles < MaxNibbles && x < ((U)1 << (4 * ShorterNibbles)))
+      nibbles<ShorterNibbles, PrintLeading0Shorter>(x).print(out);
+    else
+      nibbles<MaxNibbles, PrintLeading0Longer>(x).print(out);
+  }
+};
+
+template <class I, char Pre1 = '0', char Pre2 = 'x', unsigned ShorterNibbles = 2,
+          bool PrintLeading0Shorter = true, bool PrintLeading0Longer = false>
 struct hex_int {
   typedef typename signed_for_int<I>::unsigned_t U;
   I i;
@@ -44,7 +94,7 @@ struct hex_int {
   typedef void leaf_configure;
   void assign(std::string const& s) {
     std::string::size_type const sz = s.size();
-    if (sz >= 2 && s[0] == '0' && s[1] == 'x')
+    if (sz >= 2 && (s[0] == Pre1 && s[1] == Pre2 || s[0] == '0' && s[1] == 'x'))
       i = (I)hextou<U>(&s[2], &s[sz]);
     else
       string_to(s, i);
@@ -55,33 +105,41 @@ struct hex_int {
     return "(hexadecimal) " + type_string(me.i);
   }
 
-  hex_int() : i() {}
-  constexpr hex_int(I i) : i(i) {}
+  hex_int()
+      : i() {}
+  constexpr hex_int(I i)
+      : i(i) {}
   explicit hex_int(std::string const& s) { assign(s); }
   operator I const&() const { return i; }
   operator I&() { return i; }
   void operator=(I to) { i = to; }
-  typedef hex_int<I> self_type;
+  typedef hex_int self_type;
   TO_OSTREAM_PRINT
   FROM_ISTREAM_READ
   template <class S>
   void print(S& s) const {
-    s << '0' << 'x' << std::hex << U(i) << std::dec;
+    s.put(Pre1);
+    s.put(Pre2);
+    PrintNibbles<ShorterNibbles>::printShorter(s, (U)i);
   }
   template <class S>
   void read(S& s) {
     char c;
-    if (!s.get(c)) return;
-    if (c == '0') {
+    if (!s.get(c))
+      return;
+    if (c == Pre1 || c == '0') {
       i = 0;
-      if (!s.get(c)) return;
-      if (c == 'x') {
+      if (!s.get(c))
+        return;
+      if (c == Pre2 || c == 'x') {
         U u;
-        if (!(s >> std::hex >> u >> std::dec)) return;
+        if (!(s >> std::hex >> u >> std::dec))
+          return;
         i = u;
       } else {
-        s.unget();  // actual number starting with 0. //octal for consistency with string_to.
-        if (std::isdigit(c)) s >> std::oct >> i;
+        s.unget(); // actual number starting with 0. //octal for consistency with string_to.
+        if (std::isdigit(c))
+          s >> std::oct >> i;
       }
     } else {
       // regular int, maybe signed
@@ -119,6 +177,6 @@ DEFINE_HEX_INT(uint64_t);
 #endif
 
 
-}
+} // namespace graehl
 
 #endif

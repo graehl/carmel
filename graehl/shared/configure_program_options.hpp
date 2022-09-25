@@ -125,7 +125,7 @@ struct program_options_exec : boost::noncopyable {
       allow_unk_paths[pathname] = args;
     }
   }
-  std::string unrecognized_complaint(std::string arg, std::string parent, std::string prefix = "") {
+  std::string unrecognized_complaint(std::string const& arg, std::string const& parent, std::string prefix = "") {
     std::string complaint(prefix);
     (((complaint += arg) += " is an unknown option and parent ") += parent) += " doesn't like those!";
     warning(complaint);

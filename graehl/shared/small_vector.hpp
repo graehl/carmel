@@ -145,9 +145,10 @@ struct pod_array_ref {
   typedef T const& const_reference;
   Size sz;
   T* a;
+  // cppcheck-suppress uninitMemberVar
   pod_array_ref() : sz() {}
   pod_array_ref(T* a, Size sz) : sz(sz), a(a) {}
-  pod_array_ref(T* begin, T* end) : sz(end - begin), a(begin) {}
+  pod_array_ref(T* begin, T const* end) : sz(end - begin), a(begin) {}
   template <class Vec>
   explicit pod_array_ref(Vec const& vec) : sz((Size)vec.size()), a(&vec[0]) {
     assert(vec.size() == sz);
@@ -293,7 +294,7 @@ struct small_vector {
     new (push_back_uninitialized()) T(a0, a1, a2, a3);
   }
 #endif
-
+  // cppcheck-suppress unknownMacro
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   template <class Archive>
   void save(Archive& ar, const unsigned) const {
@@ -903,6 +904,10 @@ struct small_vector {
       (*this)[i] = val;
   }
 
+#if __GNUC__ > 8
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
   T& operator[](size_type i) {
     if (d_.stack.sz_ <= kMaxInlineSize) return d_.stack.vals_[i];
     return d_.heap.begin_[i];
@@ -911,6 +916,9 @@ struct small_vector {
     if (d_.stack.sz_ <= kMaxInlineSize) return d_.stack.vals_[i];
     return d_.heap.begin_[i];
   }
+#if __GNUC__ > 8
+#pragma GCC diagnostic pop
+#endif
 
   bool operator==(small_vector const& o) const {
     if (d_.stack.sz_ != o.d_.stack.sz_) return false;

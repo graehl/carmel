@@ -644,6 +644,7 @@ This is definitely linear to n.
     put(index_in_heap, willb, index_b);
   }
 
+  // cppcheck-suppress unusedPrivateFunction
   void move_heap_element(MoveableValueRef v, size_type ito) {
     using boost::put;
     put(index_in_heap, data[ito] = (MoveableValueRef)v, ito);
@@ -724,13 +725,12 @@ This is definitely linear to n.
       put(index_in_heap, data[index] = (MoveableValueRef)valparent, index);
       preserve_heap_property_up((MoveableValueRef)copyi, parent_index, disti);
     }
-    return;
-    verify_heap();
   }
 
 
   /// \return 0 if currently_being_moved is better than all children of parent_index else position of child
   /// that should move to parent_index (best child). heap_size should == data.size() (caching)
+  // cppcheck-suppress unusedPrivateFunction
   size_type which_child_down(size_type parent_index, distance_type parent_dist, Value* heap_ptr,
                              size_type heap_size) {
     size_type first_child_index = child(parent_index, 0);

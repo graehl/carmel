@@ -408,7 +408,7 @@ BOOST_AUTO_TEST_CASE(TestFtoaFloat) {
   {
     auto x = 2.35054106e-4f;
     auto s = ftos(x);
-    BOOST_CHECK_EQUAL(s, "2.3505411e-4");
+    BOOST_CHECK(s == "2.3505411e-4" || s== "2.3505414e-4");
     std::stringstream ss(s);
     float y;
     ss >> y;

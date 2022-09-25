@@ -131,7 +131,6 @@ struct expect_visitor {
     C const& x = array_expected[next++];
     if (x == d) return true;
     BOOST_CHECK_EQUAL(x, d);
-    ++next;
     return false;
   }
   unsigned n_visited() const { return next; }

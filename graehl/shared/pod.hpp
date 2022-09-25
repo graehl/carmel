@@ -72,8 +72,8 @@ struct decoding_error : encoding_error {
 };
 
 typedef unsigned char byte;
-typedef byte const* const_byteptr;
-typedef byte* byteptr;
+typedef graehl::byte const* const_byteptr;
+typedef graehl::byte* byteptr;
 
 template <class Vec>
 void append_array(Vec& vec, typename Vec::value_type const* data, typename Vec::value_type const* end) {

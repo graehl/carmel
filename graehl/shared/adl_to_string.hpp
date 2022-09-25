@@ -75,6 +75,6 @@ inline void adl_append_to_string(std::string& s, V const& v) {
 }
 
 
-}
+} // namespace adl
 
 #endif

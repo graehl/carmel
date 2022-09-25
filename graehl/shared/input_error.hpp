@@ -61,7 +61,8 @@ inline C scrunch_char(C c, char with = '/') {
 
 template <class O, class C>
 inline void output_n(O& o, C const& c, unsigned n) {
-  for (unsigned i = 0; i < n; ++i) o << c;
+  for (unsigned i = 0; i < n; ++i)
+    o << c;
 }
 
 template <class Ic, class It, class Oc, class Ot>
@@ -81,15 +82,18 @@ inline std::streamoff show_error_context(std::basic_istream<Ic, It>& in, std::ba
     std::streamoff after(in.tellg());
     if (!in) {
       in.clear();
-      in.seekg(after = 0);
-    }
-    actual_pretext_chars = before - after;
+      in.seekg(0);
+      actual_pretext_chars = before;
+    } else
+      actual_pretext_chars = before - after;
   } else
-    actual_pretext_chars = 1;  // from unget
+    actual_pretext_chars = 1; // from unget
   in.clear();
   out << "INPUT ERROR: ";
-  if (before >= 0) out << " reading byte #" << before + 1;
-  if (ineof) out << " (at EOF)";
+  if (before >= 0)
+    out << " reading byte #" << before + 1;
+  if (ineof)
+    out << " (at EOF)";
   out << " (^ marks the read position):\n";
   const unsigned indent = 3;
   output_n(out, '.', indent);
@@ -120,7 +124,8 @@ inline std::streamoff show_error_context(std::basic_istream<Ic, It>& in, std::ba
 
   out << '\n';
   output_n(out, ' ', indent);
-  for (unsigned i = 0; i < ip_lastline; ++i) out << ' ';
+  for (unsigned i = 0; i < ip_lastline; ++i)
+    out << ' ';
   out << '^' << '\n';
   return before >= 0 ? before : -1;
 }
@@ -130,11 +135,13 @@ void throw_input_exception(std::basic_istream<Ic, It>& in, std::string const& er
                            char const* item = "input", std::size_t number = 0) {
   std::ostringstream err;
   err << "Error reading";
-  if (item) err << ' ' << item << " # " << number;
+  if (item)
+    err << ' ' << item << " # " << number;
   err << ": " << error << '\n';
   std::streamoff where = show_error_context(in, err);
 #if INPUT_ERROR_TELLG
-  if (where >= 0) err << "(file position " << where << ")";
+  if (where >= 0)
+    err << "(file position " << where << ")";
 #endif
   err << '\n';
   throw Exception(err.str());
@@ -147,6 +154,6 @@ void throw_input_error(std::basic_istream<Ic, It>& in, std::string const& error 
 }
 
 
-}
+} // namespace graehl
 
 #endif

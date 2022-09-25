@@ -37,7 +37,7 @@ struct value_str {
     *this = t;
   }
   template <class T>
-  value_str(T const& t, std::string as_string) : value(t), str(as_string) {}
+  value_str(T const& t, std::string const& as_string) : value(t), str(as_string) {}
 
   template <class T>
   void assign_to(T& t) const  // must be same type as stored in value

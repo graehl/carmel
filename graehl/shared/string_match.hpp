@@ -332,6 +332,7 @@ inline bool expect_consuming(std::basic_istream<Ch, Tr>& i, CharIt begin, CharIt
   while (begin != end) {
     if (!i.get(c)) return false;
     if (c != *begin) return false;
+    ++begin;
   }
   return true;
   /* //NOTE: whitespace will be ignored!  so don't include space in expectation ...

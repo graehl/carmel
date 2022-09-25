@@ -39,4 +39,10 @@
 #define ANALYZER_NORETURN
 #endif
 
+#if defined(_MSC_VER)
+#define NORETURNPRE __declspec(noreturn)
+#else
+#define NORETURNPRE
+#endif
+
 #endif

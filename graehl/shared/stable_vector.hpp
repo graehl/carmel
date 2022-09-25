@@ -72,7 +72,7 @@ struct stable_vector {
 
   typedef typename use_small_vector<Chunk, UseSmallVector>::type Chunks;
   Chunks chunks_;
-  I size_, capacity_;  // capacity_ is redundant but helps w/ speed
+  I size_ = 0, capacity_; // capacity_ is redundant but helps w/ speed
 
   T& back() {
     assert(size_);
@@ -114,7 +114,9 @@ struct stable_vector {
     return chunks_[chunk][pos];
   }
 
-  stable_vector() : size_(), capacity_() {}
+  stable_vector()
+      : size_()
+      , capacity_() {}
   stable_vector(I size) { init(size); }
   stable_vector(I size, T const& initial) { init(size, initial); }
 
@@ -136,24 +138,28 @@ struct stable_vector {
     Chunk last = chunks_[nowchunk];
     I morechunks = afterchunk - nowchunk;
     // fill up this chunk
-    for (I i = nowpos, n = morechunks ? chunksize : afterpos; i < n; ++i) last[i] = initial;
+    for (I i = nowpos, n = morechunks ? chunksize : afterpos; i < n; ++i)
+      last[i] = initial;
 
     if (morechunks) {
       for (I i = 0, n = morechunks; i < n; ++i)
-        push_back_chunk(new_chunk(initial));  // additional full chunks_
+        push_back_chunk(new_chunk(initial)); // additional full chunks_
     }
     size_ = size;
   }
 
   void reserve(I cap) {
-    if (cap > capacity_) reserve_chunks((cap + posmask) >> chunkshift);
+    if (cap > capacity_)
+      reserve_chunks((cap + posmask) >> chunkshift);
     assert(capacity_ >= cap);
   }
   void reserve_chunks(I nchunks) {
     I oldchunks = (I)chunks_.size();
-    if (nchunks < oldchunks) return;
+    if (nchunks < oldchunks)
+      return;
     chunks_.reserve(nchunks);
-    for (I n = nchunks - oldchunks; n; --n) push_back_chunk();
+    for (I n = nchunks - oldchunks; n; --n)
+      push_back_chunk();
   }
 
   /// position within chunk
@@ -179,7 +185,7 @@ struct stable_vector {
     void operator+=(I delta) { i += delta; }
     void operator-=(I delta) { i -= delta; }
     Val& operator*() const {
-      return self[i];  // TODO: we can optimize using two separate indices
+      return self[i]; // TODO: we can optimize using two separate indices
     }
 
 #define GRAEHL_STABLE_VECTOR_RELATION(rel)          \
@@ -196,17 +202,31 @@ struct stable_vector {
     GRAEHL_STABLE_VECTOR_RELATION(>)
 #undef GRAEHL_STABLE_VECTOR_RELATION
 
-    iterator_impl(self_type const& self, I i) : self(const_cast<self_type&>(self)), i(i) {}
+    iterator_impl(self_type const& self, I i)
+        : self(const_cast<self_type&>(self))
+        , i(i) {}
   };
   typedef iterator_impl<T> iterator;
   typedef iterator_impl<T const> const_iterator;
-  iterator begin() { return iterator(*this, 0); }
-  const_iterator begin() const { return const_iterator(*this, 0); }
-  iterator end() { return iterator(*this, size_); }
-  const_iterator end() const { return const_iterator(*this, size_); }
+  iterator begin() {
+    return iterator(*this, 0);
+  }
+  const_iterator begin() const {
+    return const_iterator(*this, 0);
+  }
+  iterator end() {
+    return iterator(*this, size_);
+  }
+  const_iterator end() const {
+    return const_iterator(*this, size_);
+  }
 
-  bool empty() const { return !size_; }
-  I size() const { return size_; }
+  bool empty() const {
+    return !size_;
+  }
+  I size() const {
+    return size_;
+  }
 
   T& push_back() {
     if (size_ == capacity_) {
@@ -249,7 +269,8 @@ struct stable_vector {
 
   void pop_back(bool destroy = kRemoveDestroys) {
     assert(size_);
-    if (destroy) reinit((*this)[size_ - 1]);
+    if (destroy)
+      reinit((*this)[size_ - 1]);
     --size_;
   }
 
@@ -268,15 +289,16 @@ struct stable_vector {
     if (sz < size_) {
       I const oldchunks = (I)chunks_.size();
       I newchunks = ((sz + posmask) >> chunkshift);
-      for (I i = newchunks; i < oldchunks; ++i) free_chunk(chunks_[i]);
+      for (I i = newchunks; i < oldchunks; ++i)
+        free_chunk(chunks_[i]);
       chunks_.resize(newchunks);
       capacity_ = newchunks * chunksize;
       if (destroy && newchunks) {
         assert(!chunks_.empty());
-        Chunk& chunk = chunks_[newchunks - 1];
         I pos = sz & posmask;
-        if (pos)  // fits exactly into #chunks_ => nothing to clear
-          for (; pos < chunksize; ++pos) reinit(chunk[pos]);
+        if (pos) // fits exactly into #chunks_ => nothing to clear
+          for (Chunk& chunk = chunks_[newchunks - 1]; pos < chunksize; ++pos)
+            reinit(chunk[pos]);
       }
       size_ = sz;
     }
@@ -292,10 +314,13 @@ struct stable_vector {
   }
 
   ~stable_vector() {
-    for (typename Chunks::const_iterator i = chunks_.begin(), e = chunks_.end(); i != e; ++i) free_chunk(*i);
+    for (typename Chunks::const_iterator i = chunks_.begin(), e = chunks_.end(); i != e; ++i)
+      free_chunk(*i);
   }
 
-  stable_vector(stable_vector const& o) : size_(o.size_), capacity_() {
+  stable_vector(stable_vector const& o)
+      : size_(o.size_)
+      , capacity_() {
     for (typename Chunks::const_iterator i = o.chunks_.begin(), e = o.chunks_.end(); i != e; ++i)
       push_back_chunk(clone_chunk(*i));
     assert(capacity_ == o.capacity_);
@@ -304,7 +329,9 @@ struct stable_vector {
 
 #if GRAEHL_CPP11
   stable_vector(stable_vector&& o) noexcept
-      : chunks_(std::move(o.chunks_)), size_(o.size_), capacity_(o.capacity_) {}
+      : chunks_(std::move(o.chunks_))
+      , size_(o.size_)
+      , capacity_(o.capacity_) {}
   stable_vector& operator=(stable_vector&& o) noexcept {
     assert(this != &o);
     chunks_ = std::move(o.chunks_);
@@ -315,7 +342,8 @@ struct stable_vector {
 #endif
 
   void operator=(stable_vector const& o) {
-    if (this == &o) return;
+    if (this == &o)
+      return;
     clear();
     for (typename Chunks::const_iterator i = o.chunks_.begin(), e = o.chunks_.end(); i != e; ++i)
       push_back_chunk(clone_chunk(*i));
@@ -323,21 +351,27 @@ struct stable_vector {
     size_ = o.size_;
   }
 
-  bool operator!=(stable_vector const& o) const { return !(*this == o); }
+  bool operator!=(stable_vector const& o) const {
+    return !(*this == o);
+  }
 
   bool operator==(stable_vector const& o) const {
-    if (size_ != o.size_) return false;
+    if (size_ != o.size_)
+      return false;
     I nchunks = chunks_.size();
-    if (o.chunks_.size() != nchunks) return false;
+    if (o.chunks_.size() != nchunks)
+      return false;
     I i = 0, n = nchunks - 1;
     for (; i < n; ++i)
-      if (!equal_chunks(chunks_[i], o.chunks_[i])) return false;
-    return equal_chunks(chunks_[i], o.chunks_[i], size_ & posmask);  // last chunk
+      if (!equal_chunks(chunks_[i], o.chunks_[i]))
+        return false;
+    return equal_chunks(chunks_[i], o.chunks_[i], size_ & posmask); // last chunk
   }
 
   // meant to be private w/ friend fn calling it but MSVC2010 couldn't find the friend fn
   T& growImpl(I i) {
-    if (i >= size_) resizeLarger(i + 1);
+    if (i >= size_)
+      resizeLarger(i + 1);
     return (*this)[i];
   }
 
@@ -349,7 +383,8 @@ struct stable_vector {
 
   void init(I size, T const& initial) {
     capacity_ = 0;
-    for (I i = 0, n = size >> chunkshift; i < n; ++i) push_back_chunk(initial);
+    for (I i = 0, n = size >> chunkshift; i < n; ++i)
+      push_back_chunk(initial);
     push_back_chunk(initial, size & posmask);
     size_ = size;
   }
@@ -367,12 +402,17 @@ struct stable_vector {
      constructor. it would be easy to change to lazy-copy-construct later,
      though
   */
-  void push_back_chunk() { push_back_chunk(new_chunk()); }
-  void push_back_chunk(T const& initial, I sz = chunksize) { push_back_chunk(new_chunk(initial, sz)); }
+  void push_back_chunk() {
+    push_back_chunk(new_chunk());
+  }
+  void push_back_chunk(T const& initial, I sz = chunksize) {
+    push_back_chunk(new_chunk(initial, sz));
+  }
 
   bool equal_chunks(Chunk a, Chunk b, I sz = chunksize) const {
     for (I i = 0; i < sz; ++i)
-      if (a[i] != b[i]) return false;
+      if (a[i] != b[i])
+        return false;
     return true;
   }
 
@@ -380,13 +420,14 @@ struct stable_vector {
     Chunk c = (Chunk)::operator new(sizeof(T) * chunksize);
     I i = 0;
     try {
-      for (; i < chunksize; ++i) new (&c[i]) T();  // () gives 0 init for primitives
+      for (; i < chunksize; ++i)
+        new (&c[i]) T(); // () gives 0 init for primitives
       return c;
     } catch (...) {
-      while (i) c[--i].~T();
+      while (i)
+        c[--i].~T();
       ::operator delete((void*)c);
       throw std::runtime_error("stable_vector constructing chunk");
-      return 0;
     }
   }
 
@@ -395,27 +436,30 @@ struct stable_vector {
     Chunk c = (Chunk)::operator new(sizeof(T) * chunksize);
     I i = 0;
     try {
-      for (; i < sz; ++i) new (&c[i]) T(initial);
-      for (; i < chunksize; ++i) new (&c[i]) T();  // () gives 0 init for primitives
+      for (; i < sz; ++i)
+        new (&c[i]) T(initial);
+      for (; i < chunksize; ++i)
+        new (&c[i]) T(); // () gives 0 init for primitives
       return c;
     } catch (...) {
-      while (i) c[--i].~T();
+      while (i)
+        c[--i].~T();
       ::operator delete((void*)c);
       throw std::runtime_error("stable_vector constructing chunk");
-      return 0;
     }
   }
   static Chunk clone_chunk(Chunk from) {
     Chunk c = (Chunk)::operator new(sizeof(T) * chunksize);
     I i = 0;
     try {
-      for (; i < chunksize; ++i) new (&c[i]) T(from[i]);
+      for (; i < chunksize; ++i)
+        new (&c[i]) T(from[i]);
       return c;
     } catch (...) {
-      while (i) c[--i].~T();
+      while (i)
+        c[--i].~T();
       ::operator delete((void*)c);
       throw std::runtime_error("stable_vector constructing chunk");
-      return 0;
     }
   }
 
@@ -425,7 +469,8 @@ struct stable_vector {
   }
 
   static void free_chunk(Chunk c) {
-    for (I i = chunksize; i;) c[--i].~T();
+    for (I i = chunksize; i;)
+      c[--i].~T();
     ::operator delete((void*)c);
   }
 };
@@ -435,7 +480,8 @@ struct stable_vector {
 
 template <class T>
 T& grow(std::vector<T>& v, std::size_t i) {
-  if (i >= v.size()) v.resize(i + 1);
+  if (i >= v.size())
+    v.resize(i + 1);
   return v[i];
 }
 
@@ -449,7 +495,8 @@ template <class T>
 void shrink_destroy(std::vector<T>& v, std::size_t sz) {
   std::size_t oldsz = v.size();
   if (sz < oldsz) {
-    if (!sz) clear_destroy(v);
+    if (!sz)
+      clear_destroy(v);
     v.resize(sz);
   }
 }
@@ -473,7 +520,7 @@ void clear_destroy(graehl::stable_vector<A, B, C, D>& v) {
   v.clear(true);
 }
 
-}  // ns
+} // namespace graehl
 
 #ifndef _WIN32
 #ifdef GRAEHL_TEST
@@ -481,8 +528,7 @@ void clear_destroy(graehl::stable_vector<A, B, C, D>& v) {
 #include <graehl/shared/small_vector.hpp>
 #include <graehl/shared/test.hpp>
 
-namespace graehl {
-namespace unit_test {
+namespace graehl { namespace unit_test {
 
 typedef stable_vector<int, std::size_t, 8, true> StableVector1;
 typedef stable_vector<std::size_t, unsigned, 2, false> StableVector2;
@@ -502,7 +548,8 @@ inline void test_stable_vector(bool isStable = true) {
   grow(v, 99999);
   BOOST_REQUIRE_EQUAL(v.size(), 99999 + 1);
   BOOST_CHECK_EQUAL(v[1333], 1337);
-  if (isStable) BOOST_CHECK_EQUAL(&v[1333], &v1333);
+  if (isStable)
+    BOOST_CHECK_EQUAL(&v[1333], &v1333);
 }
 
 BOOST_AUTO_TEST_CASE(stable_vector_test_case) {
@@ -512,7 +559,7 @@ BOOST_AUTO_TEST_CASE(stable_vector_test_case) {
 }
 
 
-}}
+}} // namespace graehl::unit_test
 
 #endif
 #endif

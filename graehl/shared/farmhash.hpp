@@ -260,6 +260,40 @@ GRAEHL_FORCE_INLINE uint64_t farmhash_str(StringView const& s) {
 }
 
 struct Farmhash {
+  /// for heterogenous dense_hash_map
+  using transparent_key_equal = Farmhash;
+  using is_transparent = void;
+  template <class StringView1, class StringView2>
+  bool operator()(StringView1 const& a, StringView2 const& b) const {
+    return a == b;
+  }
+  inline bool operator()(std::pair<char const*, char const*> a, std::pair<char const*, char const*> b) const {
+    unsigned nb = b.second - b.first;
+    if (nb != a.second - a.first) return false;
+    return !std::memcmp(a.first, b.first, nb);
+  }
+  template <class StringView>
+  bool operator()(StringView const& v, std::pair<char const*, char const*> p) const {
+    unsigned n = v.length();
+    if (n != p.second - p.first) return false;
+    return !std::memcmp(v.data(), p.first, n);
+  }
+  template <class StringView>
+  bool operator()(std::pair<char const*, char const*> p, StringView const& v) const {
+    unsigned n = v.length();
+    if (n != p.second - p.first) return false;
+    return !std::memcmp(v.data(), p.first, n);
+  }
+
+  template <class StringView>
+  bool operator()(char const* a, StringView const& v) const {
+    return !std::strcmp(a, v.data());
+  }
+  template <class StringView>
+  bool operator()(StringView const& v, char const* a) const {
+    return !std::strcmp(a, v.data());
+  }
+
   typedef std::size_t result_type;
 
   /// hash fn object
@@ -268,9 +302,13 @@ struct Farmhash {
     return farmhash(s.data(), s.length());
   }
 
+  inline std::size_t operator()(std::pair<char const*, char const*> slice) const {
+    return farmhash(slice.first, slice.second - slice.first);
+  }
+
   inline std::size_t operator()(char const* data) const { return farmhash(data, std::strlen(data)); }
 
-  /// for tbb::concurrent_hash_map
+  /// hash, equal fns: for tbb::concurrent_hash_map
   template <class StringView>
   static inline std::size_t hash(StringView const& s) {
     return farmhash(s.data(), s.length());
@@ -287,6 +325,7 @@ struct Farmhash {
   static inline bool equal(StringView const& v, char const* a) {
     return !std::strcmp(a, v.data());
   }
+
 };
 
 

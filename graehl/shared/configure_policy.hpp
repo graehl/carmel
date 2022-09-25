@@ -16,10 +16,10 @@ namespace configure {
 
 template <class T>
 void init(T& t) {
-}  // default is to do nothing. ADL overridable. used to 'default construct' vectors of configurable objects
+} // default is to do nothing. ADL overridable. used to 'default construct' vectors of configurable objects
 
 template <class T>
-void init_default(T& t)  // used if .init_default() conf_opt
+void init_default(T& t) // used if .init_default() conf_opt
 {
   graehl::assign_traits<T>::init(t);
   init(t);
@@ -108,7 +108,8 @@ struct map_configure_policy : configure_policy_base {
   static bool init_tree(Backend const& backend, Action const& action, std::shared_ptr<Val>* pval,
                         conf_expr_base const& conf) {
     auto& p = *pval;
-    if (!p) p = std::make_shared<Val>();
+    if (!p)
+      p = std::make_shared<Val>();
     backend.do_print_action_open(action, p.get(), conf);
     return true;
   }
@@ -118,7 +119,8 @@ struct map_configure_policy : configure_policy_base {
   static void action(Backend const& backend, Action const& action, std::shared_ptr<Val>* pval,
                      conf_expr_base const& conf) {
     auto& p = *pval;
-    if (!p) p = std::make_shared<Val>();
+    if (!p)
+      p = std::make_shared<Val>();
     backend.do_map_action(action, p.get(), conf);
     backend.do_print_map_sequence_action_close(action, p.get(), conf);
   }
@@ -177,6 +179,6 @@ struct select_configure_policy<Val2, typename enable_if<set_leaf_configurable<Va
 };
 
 
-}
+} // namespace configure
 
 #endif

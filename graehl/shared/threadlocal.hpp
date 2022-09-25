@@ -67,6 +67,8 @@
 
 #endif
 
+#include <memory>
+
 namespace graehl {
 
 template <class D, class Old = D>
@@ -82,10 +84,14 @@ struct SetLocal {
   D& value;
   Old old_value;
   template <class NewValue>
-  SetLocal(D& val, NewValue const& new_value) : value(val), old_value(val) {
+  SetLocal(D& val, NewValue const& new_value) : value(val), old_value(std::move(val)) {
     value = new_value;
   }
-  ~SetLocal() { value = old_value; }
+  template <class NewValue>
+  SetLocal(D& val, NewValue && new_value) : value(val), old_value(std::move(val)) {
+    value = std::move(new_value);
+  }
+  ~SetLocal() { value = std::move(old_value); }
 };
 
 template <class D>

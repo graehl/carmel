@@ -115,6 +115,7 @@ class basic_array_streambuf : public std::basic_streambuf<cT, cT_Traits> {
 
   void set_array(const char_type* p = 0, size_type sz = 0) {
     buf = const_cast<char_type*>(p);
+    // cppcheck-suppress nullPointerArithmetic
     bufend = buf + sz;
     this->setg(buf, buf, bufend);
     this->setp(buf, bufend);

@@ -242,10 +242,10 @@ struct main {
   typedef istream_arg in_arg;
   friend inline void init_default(main&) {}
 
-  int debug_lvl;
-  bool help;
-  bool quiet;
-  int verbose;
+  int debug_lvl = 0;
+  bool help = false;
+  bool quiet = false;
+  int verbose = 0;
   ostream_arg log_file, out_file;
   istream_arg in_file, config_file;
   istream_args ins;  // this will also have the single in_file if you opt.allow_in()
@@ -253,7 +253,7 @@ struct main {
   istream_arg const& first_input() const { return ins.empty() ? in_file : ins[0]; }
 
   std::string cmdname, cmdline_str;
-  std::ostream* log_stream;
+  std::ostream* log_stream = 0;
 #if !GRAEHL_CPP11
   std::auto_ptr<teebuf> teebufptr;
   std::auto_ptr<std::ostream> teestreamptr;
@@ -261,9 +261,9 @@ struct main {
   std::unique_ptr<teebuf> teebufptr;
   std::unique_ptr<std::ostream> teestreamptr;
 #endif
-  uint32_t random_seed;
+  uint32_t random_seed = 0;
 
-  int help_exitcode;
+  int help_exitcode = 0;
 
   /// using this constructor, you must call init before any other methods (e.g. configurable)
   main() : general("General options"), cosmetic("Cosmetic options"), all_options_("Options") {}
@@ -297,7 +297,6 @@ struct main {
       : general("General options"), cosmetic("Cosmetic options"), all_options_("Options") {
     opt.name = name;
     opt.usage = usage;
-    opt.version = version;
     opt.compiled = compiled;
     opt.version = version;
     opt.multifile = multifile;
@@ -317,7 +316,7 @@ struct main {
 #endif
   }
 
-  bool options_added, configure_finished;
+  bool options_added = false, configure_finished = false;
 
   void print_version(std::ostream& o) { o << opt.name << ' ' << opt.version << ' ' << opt.compiled << '\n'; }
 

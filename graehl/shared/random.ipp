@@ -17,13 +17,13 @@
    random0n member. otherwise, you can use globals or std::rand
 */
 
-inline double random0n(double n)  // random from [0..n)
+inline double random0n(double n) // random from [0..n)
 {
   return n * random01();
 }
 
 
-inline double random_pos_fraction()  // returns uniform random number on (0..1]
+inline double random_pos_fraction() // returns uniform random number on (0..1]
 {
 #ifdef USE_STD_RAND
   return ((double)std::rand() + 1.) * (1. / ((double)RAND_MAX + 1.));
@@ -43,18 +43,20 @@ unsigned random_less_than(unsigned limit, Rand rand) {
   unsigned min =
 // set min = 2^32 % limit
 #if (UINT_MAX > 0xffffffffUL)
-      0x100000000UL % limit;
+    0x100000000UL % limit;
 #else
-      min = limit > 0x80000000 ? 1 + ~limit : ((0xffffffff - (limit * 2)) + 1) % limit;
+    limit > 0x80000000 ? 1 + ~limit : ((0xffffffff - (limit * 2)) + 1) % limit;
 #endif
   for (;;) {
     unsigned r = rand();
-    if (r >= min) return r % limit;
+    if (r >= min)
+      return r % limit;
   }
 }
 
 inline unsigned random_less_than(unsigned limit) {
-  if (limit <= 1) return 0;
+  if (limit <= 1)
+    return 0;
 #if USE_STD_RAND
   return random_less_than(limit, std_rand());
 #else
@@ -69,7 +71,8 @@ inline bool random_bool() {
 template <class Int>
 inline Int random_up_to(Int limit) {
 #if USE_STD_RAND
-  if (limit == RAND_MAX) return (Int)std::rand();
+  if (limit == RAND_MAX)
+    return (Int)std::rand();
 #endif
   return random_less_than(limit + 1);
 }
@@ -83,10 +86,10 @@ inline char random_alpha() {
 }
 
 inline char random_alphanum() {
-  unsigned r = random_less_than((unsigned)(GRAEHL_RANDOM__NLETTERS * 2 + 10));
+  int r = (int)random_less_than((unsigned)(GRAEHL_RANDOM__NLETTERS * 2 + 10));
   return r < GRAEHL_RANDOM__NLETTERS * 2
-             ? ((r < GRAEHL_RANDOM__NLETTERS) ? 'a' + r : ('A' - GRAEHL_RANDOM__NLETTERS) + r)
-             : ('0' - GRAEHL_RANDOM__NLETTERS * 2) + r;
+           ? ((r < GRAEHL_RANDOM__NLETTERS) ? 'a' + r : ('A' - GRAEHL_RANDOM__NLETTERS) + r)
+           : ('0' - GRAEHL_RANDOM__NLETTERS * 2) + r;
 }
 #undef GRAEHL_RANDOM__NLETTERS
 
@@ -99,40 +102,47 @@ inline std::string random_alpha_string(unsigned len) {
   s(new char[len + 1]);
   char* e = s.get() + len;
   *e = '\0';
-  while (s.get() < e--) *e = random_alpha();
+  while (s.get() < e--)
+    *e = random_alpha();
   return s.get();
 }
 
 // P(*It) = double probability (unnormalized).
 template <class It, class P>
 It choose_p(It begin, It end, P const& p) {
-  if (begin == end) return end;
+  if (begin == end)
+    return end;
   double sum = 0.;
-  for (It i = begin; i != end; ++i) sum += p(*i);
+  for (It i = begin; i != end; ++i)
+    sum += p(*i);
   double choice = sum * random01();
   for (It i = begin;;) {
     choice -= p(*i);
     It r = i;
     ++i;
-    if (choice < 0 || i == end) return r;
+    if (choice < 0 || i == end)
+      return r;
   }
-  return begin;  // unreachable
+  return begin; // unreachable
 }
 
 // P(*It) = double probability (unnormalized).
 template <class Sum, class It, class P>
 It choose_p_sum(It begin, It end, P const& p) {
-  if (begin == end) return end;
+  if (begin == end)
+    return end;
   Sum sum = 0.;
-  for (It i = begin; i != end; ++i) sum += p(*i);
+  for (It i = begin; i != end; ++i)
+    sum += p(*i);
   double choice = random01();
   for (It i = begin;;) {
     choice -= p(*i) / sum;
     It r = i;
     ++i;
-    if (choice < 0 || i == end) return r;
+    if (choice < 0 || i == end)
+      return r;
   }
-  return begin;  // unreachable
+  return begin; // unreachable
 }
 
 // as above but already normalized
@@ -144,9 +154,10 @@ It choose_p01(It begin, It end, P const& p) {
     sum += p(*i);
     It r = i;
     ++i;
-    if (sum > choice || i == end) return r;
+    if (sum > choice || i == end)
+      return r;
   }
-  return begin;  // unreachable
+  return begin; // unreachable
 }
 
 

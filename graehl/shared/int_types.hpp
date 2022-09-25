@@ -252,8 +252,7 @@ inline uint64_t next_power_of_2(uint64_t x) {
 #if GRAEHL_CPP11
 /// slow but pure functional for constexpr. defaulted parameter is for impl only
 inline constexpr uint64_t ceil_log2_const(uint64_t x, bool exact = true) {
-  return (x == 0) ? (1 / x)
-                  : (x == 1) ? (exact ? 0 : 1) : 1 + ceil_log2_const(x >> 1, ((x & 1) == 1) ? false : exact);
+  return x == 0 ? 1 : x == 1 ? (exact ? 0 : 1) : 1 + ceil_log2_const(x >> 1, ((x & 1) == 1) ? false : exact);
 }
 
 #if 0

@@ -56,8 +56,8 @@
 #pragma once
 #include <graehl/shared/append.hpp>
 #include <graehl/shared/cpp11.hpp>
-#include <graehl/shared/type_traits.hpp>
 #include <graehl/shared/int_types.hpp>
+#include <graehl/shared/type_traits.hpp>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -139,14 +139,15 @@ Data& string_to(Str const& str, Data& out_str_to_data);
 
 template <class Data, class Str>
 inline Data string_to(Str const& str);
-}
+} // namespace graehl
 
 namespace graehl {
 
 template <class I, class To>
 bool try_stream_into(I& i, To& to, bool complete = true) {
   i >> to;
-  if (i.fail()) return false;
+  if (i.fail())
+    return false;
   if (complete) {
     char c;
     return !(i >> c);
@@ -184,7 +185,7 @@ inline void string_to_impl(char const* s, int64_t& x) {
   x = strtol_complete(s);
 }
 
-#ifndef SDL_32  // size_t == unsigned, avoid signature collision
+#ifndef SDL_32 // size_t == unsigned, avoid signature collision
 inline void string_to_impl(std::string const& s, unsigned& x) {
   x = atou_fast_complete<unsigned>(s.c_str());
 }
@@ -223,27 +224,32 @@ inline bool islc(char c, char lc) {
 inline bool parse_bool(char const* p, unsigned len) {
   switch (len) {
     case 1:
-      if (*p == 'y' || *p == 'Y' || *p == '1') return true;  // y or 1
-      if (*p == 'n' || *p == 'N' || *p == '0') return false;  // n or 0
+      if (*p == 'y' || *p == 'Y' || *p == '1')
+        return true; // y or 1
+      if (*p == 'n' || *p == 'N' || *p == '0')
+        return false; // n or 0
       break;
     case 2:
       if (islc(*p, 'o')) {
-        if (islc(p[1], 'n')) return true;  // on
+        if (islc(p[1], 'n'))
+          return true; // on
       } else if (islc(*p, 'n') && islc(p[1], 'o'))
-        return false;  // no
+        return false; // no
       break;
     case 3:
       if (islc(*p, 'y')) {
-        if (islc(p[1], 'e') && islc(p[2], 's')) return true;  // yes
+        if (islc(p[1], 'e') && islc(p[2], 's'))
+          return true; // yes
       } else if (islc(*p, 'o') && islc(p[1], 'f') && islc(p[2], 'f'))
-        return false;  // off
+        return false; // off
       break;
     case 4:
-      if (islc(*p, 't') && islc(p[1], 'r') && islc(p[2], 'u') && islc(p[3], 'e')) return true;  // true
+      if (islc(*p, 't') && islc(p[1], 'r') && islc(p[2], 'u') && islc(p[3], 'e'))
+        return true; // true
       break;
     case 5:
       if (islc(*p, 'f') && islc(p[1], 'a') && islc(p[2], 'l') && islc(p[3], 's') && islc(p[4], 'e'))
-        return false;  // false
+        return false; // false
       break;
   }
   VTHROW_A_MSG(string_to_exception, "'" << std::string(p, p + len)
@@ -262,7 +268,8 @@ inline void string_to_impl(std::string const& s, bool& x) {
 }
 
 inline void string_to_impl(std::string const& s, char& x) {
-  if (s.size() != 1) VTHROW_A_MSG(string_to_exception, "'" << s << "': converting string to character.");
+  if (s.size() != 1)
+    VTHROW_A_MSG(string_to_exception, "'" << s << "': converting string to character.");
   x = s[0];
 }
 
@@ -296,7 +303,7 @@ PrintfFormat fmt_double_for_float_default = "%.7g";
 PrintfFormat fmt_double_roundtrip = "%.17g";
 PrintfFormat fmt_double_default = "%.15g";
 PrintfFormat fmt_double_precision2
-    = "%.*g";  // http://www.cplusplus.com/reference/cstdio/printf/ suggests this is std
+  = "%.*g"; // http://www.cplusplus.com/reference/cstdio/printf/ suggests this is std
 
 /**
    enough space to printf 0-terminated -1.238945783e+0301 or whatever the max is
@@ -311,7 +318,7 @@ PrintfBytes bytes_double_default = 32;
 */
 inline std::string to_string_roundtrip(float x) {
   char buf[bytes_double_for_float_roundtrip];
-  return std::string(buf, buf + std::sprintf(buf, fmt_double_for_float_roundtrip, (double)x));  // NOLINT
+  return std::string(buf, buf + std::sprintf(buf, fmt_double_for_float_roundtrip, (double)x)); // NOLINT
 }
 
 inline std::string to_string_impl(float x) {
@@ -319,13 +326,13 @@ inline std::string to_string_impl(float x) {
   return ftos(x);
 #else
   char buf[bytes_double_for_float_default];
-  return std::string(buf, buf + std::sprintf(buf, fmt_double_for_float_default, (double)x));  // NOLINT
+  return std::string(buf, buf + std::sprintf(buf, fmt_double_for_float_default, (double)x)); // NOLINT
 #endif
 }
 
 inline std::string to_string_roundtrip(double x) {
   char buf[bytes_double_roundtrip];
-  return std::string(buf, buf + std::sprintf(buf, fmt_double_roundtrip, x));  // NOLINT
+  return std::string(buf, buf + std::sprintf(buf, fmt_double_roundtrip, x)); // NOLINT
 }
 
 inline std::string to_string_impl(double x) {
@@ -333,7 +340,7 @@ inline std::string to_string_impl(double x) {
   return ftos(x);
 #else
   char buf[bytes_double_default];
-  return std::string(buf, buf + std::sprintf(buf, fmt_double_default, x));  // NOLINT
+  return std::string(buf, buf + std::sprintf(buf, fmt_double_default, x)); // NOLINT
 #endif
 }
 
@@ -662,6 +669,6 @@ BOOST_AUTO_TEST_CASE(test_string_to) {
 #endif
 
 
-}
+} // namespace graehl
 
 #endif

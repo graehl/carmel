@@ -45,7 +45,11 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <utility>
+#if __cplusplus >= 202000L
+#include <span>
+#endif
 
 #ifndef GRAEHL_ADL_PRINTER_MOVE_OVERLOAD
 /** (C++11 only): the AdlPrinterMove and PrinterMove classes will be selected
@@ -68,6 +72,10 @@ template <class O, class V, class S, class If = typename graehl::enable_if<graeh
 void print(O& o, V const& v, S const& s);
 #endif
 
+#if __cplusplus >= 202000L
+template<class O, class T, std::size_t E>
+void operator<<(O&, std::span<T, E> const&);
+#endif
 template <class O, class A, class B>
 void operator<<(O&, std::pair<A, B> const&);
 template <class O, class A, class B, class S>
@@ -226,8 +234,8 @@ template <class O, class V, class If>
 O& operator<<(O& o, V const& v) {
   ::adl::list_format<> format;
   format.open(o);
-  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i)
-    format.element(o, *i);
+  for (auto const& x : v)
+    format.element(o, x);
   format.close(o);
   return o;
 }
@@ -237,8 +245,35 @@ template <class O, class V, class S, class If>
 void print(O& o, V const& v, S const& s) {
   ::adl::list_format<> format;
   format.open(o);
-  for (typename V::const_iterator i = v.begin(), e = v.end(); i != e; ++i)
-    format.element(o, v, s);
+  for (auto const& x : v)
+    format.element(o, x, s);
+  format.close(o);
+}
+#endif
+
+#if __cplusplus >= 202000L
+template<class O, class T, std::size_t E>
+void operator<<(O& o, std::span<T, E> const& v) {
+  ::adl::list_format<> format;
+  format.open(o);
+  for (auto const& x : v)
+    format.element(o, x);
+  format.close(o);
+}
+template<class O, class T, std::size_t E>
+void print(O& o, std::span<T, E> const& v) {
+  ::adl::list_format<> format;
+  format.open(o);
+  for (auto const& x : v)
+    format.element(o, x);
+  format.close(o);
+}
+template<class O, class T, std::size_t E, class S>
+void print(O& o, std::span<T, E> const& v, S const& s) {
+  ::adl::list_format<> format;
+  format.open(o);
+  for (auto const& x : v)
+    format.element(o, x, s);
   format.close(o);
 }
 #endif
@@ -287,6 +322,16 @@ void print(O& o, std::pair<A const*, A const*> v, S const& s) {
   for (; v.first != v.second; ++v.first)
     format.element(o, *v.first, s);
   format.close(o);
+}
+template <class O, class Tuple, size_t... I>
+void print(O& o, const Tuple& tuple, std::index_sequence<I...>) {
+  o << '[';
+  (..., (o << (I == 0 ? "" : " ") << std::get<I>(tuple)));
+  o << ']';
+}
+template <class O, class... T>
+void print(O& o, const std::tuple<T...>& tuple) {
+  print(o, tuple, std::make_index_sequence<sizeof...(T)>());
 }
 } // namespace adl_default
 

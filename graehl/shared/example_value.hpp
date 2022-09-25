@@ -50,16 +50,19 @@ GRAEHL_FOR_DISTINCT_FLOAT_TYPES(GRAEHL_EXAMPLE_VALUE_FLOAT)
 
 template <class T>
 std::string example_value() {
+  // cppcheck-suppress nullPointer
   return example_value(*(T const*)0); // NOLINT
 }
 
 template <class T>
 std::string example_value(std::shared_ptr<T> const&) {
+  // cppcheck-suppress nullPointer
   return example_value(*(T const*)0); // NOLINT
 }
 
 template <class T>
 std::string example_value(boost::optional<T> const&) {
+  // cppcheck-suppress nullPointer
   return example_value(*(T const*)0); // NOLINT
 }
 
