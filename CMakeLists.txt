@@ -1,0 +1,25 @@
+macro(our_boost_libs)
+  find_package(Boost "${Boost_require_VERSION}" COMPONENTS ${ARGV} REQUIRED)
+  include_directories(${BOOST_INCLUDE_DIR})
+  foreach(BLIB ${ARGV})
+    list(APPEND OUR_BOOST_LIBS "Boost::${BLIB}")
+  endforeach()
+  message("boost libs: ${OUR_BOOST_LIBS}")
+endmacro()
+add_definitions(-fvisibility=hidden)
+cmake_minimum_required(VERSION 3.15)
+project(all)
+set(ZLIB_USE_STATIC_LIBS ON)
+set(ZSTD_USE_STATIC_LIBS ON)
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_require_VERSION 1.50)
+set(CMAKE_CXX_STANDARD 14)
+include_directories("${PROJECT_SOURCE_DIR}")
+list(APPEND subdirs
+  carmel
+  forest-em
+
+  )
+foreach(subdir ${subdirs})
+  add_subdirectory(${subdir})
+endforeach()
