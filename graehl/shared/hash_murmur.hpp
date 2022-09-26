@@ -601,10 +601,6 @@ inline uint32_t MurmurHash32(const void* key, int len, MurmurSeed seed = GRAEHL_
   return h;
 }
 
-inline MurmurHashResult MurmurHash(const void* key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED) {
-  return MurmurHash32(key, len, seed);
-}
-
 // 64-bit hash for 32-bit platforms
 
 inline uint64_t MurmurHash64(const void* key, int len, MurmurSeed seed = GRAEHL_MURMUR_DEFAULT_SEED) {
