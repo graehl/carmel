@@ -1,3 +1,10 @@
+set(USE_BOOST_ROOT "/local/graehl/c/xmt-externals/FC12/libraries/boost-1.69.0" CACHE STRING
+  "If this exists, it's used instead of system path when finding boost libs")
+if (EXISTS "${USE_BOOST_ROOT}")
+  set(Boost_NO_SYSTEM_PATHS 1)
+  set(Boost_ROOT "${USE_BOOST_ROOT}")
+  set(Boost_INCLUDEDIR "${USE_BOOST_ROOT}/include")
+endif()
 macro(our_boost_libs)
   find_package(Boost "${Boost_require_VERSION}" COMPONENTS ${ARGV} REQUIRED)
   include_directories(${BOOST_INCLUDE_DIR})
