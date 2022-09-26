@@ -16,13 +16,4 @@
 
 namespace graehl {
 
-template <class Real>
-const int logweight<Real>::base_index = std::ios_base::xalloc();
-// xalloc gives a unique global handle with per-ios space handled by the ios
-template <class Real>
-const int logweight<Real>::thresh_index = std::ios_base::xalloc();
-template <class Real>
-WEIGHT_THREADLOCAL int logweight<Real>::default_base = logweight<Real>::EXP;
-template <class Real>
-WEIGHT_THREADLOCAL int logweight<Real>::default_thresh = logweight<Real>::ALWAYS_LOG;
 }

@@ -53,6 +53,7 @@
 #include <graehl/shared/funcs.hpp>
 #include <graehl/shared/threadlocal.hpp>
 #include <graehl/shared/random.hpp>
+#include <graehl/shared/weight.h>
 #include <cstdlib>
 #include <limits>
 
@@ -155,14 +156,9 @@ struct logweight {  // capable of representing nonnegative reals
   static inline Real LN_MUCH_LARGER() { return MUCH_BIGGER_LN; }
   static const int base_index;  // handle to ostream iword for LogBase enum (initialized to 0)
   static const int thresh_index;  // handle for OutThresh
-#if __clang__ && defined(__APPLE__)
-  #define WEIGHT_THREADLOCAL
-#else
-  #define WEIGHT_THREADLOCAL THREADLOCAL
-#endif
 
-  static WEIGHT_THREADLOCAL int default_base;
-  static WEIGHT_THREADLOCAL int default_thresh;
+  static THREADLOCAL int default_base;
+  static THREADLOCAL int default_thresh;
 
  public:
   // linux g++ 3.2 didn't like static self-class member
@@ -875,6 +871,17 @@ template <class Real>
 inline bool operator>=(logweight<Real> lhs, logweight<Real> rhs) {
   return lhs.weight >= rhs.weight;
 }
+
+template <class Real>
+const int logweight<Real>::base_index = std::ios_base::xalloc();
+// xalloc gives a unique global handle with per-ios space handled by the ios
+template <class Real>
+const int logweight<Real>::thresh_index = std::ios_base::xalloc();
+template <class Real>
+THREADLOCAL int logweight<Real>::default_base = logweight<Real>::EXP;
+template <class Real>
+THREADLOCAL int logweight<Real>::default_thresh = logweight<Real>::ALWAYS_LOG;
+
 /*
 //FIXME: why doesn't this automatically convert?
 template<class Real>
@@ -1023,6 +1030,7 @@ class numeric_limits<graehl::logweight<Real> > : public std::numeric_limits<Real
     }
   */
 };
+
 }
 
 
