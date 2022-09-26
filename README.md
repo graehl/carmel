@@ -10,9 +10,15 @@ What is this thing? See http://www.isi.edu/licensed-sw/carmel/carmel-tutorial2.p
 
 ## Building from source
 
+Recommended: cmake
 ```
+cmake -B build . -G "Unix Makefiles" && cmake --build build
+# recommend -G Ninja instead
+
+```
+from Makefile (some LDFLAGS CFLAGS customization may be needed to find libs)
 # mac
-brew install boost@1.76 # other version are fine too
+brew install boost@1.79 # other version are fine too
 cd carmel; make -j 4 carmel BOOST_SUFFIX=-mt
 # BOOST_SUFFIX= depends on how your boost libraries are installed - ls /usr/lib/libboost*.so
 

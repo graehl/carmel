@@ -17,7 +17,7 @@
 #include <graehl/shared/command_line.hpp>
 #include <graehl/shared/backtrace.hpp>
 #include <graehl/shared/gibbs.hpp>
-#include "forest-em.README.hpp" // note: dependency/makefile won't make #include <graehl/tt...
+#include <forest-em.README.hpp>
 
 //TODO: pass ref to this to Forests (even though it increases coupling - pretty
 //much copies of all of these are used anyway) to simplify

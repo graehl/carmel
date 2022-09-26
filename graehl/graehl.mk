@@ -88,8 +88,8 @@ ifndef SHARED
 SHARED=../graehl/shared
 endif
 ifndef BOOST_DIR
-# note: BOOST_DIR not used for anything now, we assume boost somewhere in std include
-#BOOST_DIR:=../boost
+# note: BOOST_DIR points to sources used if BUILD_OWN_BOOST_LIBS; otherwise assume boost includes/lib somewhere in usual paths or add to CFLAGS/LDFLAGS
+BOOST_DIR:=../boost
 #BOOST_DIR=~/isd/$(HOST)/include
 endif
 ifndef BASEOBJ

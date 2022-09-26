@@ -26,7 +26,6 @@
 #include <graehl/shared/stream_util.hpp>
 #include <graehl/shared/function_macro.hpp>
 #include <graehl/shared/hash_jenkins.hpp>
-#include <graehl/shared/hash_murmur.hpp>
 #include <graehl/shared/bit_arithmetic.hpp>
 #include <boost/functional/hash/hash.hpp>
 
