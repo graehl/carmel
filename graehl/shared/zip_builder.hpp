@@ -27,6 +27,12 @@ void append_bytes(std::string& buf, T const& x) {
 struct bytes32 {
   char const* bytes;
   std::uint32_t len;
+#ifdef _MSC_VER
+  bytes32() = default;
+  bytes32(char const* bytes, std::uint32_t len)
+      : bytes(bytes)
+      , len(len) {}
+#endif
 };
 
 /// manage CRC32 and zip headers for a zipped file
@@ -74,7 +80,9 @@ struct zipped_file {
     append_bytes(header, (std::uint16_t)0); // extra field length
     header.append(fname);
     auto zipfile_pos = header_pos;
-    write(header.data(), header.size(), zipfile_pos);
+    std::uint32_t header_len = header.size();
+    write(header.data(), header_len, zipfile_pos);
+    zipfile_pos += header_len;
     for (auto const& section : sections)
       write(section.bytes, section.len, zipfile_pos);
     return zipfile_pos;
@@ -109,7 +117,7 @@ struct zip_builder {
   std::uint32_t zipfile_pos;
   std::vector<zipped_file> files;
   std::string opened_name_storage;
-  zipped_file* opened;
+  zipped_file* opened = 0;
   zip_builder() = default;
   /** \pre finish() was called or no zipfile_path provided yet
    */
@@ -139,6 +147,7 @@ struct zip_builder {
   void close(std::string const& filename) {
     assert(opened);
     zipfile_pos = opened->write(filename);
+    opened = 0;
   }
   static constexpr std::uint32_t PKZIP_FOOTER = 0x06054b50u;
   static constexpr unsigned PKZIP_FOOTER_BYTES = 22;
@@ -161,8 +170,8 @@ struct zip_builder {
     append_bytes(f, central_directory_pos);
     append_bytes(f, (std::uint16_t)0); // zip comment
     assert(f.size() == PKZIP_FOOTER_BYTES);
-    fwrite(f.data(), sizeof(char), PKZIP_FOOTER_BYTES, zipfile);
-    fclose(zipfile);
+    std::fwrite(f.data(), sizeof(char), PKZIP_FOOTER_BYTES, zipfile);
+    std::fclose(zipfile);
     files.clear();
     zipfile = 0;
   }
