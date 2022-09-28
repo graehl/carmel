@@ -52,7 +52,6 @@ struct zipped_file {
       : zipfile(zipfile)
       , header_pos(zipfile_pos) {
     assert(zipfile_pos = std::ftell(zipfile));
-    checkPos();
     header.reserve(90);
     append_bytes(header, PKZIP_HEADER);
     append_bytes(header, PKZIP_VERSION);
