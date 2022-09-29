@@ -47,7 +47,7 @@ struct zipped_file {
   static constexpr std::uint32_t PKZIP_CENTRAL_DIR = 0x02014b50u;
   static constexpr std::uint16_t PKZIP_VERSION = 20;
   static constexpr unsigned HEADER_CRC_OFFSET = 14;
-  static constexpr unsigned HEADER_NAME_OFFSET = 14;
+  static constexpr unsigned HEADER_NAME_OFFSET = 30;
   zipped_file(FILE* zipfile, std::uint32_t zipfile_pos)
       : zipfile(zipfile)
       , header_pos(zipfile_pos) {
@@ -95,13 +95,18 @@ struct zipped_file {
     auto local = header.data();
     auto local_fname = local + 30;
     b.append(local + 4, local_fname);
-    b.resize(6 + (30 - 4) + 10);
+    b.resize(6 + (HEADER_NAME_OFFSET - 4) + 10);
     append_bytes(b, header_pos);
     b.append(local_fname, local_fname + fname_bytes);
     std::uint32_t bytes = b.size();
     write(b.data(), bytes);
     return bytes;
   }
+  friend inline std::ostream& operator<<(std::ostream& out, zipped_file const& self) {
+    self.print(out);
+    return out;
+  }
+  void print(std::ostream& out) const { out.write(header.data() + HEADER_NAME_OFFSET, fname_bytes); }
 
  private:
   void write(char const* data, std::uint32_t len) const { std::fwrite(data, sizeof(char), len, zipfile); }
@@ -114,6 +119,7 @@ struct zipped_file {
 
 struct zip_builder {
   FILE* zipfile = 0;
+  bool flushed = false;
   std::uint32_t zipfile_pos;
   std::vector<zipped_file> files;
   std::string opened_name_storage;
@@ -126,6 +132,7 @@ struct zip_builder {
     assert(!zipfile);
     zipfile = std::fopen(zipfile_path, "wb");
     assert(ftell(zipfile) == 0);
+    flushed = false;
     zipfile_pos = 0;
     if (!zipfile_path)
       throw std::runtime_error(std::string("couldn't open zip file for output: ") + zipfile_path);
@@ -156,26 +163,17 @@ struct zip_builder {
   /** write the zip file central directory and footer
       (error if open is called again without a start(zipfile_path) first) */
   void finish() {
-    auto central_directory_pos = zipfile_pos;
-    std::uint32_t central_directory_len = 0;
-    for (auto const& file : files)
-      central_directory_len += file.write_central_directory_entry();
-    // zip footer
-    std::string f;
-    append_bytes(f, PKZIP_FOOTER);
-    append_bytes(f, (std::uint32_t)0);
-    std::uint16_t nrecs = (std::uint16_t)files.size();
-    assert(nrecs == files.size());
-    append_bytes(f, nrecs);
-    append_bytes(f, nrecs);
-    append_bytes(f, central_directory_len);
-    append_bytes(f, central_directory_pos);
-    append_bytes(f, (std::uint16_t)0); // zip comment
-    assert(f.size() == PKZIP_FOOTER_BYTES);
-    std::fwrite(f.data(), sizeof(char), PKZIP_FOOTER_BYTES, zipfile);
+    flushImpl();
     std::fclose(zipfile);
     files.clear();
     zipfile = 0;
+  }
+  /// you have a valid zip file after this (with no need to call finish()), but
+  /// may continue with more files after which another flush or finish is needed
+  void flush() {
+    flushImpl();
+    flushed = true;
+    std::fseek(zipfile, zipfile_pos, SEEK_SET);
   }
   void file(std::string const& filename, char const* part1_bytes, std::uint32_t part1_len) {
     open();
@@ -190,8 +188,41 @@ struct zip_builder {
     close(filename);
   }
   ~zip_builder() {
-    if (zipfile)
-      finish();
+    if (zipfile) {
+      if (!flushed)
+        flushImpl();
+      std::fclose(zipfile);
+    }
+  }
+
+  friend inline std::ostream& operator<<(std::ostream& out, zip_builder const& self) {
+    self.print(out);
+    return out;
+  }
+  void print(std::ostream& out) const {
+    out << "ZIP:";
+    for (auto const& file : files)
+      out << ' ' << file;
+  }
+
+ private:
+  void flushImpl() {
+    std::uint32_t central_directory_len = 0;
+    for (auto const& file : files)
+      central_directory_len += file.write_central_directory_entry();
+    // zip footer
+    std::string f;
+    append_bytes(f, PKZIP_FOOTER);
+    append_bytes(f, (std::uint32_t)0);
+    std::uint16_t nrecs = (std::uint16_t)files.size();
+    assert(nrecs == files.size());
+    append_bytes(f, nrecs);
+    append_bytes(f, nrecs);
+    append_bytes(f, central_directory_len);
+    append_bytes(f, zipfile_pos);
+    append_bytes(f, (std::uint16_t)0); // zip comment
+    assert(f.size() == PKZIP_FOOTER_BYTES);
+    std::fwrite(f.data(), sizeof(char), PKZIP_FOOTER_BYTES, zipfile);
   }
 };
 
