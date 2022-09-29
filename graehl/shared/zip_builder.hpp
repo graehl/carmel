@@ -51,7 +51,7 @@ struct zipped_file {
   zipped_file(FILE* zipfile, std::uint32_t zipfile_pos)
       : zipfile(zipfile)
       , header_pos(zipfile_pos) {
-    assert(zipfile_pos = std::ftell(zipfile));
+    assert(zipfile_pos == std::ftell(zipfile));
     header.reserve(90);
     append_bytes(header, PKZIP_HEADER);
     append_bytes(header, PKZIP_VERSION);
@@ -80,11 +80,10 @@ struct zipped_file {
     append_bytes(header, (std::uint16_t)0); // extra field length
     header.append(fname);
     auto zipfile_pos = header_pos;
-    std::uint32_t header_len = header.size();
-    write(header.data(), header_len, zipfile_pos);
+    write(header.data(), header.size(), zipfile_pos);
     for (auto const& section : sections)
       write(section.bytes, section.len, zipfile_pos);
-    assert(zipfile_pos = std::ftell(zipfile));
+    assert(zipfile_pos == std::ftell(zipfile));
     return zipfile_pos;
   }
   /// \return #bytes written
@@ -109,6 +108,7 @@ struct zipped_file {
   void write(char const* data, std::uint32_t len, std::uint32_t& pos) const {
     std::fwrite(data, sizeof(char), len, zipfile);
     pos += len;
+    assert(pos == std::ftell(zipfile));
   }
 };
 
@@ -125,6 +125,7 @@ struct zip_builder {
   void start(char const* zipfile_path) {
     assert(!zipfile);
     zipfile = std::fopen(zipfile_path, "wb");
+    assert(ftell(zipfile) == 0);
     zipfile_pos = 0;
     if (!zipfile_path)
       throw std::runtime_error(std::string("couldn't open zip file for output: ") + zipfile_path);
