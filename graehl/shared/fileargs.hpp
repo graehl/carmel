@@ -357,6 +357,17 @@ struct file_arg {
     set_none();
   }
 
+  /// close if file else just flush
+  void close_file() {
+    if (!none) {
+      traits::call_flush(*pointer);
+      if (is_file()) {
+        set_none();
+        traits::call_close(*pointer);
+      }
+    }
+  }
+
   typedef file_arg<Stream> self_type;
 
   void reset() { set_none(); }

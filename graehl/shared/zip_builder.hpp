@@ -163,16 +163,19 @@ struct zip_builder {
   /** write the zip file central directory and footer
       (error if open is called again without a start(zipfile_path) first) */
   void finish() {
-    flushImpl();
-    std::fclose(zipfile);
+    finishImpl();
+    flushed = true;
     files.clear();
     zipfile = 0;
   }
   /// you have a valid zip file after this (with no need to call finish()), but
   /// may continue with more files after which another flush or finish is needed
   void flush() {
+    if (flushed)
+      return;
     flushImpl();
     flushed = true;
+    std::fflush(zipfile);
     std::fseek(zipfile, zipfile_pos, SEEK_SET);
   }
   void file(std::string const& filename, char const* part1_bytes, std::uint32_t part1_len) {
@@ -187,13 +190,7 @@ struct zip_builder {
     section(part2_bytes, part2_len);
     close(filename);
   }
-  ~zip_builder() {
-    if (zipfile) {
-      if (!flushed)
-        flushImpl();
-      std::fclose(zipfile);
-    }
-  }
+  ~zip_builder() { finishImpl(); }
 
   friend inline std::ostream& operator<<(std::ostream& out, zip_builder const& self) {
     self.print(out);
@@ -206,6 +203,14 @@ struct zip_builder {
   }
 
  private:
+  void finishImpl() {
+    if (zipfile) {
+      if (!flushed)
+        flushImpl();
+      std::fclose(zipfile);
+    }
+  }
+
   void flushImpl() {
     std::uint32_t central_directory_len = 0;
     for (auto const& file : files)

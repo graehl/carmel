@@ -24,6 +24,7 @@
 #include <graehl/shared/adl_to_string.hpp>
 #include <graehl/shared/base64.hpp>
 #include <graehl/shared/int_types.hpp>
+#include <graehl/shared/is_container.hpp>
 #include <graehl/shared/itoa.hpp>
 #include <graehl/shared/string_buffer.hpp>
 #include <graehl/shared/string_to.hpp>
@@ -514,6 +515,11 @@ struct string_builder : string_buffer {
     if (sz)
       out.write(begin() + 1, --sz);
   }
+};
+
+template <>
+struct is_nonstring_container<string_builder, void> {
+  enum { value = 0 };
 };
 
 inline string_builder& appending(string_buffer& b) {
