@@ -3,6 +3,7 @@
 ### figure out python logging lib
 ### """
 
+from __future__ import print_function
 import sys,re,random,math,os,collections,errno,time,operator,datetime
 
 def chomp(s):

@@ -368,7 +368,6 @@ export BLOBS
 WHOAMI=`whoami`
 HOST=${HOST:-$(hostname)}
 export TEMP=${TEMP:-/tmp}
-export HADOOP_HOME=${HADOOP_HOME:-/home/nlg-01/chiangd/pkg/hadoop}
 wordsn() {
     for i in $(seq 1 ${2:-1}); do
         echo -n "$1 "
@@ -2078,7 +2077,7 @@ pipemap() {
     local cmd=$1
     shift
     while [ "$1" ] ; do
-        echo2 "+ catz $1 | $cmd"
+        echo2 "+ $cmd < $1"
         eval "catz $1 | $cmd"
         shift
         echo2

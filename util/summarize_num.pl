@@ -34,14 +34,16 @@ my $N;
 my $prec=8;
 my $fullout;
 my $verbose;
+my $del = '^(?:[^ :]+:)?0x[0-9a-fA-F]{8,} ';
 my @options=(
-    "Any lines containing integer or floating point numbers are normalized and averages over each unique line (after normalization) are reported",
+    "Any lines containing integer or floating point numbers are nodelalized and averages over each unique line (after normalization) are reported",
     #             ["template-string=s"=>\$template_string,"Unique string that won't occur anywhere in the input"],
     ["raw-numbers-out=s"=>\$raw_out,"Write any recognized numbers to this file"],
     ["sums!"=>\$sums,"Compute sums"],
     ["avgonly!"=>\$avgonly,"Output average only"],
     ["fullout=s"=>\$fullout,"Output full bounds here even if avgonly (filename)"],
     ["grep=s"=>\$grep,"Regexp filtering input lines"],
+    ["del=s"=>\$del,"remove this regex from input lines first (global)"],
     ["n=i"=>\$N,"Only record first n (matching) lines"],
     ["prec=i"=>\$prec,"digits of precision"],
     ["verbose!"=>\$verbose,"show cmdline options"],
@@ -66,11 +68,13 @@ my $loose_num_match=qr/([+\-]?[0123456789]+(?:[.][0123456789]*(?:[eE][0123456789
 my $RAW=openz_out($raw_out) if $raw_out;
 
 my $l=0;
+&debug($del);
 while(<>) {
-    next if ($grep && ! /$grep/o);
+    s/$del//go if $del ne '';
+    &debug($_);
     ++$l;
+    next if ($grep && ! /$grep/o);
     if ($N and $l>$N) {
-        #        while(<>) {}
         last;
     } else {
         if ($raw_out) {

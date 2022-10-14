@@ -472,7 +472,7 @@ sub set_debug_fh {
     return $oldfh;
 }
 
-#require 'dumpvar.pl';
+require 'dumpvar.pl';
 
 my %mathsym=(
     '<=','leq',

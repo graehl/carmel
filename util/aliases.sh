@@ -6,6 +6,7 @@ UTIL=${UTIL:-$(echo ~/u)}
 set -b
 shopt -s checkwinsize
 shopt -s cdspell
+export SAVEDIFFS=/var/tmp/savediffs
 export VISUAL=emacsclient
 export CLANGTIDYSKIP=1
 if [[ $TERM = dumb && ! $INSIDE_EMACS ]] ; then
@@ -13,9 +14,179 @@ if [[ $TERM = dumb && ! $INSIDE_EMACS ]] ; then
 else
     export EDITOR=emacs
 fi
+ovpn() {
+    local conf=$1
+    shift
+    sudo /usr/local/opt/openvpn/sbin/openvpn --config "${conf}" "$@"
+}
+compiling() {
+    perl -ne '++$f{$1} if /\(compiling source file ([^)]+)\)/; END { for (keys %f) { s/^.*sdl/sdl/;s{\\}{/}g;print "$_\n" }}' "$@"
+}
+nssh() {
+    ssh -i ~/.ssh/nbuild-laptop -l nbuild "$@"
+}
+xcpp() {
+    (cd ~/x;
+     . jenkins/lib.sh
+     cppch sdl
+     )
+}
+mavg() {
+    perl -ne 'chomp; @f = split; $s=0; $s+=$_ for (@f); $S += $s; print $s/(scalar @f),"\n" if scalar @f; END { print "total: $S\n"}' "$@"
+}
+newkill() {
+    newmaster
+    killbranch "$1"
+}
+mvbr() {
+    killbranch "$1"
+    branchthis "$1"
+}
+gtxt() {
+    local f=${1:-1.txt}
+    (cd ~/x
+     g=${f%.txt}
+    if [[ $g != $f ]] ; then
+        ccps < $f > $g.sh
+        chost=graehl
+        . $g.sh
+    fi
+    )
+}
+caip() {
+    (
+        xmtx=/Users/graehl/aip-test
+        c-with "cd aip-test;$*"
+    )
+}
+caipdo() {
+    caip lw=0 ver=11.0.54 lines=1 ./do.sh 2 0
+}
+gam() {
+    (
+        local rel=aip-models
+        xmtx=/Users/graehl/$rel
+        g-with "cd $rel;$*"
+    )
+}
+gamp() {
+    gam "cd train;clean=${clean:-0} force=${force:-0} ./nvs-prep.sh ${1:-5}"
+}
+gaip() {
+    (
+        xmtx=/Users/graehl/aip-test
+        g-with "cd aip-test;$*"
+    )
+}
+gaipb() {
+    gaip lw=0 vs=200 ver=11.0.55 lines=16 trg= ./do.sh 2 0
+}
+gaipdo() {
+    gaip xmtver=11.0.55 lp=0 lines=1 ./do.sh 2 0 0 0 0
+}
+
+cmserver() {
+    (
+        xmtx=/home/graehl/xmt-server
+        c-with /home/graehl/xmt-server/build.sh cmake "$@"
+    )
+}
+cserver() {
+    (
+        xmtx=/home/graehl/xmt-server
+        c-with /home/graehl/xmt-server/build.sh build "$@"
+    )
+    #    ssh c-graehl2 'cd xmt-server/Troy/Buffalo/build && make -j8'
+}
+QTRACK=${QTRACK:-/.auto/home6/graehl/qtrack}
+qtrackbaseline() {
+    local lp=lp=${1:-eng-ger}
+    (
+      set -e
+      require_dirs $QTRACK
+      cd $QTRACK
+        scripts/run.sh --baseline=$lp --apexonly
+    )
+    cd $QTRACK/apexes/$lp/
+}
+
+cmmt() {
+    (
+        xmtx=/home/graehl/xmt-server
+        c-s 'cd xmt-server/RegressionTests/Tests;./runtest.sh -R Parallel/Standalone/Regex/RegexError'
+    )
+}
+gitblanks() {
+    (
+        gitroot
+        gitchangedls | while read f ; do
+            nblanklines "$f"
+        done
+    )
+}
+blanks() {
+    local f
+    find . -name '*.stdout' | while read f ; do
+        nblanklines "$f"
+    done
+}
+nblanklines() {
+    if grep -c -q ^$ "$@"; then
+        echo "$(grep -c ^$ $*) blank lines of $(wc -l $*)"
+    fi
+}
+
+gcpa() {
+    chost=graehl ccpa "$@"
+}
+gcp() {
+    chost=graehl ccp "$@"
+}
+g-cat() {
+    g-s catz "$@"
+}
+cherryf() {
+    gitcherryf "@"
+}
+killbranchf() {
+    if [[ $1 ]] ; then
+        newmaster && killbranch "$1"
+    fi
+}
+gitcherryf() {
+    (set -e
+     gitroot
+     git cherry-pick "$@" -X theirs
+    )
+}
+gitcherryc() {
+    (
+        set -e
+        gitroot
+        for f in "$@"; do
+            if [[ -f "$@" ]] ; then
+                git checkout --theirs "$f" && git add "$f"
+            else
+                echo2 "not found: $(realpath $f)"
+            fi
+        done
+        git cherry-pick --continue
+    )
+}
+grepn() {
+    local g=$1
+    shift
+    for f in "$@"; do
+        echo -n "$f: "
+        fgrep -c "$f" "$g"
+    done
+}
+
+gitparent() {
+    git rev-list --parents -n 1 ${1:-HEAD} | cut -d' ' -f2-
+}
 gjen() {
-    #    ssh graehl ' "$@"'
-    chost=graehl c-with "x/jenkins/jenkins_buildscript ${BUILD:-Release} $* --no-cleanup --no-externals-update --no-publish"
+    chost=graehl NOKILL=1 GITSHA1=0 linjen --no-cleanup --no-externals-update "$@"
 }
 #require 'pl.pretty'.dump(set)
 makepdf() {
@@ -30,13 +201,13 @@ makepdf() {
 coforce() {
     (
         set -e
-    from=${1?from}
-    to=${2?to}
-    set -x
-    git fetch $from
-    git checkout $from/$to
-    killbranch $to || true
-    git co $from/$to -b $to
+        from=${1?from}
+        to=${2?to}
+        set -x
+        git fetch $from
+        git checkout $from/$to
+        killbranch $to || true
+        git co $from/$to -b $to
     )
 }
 sidebysidesuf() {
@@ -133,7 +304,7 @@ chx() {
     fi
 }
 grepemphf() {
-egrep -n '_[^_]*_' "$@" | sort -t: -k2
+    egrep -n '_[^_]*_' "$@" | sort -t: -k2
 }
 grepemph() {
     if [[ $# ]] ; then
@@ -168,11 +339,11 @@ agcodes() {
         len=${#c}
         i=1
         ags=''
-    while((i<$len)); do
-        ags+="${c:0:$i} ${c:$i:$((len-i))}|"
-        i=$((i+1))
-    done
-    ag "${ags%|}</w>" "$@"
+        while((i<$len)); do
+            ags+="${c:0:$i} ${c:$i:$((len-i))}|"
+            i=$((i+1))
+        done
+        ag "${ags%|}</w>" "$@"
     )
 }
 rmext() {
@@ -193,20 +364,20 @@ detoklwat() {
 }
 execpairs() {
     (
-    set -e
-    cmd=$1
-    shift
-    args1=
-    args2=
-    while (($#)) ; do
-        args1+=" $1"
-        args2+=" ${2?execpairs odd number of args after $1}"
+        set -e
+        cmd=$1
         shift
-        shift
-    done
-    $cmd $args1 &
-    $cmd $args2
-    wait
+        args1=
+        args2=
+        while (($#)) ; do
+            args1+=" $1"
+            args2+=" ${2?execpairs odd number of args after $1}"
+            shift
+            shift
+        done
+        $cmd $args1 &
+        $cmd $args2
+        wait
     )
 }
 heads() {
@@ -277,7 +448,7 @@ tolwat() {
     LC_ALL=C perl -pe 's/\Q_-#-_/__LW_AT__/og' "$@"
 }
 modalcase() {
-perlutf8 -e '
+    perlutf8 -e '
 sub debug {
     print STDERR join(" ", @_),"\n";
 }
@@ -355,8 +526,8 @@ mosesdetokpl=$mosesdetokdir/detokenizer.pl
 mosesdetok=$mosesdetokdir/detokenizer.perl
 detok() {
     (set -e
-    [[ -s $mosesdetok ]]
-    cat "$@" | PERL5LIB=$mosesdetokdir perl $mosesdetok -l ${lang:-en}
+     [[ -s $mosesdetok ]]
+     cat "$@" | PERL5LIB=$mosesdetokdir perl $mosesdetok -l ${lang:-en}
     )
 }
 unallcaps() {
@@ -530,7 +701,6 @@ bootstrap() {
       #      libtoolize -i --recursive
     )
 }
-export GCCVERSION=8.3.0
 xmtc=$(echo ~/c)
 xmtx=$(echo ~/x)
 racer=$(echo $xmtx)
@@ -562,6 +732,22 @@ export SDL_EXTERNALS_PATH=$xmtext
 export SDL_EXTERNALS_TMP_PATH=$HOME/c/sdl-externals-tmp/$lwuname
 export HADOOP_DIR=$SDL_EXTERNALS_PATH/../Shared/java/hadoop-2.7.3
 export JAVA_HOME=$SDL_EXTERNALS_PATH/libraries/jdk1.8.0_66
+
+
+GCCVERSION=${GCCVERSION:-11.3.0}
+gccprefix=${gccprefix:-$SDL_EXTERNALS_PATH/libraries/gcc-$GCCVERSION}
+if ! [[ -d $gccprefix ]] ; then
+    gccprefix=$SDL_EXTERNALS_TMP_PATH/libraries/gcc-$GCCVERSION
+fi
+extgcc() {
+if [[ -d $gccprefix ]] ; then
+    export PATH=$gccprefix/bin:/usr/local/bin:$PATH
+    LD_LIBRARY_PATH="$gccprefix/lib64"
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH%:}
+    echo using gcc prefix gccprefix=$gccprefix
+fi
+}
+
 py=$(echo $xmtx/python)
 export WORKSPACE=$xmtx
 xmtext=$xmtextbase/$lwarch
@@ -1014,31 +1200,31 @@ buildclangformat() {
     local prefix=/local/gcc
     [[ -d llvm ]] || cd /local/src
     if [[ ! $nobuild ]] ; then
-    (set -x
-     set -e
-     # choose rev <= http://llvm.org/svn/llvm-project/
-     CLANG_REV=312305
-     #295516
-     if [[ $force ]] || ! [[ -d llvm ]] ; then
-         (
-             rm -rf llvm
-             mkdir llvm
-             svn co http://llvm.org/svn/llvm-project/llvm/trunk@$CLANG_REV llvm
-             cd llvm/tools
-             svn co http://llvm.org/svn/llvm-project/cfe/trunk@$CLANG_REV clang
-             cd clang/tools
-             svn co http://llvm.org/svn/llvm-project/clang-tools-extra/trunk extra
-         )
-     fi
-     if [[ $clean || ! -d llvm-build ]]; then
-         rm -rf llvm-build
-         mkdir llvm-build
-     fi
-     cd llvm-build
-     usegcc
-     cmake -G 'Unix Makefiles' -DGCC_INSTALL_PREFIX=$prefix -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=NO -DLLVM_ENABLE_THREADS=NO ../llvm/
-     make -j8
-    )
+        (set -x
+         set -e
+         # choose rev <= http://llvm.org/svn/llvm-project/
+         CLANG_REV=312305
+         #295516
+         if [[ $force ]] || ! [[ -d llvm ]] ; then
+             (
+                 rm -rf llvm
+                 mkdir llvm
+                 svn co http://llvm.org/svn/llvm-project/llvm/trunk@$CLANG_REV llvm
+                 cd llvm/tools
+                 svn co http://llvm.org/svn/llvm-project/cfe/trunk@$CLANG_REV clang
+                 cd clang/tools
+                 svn co http://llvm.org/svn/llvm-project/clang-tools-extra/trunk extra
+             )
+         fi
+         if [[ $clean || ! -d llvm-build ]]; then
+             rm -rf llvm-build
+             mkdir llvm-build
+         fi
+         cd llvm-build
+         usegcc
+         cmake -G 'Unix Makefiles' -DGCC_INSTALL_PREFIX=$prefix -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=NO -DLLVM_ENABLE_THREADS=NO ../llvm/
+         make -j8
+        )
     fi
     for bin in clang-format clang-tidy clang-apply-replacements ; do
         local clf=llvm-build/bin/$bin
@@ -1308,15 +1494,15 @@ jremert() {
     j-s 'cd c/ct; mend'
 }
 unsetpaths() {
-      unset HADOOP_CLUSTER
-      unset LD_LIBRARY_PATH
-      unset LD_RUN_PATH
-      unset PATH
-      unset PERL5LIB
-      unset PYTHONPATH
-      unset LANG
-      unset UNSUPPORTED
-      export PATH=/usr/bin:/bin
+    unset HADOOP_CLUSTER
+    unset LD_LIBRARY_PATH
+    unset LD_RUN_PATH
+    unset PATH
+    unset PERL5LIB
+    unset PYTHONPATH
+    unset LANG
+    unset UNSUPPORTED
+    export PATH=/usr/bin:/bin
 }
 freshenv() {
     (
@@ -1333,13 +1519,13 @@ crontestclean() {
      find . -name '*.pyc' -exec rm -rf {} \;
      git clean -fd
      if false ; then
-     find . -name 'sherpa' -exec rm -rf {} \;
-     find . -name 'sherpa.*' -exec rm -rf {} \;
-     find . -name 'sherpa2.*' -exec rm -rf {} \;
-     for f in `find . -name TestCases`; do
-         echo $f
-     done
-     git clean -fdx
+         find . -name 'sherpa' -exec rm -rf {} \;
+         find . -name 'sherpa.*' -exec rm -rf {} \;
+         find . -name 'sherpa2.*' -exec rm -rf {} \;
+         for f in `find . -name TestCases`; do
+             echo $f
+         done
+         git clean -fdx
      fi
     )
 }
@@ -1367,7 +1553,7 @@ crontest() {
       fi
       freshenv /usr/bin/perl Shared/Test/bin/CronTest.pl $(cd ..;pwd) -name "$name" -steps tests -tests kraken -threads $J -parallel $J
       echo "https://condor-web.languageweaver.com/CronTest_graehl/www/index.cgi?"
-      )
+    )
 }
 reflog() {
     git reflog --format='%C(auto)%h %<|(17)%gd %C(blue)%ci%C(reset) %s' | head -${1:-99}
@@ -1444,9 +1630,9 @@ hypdir=sdl
 ostarball=/tmp/hyp-latest-release-hyp.tar.gz
 osgitdir=$(echo ~/c/hyp)
 osdirbuild=/local/graehl/build-hypergraphs
-chosts="j c-graehl gitbuild1 gitbuild2"
+chosts="graehl c-graehl2"
 
-chost=c-graehl
+chost=graehl
 jhost=j
 xmt_global_cmake_args="-DSDL_PHRASERULE_TARGET_DEPENDENCIES=1 -DSDL_BLM_MODEL=1 -DHADOOP_YARN=1"
 jemalloclib=$xmtlib/jemalloc/lib/libjemalloc.so
@@ -2723,14 +2909,16 @@ osmake() {
         cd $osdirbuild
         showvars_required CC CXX
         $CXX -v
-        cmake $osgitdir/$hypdir "$@" && TERM=dumb make -j4 VERBOSE=1
+        cmake $osgitdir/$hypdir "$@" && TERM=dumb make -j4
+        #VERBOSE=1
     )
 }
 osmakec() {
     (
         set -e
         cd $osdirbuild
-        TERM=dumb make -j3 VERBOSE=1
+        TERM=dumb make -j3
+        #VERBOSE=1
     )
 }
 osrel() {
@@ -3355,7 +3543,7 @@ if ($f && $l =~ s{$from}{$to}oe) { @a=("ln", "-sfT", $l, $f); print join(" ",@a)
 sedlinks() {
     find . -type l | sedlns "$@"
 }
-gitcherrytheirs() {
+gitcherryf() {
     git cherry-pick --strategy=recursive -X theirs "$@"
 }
 csuf() {
@@ -3369,6 +3557,18 @@ j12() {
 }
 y12() {
     chost=c-ydong c12 "$@"
+}
+g12() {
+    chost=graehl c12 "$@"
+}
+c12n() {
+    local n=$1
+    local outpre=${out:-~/tmp/c12.$outname}
+    shift
+    echo "$@" > $outpre.sh
+    for i in `seq 1 $n`; do
+        out=$outpre.$i c12 "$@" || echo "FAIL on $i of $n: $*"
+    done | tee $outpre.log
 }
 c12() {
     (
@@ -3389,13 +3589,27 @@ makesvm() {
 }
 foreverdir=$HOME/forever
 forc() {
-    for chost in c-graehl git02 c-ydong; do
+    for chost in $chosts; do
         chost=$chost c-s "$@"
     done
 }
 rmforever() {
     rm $foreverdir/*.run.*
     forc rm -rf /var/tmp/regtest*
+}
+gr-test() {
+    (
+        g-c
+        b-r
+        c-test "$@"
+    )
+}
+g-test() {
+    (
+        g-c
+        b-d
+        c-test "$@"
+    )
 }
 cr-test() {
     (
@@ -3541,7 +3755,7 @@ overc() {
         b=${3-~/bugs/over$chost}
         f=${2:-`basename $1`}
         log=$1
-        log=`perl -e 'shift; s|/Users/graehl|~|g; print' "$log"`
+        log=`perl -e 'shift; s|/(Users|home)/graehl|~|g; print' "$log"`
         d=$b/$f
         mkdir -p $d
         cd $d
@@ -3552,7 +3766,7 @@ overc() {
         echo . $s
         sleep 3
         cd $xmtx
-        . $s
+#        . $s
     )
 }
 overj() {
@@ -4109,8 +4323,8 @@ c-1best() {
 c-cat() {
     c-s catz "$@"
 }
-j-cat() {
-    j-s catz "$@"
+g-cat() {
+    g-s catz "$@"
 }
 d-cat() {
     d-s catz "$@"
@@ -4125,7 +4339,7 @@ home-c-sync() {
 }
 c-make() {
     ctitle "$@"
-    local tar=${1?target}
+    local tar=${1?c-make TARGET (quote bash -c)}
     shift
     (set -e;
      cd $xmtx; mend;
@@ -4144,10 +4358,10 @@ c-make() {
                  echo ASAN: $f
              fi
              if [[ "$*" ]] ; then
-                 c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
+                 c-s ASAN=$ASAN BUILD=$f threads=${threads:-12} makeh $tar
                  #'&&' "$@"
              else
-                 c-s ASAN=$ASAN BUILD=$f threads=${threads:-8} makeh $tar
+                 c-s ASAN=$ASAN BUILD=$f threads=${threads:-12} makeh $tar
              fi
          )  2>&1 | filter-gcc-errors
      done
@@ -4155,7 +4369,7 @@ c-make() {
 }
 cs-for() {
     ( set -e
-      for chost in c-ydong c-graehl c-mdreyer; do
+      for chost in $chosts; do
           echo2 chost=$chost "$@"
           chost=$chost "$@"
       done
@@ -4182,7 +4396,7 @@ y-s() {
     (y-c; c-s "$@")
 }
 g-c() {
-    chost=c-graehl
+    chost=graehl
 }
 g-s() {
     (g-c; c-s "$@")
@@ -4206,19 +4420,28 @@ d-with() {
     chost=c-mdreyer c-with "$@"
 }
 g-with() {
-    chost=c-graehl c-with "$@"
+    chost=graehl c-with "$@"
+}
+cdhome() {
+    local d=$1
+    if [[ ${d#/home/} != $d ]] ; then
+        d=/Users/${d#/home/}
+    fi
+    cd "$d"
 }
 c-with() {
     (set -e;
+     pushd ~/x
      #touchnewer
      chost=${chost:-c-graehl}
-     cd $xmtx; mend;
+     cdhome $xmtx; mend;
      local branch=`git_branch`
      pushc $branch
-     c-s forceco $branch
+     c-s forceco $branch $xmtx
      if [[ "$*" ]] ; then
          c-s "$@"
      fi
+     popd
     )
 }
 d-with() {
@@ -4244,6 +4467,12 @@ cr-makes() {
 }
 cr-make() {
     (cr-c;c-make "$@")
+}
+gr-make() {
+    (gr-c;c-make "$@")
+}
+g-make() {
+    (g-c;c-make "$@")
 }
 cw-make() {
     (cw-c;c-make "$@")
@@ -4360,7 +4589,14 @@ xmtpython() {
     addpythonpath $xmtx/python $xmtextbase/Shared/python
 }
 c-c() {
-    chost=c-graehl
+    chost=c-graehl2
+}
+g-c() {
+    chost=graehl
+}
+gr-c() {
+    g-c
+    b-r
 }
 k-c() {
     chost=c-ydong
@@ -4534,6 +4770,9 @@ fi
 forceco() {
     local branch=${1:?args: branch}
     local xmtx=${2:-$xmtx}
+    if [[ ${xmtx#/Users} != $xmtx ]] ; then
+        xmtx=/home${xmtx#/Users}
+    fi
     (
         set -e
         cd $xmtx
@@ -4576,7 +4815,7 @@ linfem() {
 pushc() {
     (
         local xmtx=${2:-$xmtx}
-        cd $xmtx
+        cdhome $xmtx
         lock=.git/index.lock
         if [[ -f $lock ]] ; then
             echo git lock $lock exists - waiting ...
@@ -4599,8 +4838,27 @@ pushc() {
         git push ${chost:-c-graehl} +$b
     )
 }
+aip-with() {
+    pushaip
+    if [[ "$*" ]] ; then
+        c-s "$@"
+    fi
+}
+pushaip() {
+        xmtx=/home/graehl/aip-models push1
+}
+push1() {
+    (
+        xmtx=$HOME/aip-models
+        cdhome $xmtx; mend
+        local branch=`git_branch`
+        pushc $branch
+        c-s forceco $branch $xmtx
+    )
+
+}
 pushct() {
-    xmtx=/.auto/home/graehl/c/ct pushc
+    xmtx=$HOME/c/ct pushc
 }
 lincoxs() {
     for xmtx in $xmtx $xmtextbase; do
@@ -4612,7 +4870,7 @@ lincox() {
      local xmtx=${1:-$xmtx}
      cd $xmtx
      local branch=`git_branch`
-     pushc $branch $xmtx
+     pushc $branch
      ctitle lincox "$@"
      c-s forceco $branch $xmtx
     )
@@ -4893,7 +5151,7 @@ externals() {
     local newmastercmd="git fetch origin; git reset --hard origin/master; git checkout origin/master; git branch -D master; git checkout -b master origin/master"
     local ncmd="cd /jenkins/xmt-externals && ($newmastercmd)"
     bash -c "cd $xmtextbase && ($newmastercmd)"
-    for host in c-graehl c-ydong c-mdreyer; do
+    for host in $chosts; do
         #localhost
         banner $host
         ssh $host "cd c/xmt-externals && ($newmastercmd)"
@@ -5438,12 +5696,15 @@ cto() {
     )
 }
 gerrit2local() {
-    perl -e '$_=shift;s{/local/jenkins/workspace/aiprod-xmt-gerrit/src[^/]*/}{/local/graehl/xmt/};s{/local/nbuild/jenkins/workspace/XMT-Release-Linux[^/]*/}{/local/graehl/xmt/};s{C:/jenkins/workspace/XMT-Release-Windows}{/local/graehl/xmt}g;s{/local2/}{/local/}g;s{/local/jenkins/workspace/aiprod-xmt-gerrit/src}{/local/graehl/xmt}g;s{^/local/graehl/xmt}{'$HOME'/x}g;s{/home/graehl}{'$HOME'}g;print' "$@"
-}
-nblanklines() {
-    if grep -c -q ^$ "$@"; then
-        echo `grep -c ^$ "$@"` "blank lines in $*"
-    fi
+    perl -e '$_=shift;
+s{/local/jenkins/workspace/aiprod-xmt-gerrit/src[^/]*/}{/local/graehl/xmt/};
+s{/local/nbuild/jenkins/workspace/XMT-Release-Linux[^/]*/}{/local/graehl/xmt/};
+s{C:/jenkins/workspace/XMT-Release-Windows}{/local/graehl/xmt}g;
+s{/local2/}{/local/}g;
+s{/local/jenkins/workspace/aiprod-xmt-gerrit/src}{/local/graehl/xmt}g;
+s{^/local/graehl/xmt}{'$HOME'/x}g;
+s{/home/graehl}{'$HOME'}g;
+print' "$@"
 }
 ccpr() {
     recursive=1 ccp "$@"
@@ -5453,9 +5714,6 @@ ycp() {
 }
 jcp() {
     chost=$jhost ccp "$@"
-}
-gcp() {
-    chost=c-graehl ccp "$@"
 }
 wcp() {
     (
@@ -5524,19 +5782,24 @@ ccp() {
 }
 csh() {
     (
-             local cargs
-            if [[ $cuser ]] ; then
-                 cargs+="-l $cuser"
-             fi
-             if [[ ${cidentity:-} ]] ; then
-                 cargs+=" -i $cidentity"
-             fi
-             ssh $cargs $chost "$@"
+        local cargs
+        if [[ $cuser ]] ; then
+            cargs+="-l $cuser"
+        fi
+        if [[ ${cidentity:-} ]] ; then
+            cargs+=" -i $cidentity"
+        fi
+        ssh $cargs $chost "$@"
     )
 }
 ccpa() {
     cd ~/x
     ccpgitadd=1 ccp "$@"
+#    local a=$1
+#    local b=$2
+#    if [[ ${a%.stderr} != $a ]] ; then
+#        ccpgitadd=1 ccp "${a%.stderr}.stdout" "${b%.stderr}.stdout"
+#    fi
 }
 nccpa() {
     ccpgitadd=1 nccp "@"
@@ -5808,19 +6071,14 @@ yregrs() {
     forall yregr "$@"
 }
 yreg() {
+    export SAVEDIFFS=/var/tmp/savediffs
     if [[ ${xmtShell:-} ]] ; then
         makeh xmtShell
     fi
     local args=${yargs:-}
     # -t 2
     (set -e;
-     nbin=/home/nbuild/local/bin
-     npython=$nbin/python3
-     if [[ -x $npython ]] ; then
-         python=$npython
-     else
-         python=`which python`
-     fi
+     python=`which python3`
      pythonroot=$xmtx/python
      SDL_EXTERNALS_SHARED=$SDL_EXTERNALS/Shared
      SDL_SHARED_PYTHON=$SDL_EXTERNALS_SHARED/python
@@ -5835,7 +6093,7 @@ yreg() {
      cd $xmtx/RegressionTests
      THREADS=${MAKEPROC:-`ncpus`}
      MINTHREADS=${MINTHREADS:-1} # unreliable with 1
-     MAXTHREADS=8
+     MAXTHREADS=12
      if [[ $THREADS -gt $MAXTHREADS ]] ; then
          THREADS=$MAXTHREADS
      fi
@@ -5980,7 +6238,7 @@ dwith() {
 }
 cwith() {
     (
-        chost=c-graehl c-with "$@"
+        chost=c-graehl2 c-with "$@"
     )
 }
 linjen() {
@@ -5992,27 +6250,27 @@ linjen() {
     #$xmtx
     ctitle jen "$@"
     echo |
-    (set -e;
-     tmp2=`tmpnam`
-     tmp=`echo ~/tmp`
-     mkdir -p $tmp
-     c-s forceco $branch 2>$tmp2
-     tail $tmp2
-     rm $tmp2
-     log=$tmp/linjen.`csuf`.$branch.$BUILD
-     mv $log ${log}2 || true
-     GCCVERSION=${GCCVERSION:-8.3.0}
-     if [[ $chost = deep ]] ; then
-         gccprefix=
-     else
-         gccprefix=$xmtextbase/FC12/libraries/gcc
-         #-$GCCVERSION
-     fi
-     #gccprefix=/local/gcc
-     # gccprefix=$gccprefix GCCVERSION=$GCCVERSION GCC_SUFFIX=$GCC_SUFFIX
-     #JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/  NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=1
-     echo linjen:
-     c-s debug=$debug CLANGTIDYSKIP=$CLANGTIDYSKIP CLANGTIDYERR=$CLANGTIDYERR PROFILE=$PROFILE nohup=$nohup SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} NOPIPES=${NOPIPES:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-0} CLEANUP=${CLEANUP:-0} UPDATE=0 REGTESTTHREADS=$REGTESTTHREADS threads=${threads:-9} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} PUBLISH=${PUBLISH:-0} jen --no-cleanup "$@" 2>&1) | tee $tmp | ${filtercat:-$filtergccerr}
+        (set -e;
+         tmp2=`tmpnam`
+         tmp=`echo ~/tmp`
+         mkdir -p $tmp
+         c-s forceco $branch 2>$tmp2
+         tail $tmp2
+         rm $tmp2
+         log=$tmp/linjen.`csuf`.$branch.$BUILD
+         mv $log ${log}2 || true
+         GCCVERSION=${GCCVERSION:-8.3.0}
+         if [[ $chost = deep ]] ; then
+             gccprefix=
+         else
+             gccprefix=$xmtextbase/FC12/libraries/gcc
+             #-$GCCVERSION
+         fi
+         #gccprefix=/local/gcc
+         # gccprefix=$gccprefix GCCVERSION=$GCCVERSION GCC_SUFFIX=$GCC_SUFFIX
+         #JAVA_HOME=/home/hadoop/jdk1.8.0_60 SDL_HADOOP_ROOT=$xmtextbase/FC12/libraries/hadoop-0.20.2-cdh3u3/  NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=1
+         echo linjen:
+         c-s debug=$debug CLANGFORMAT=${CLANGFORMAT:-no} CLANGTIDYSKIP=$CLANGTIDYSKIP CLANGTIDYERR=$CLANGTIDYERR PROFILE=$PROFILE nohup=$nohup NOKILL=${NOKILL:-1} SDL_ETS_BUILD=$SDL_ETS_BUILD NO_CCACHE=$NO_CCACHE SDL_NEW_BOOST=${SDL_NEW_BOOST:-1} SDL_BUILD_TYPE=$SDL_BUILD_TYPE SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} NOPIPES=${NOPIPES:-1} RULEDEPENDENCIES=${RULEDEPENDENCIES:-0} USEBUILDSUBDIR=1 UNITTEST=${UNITTEST:-1} CLEANUP=${CLEANUP:-0} UPDATE=0 REGTESTTHREADS=$REGTESTTHREADS threads=${threads:-9} VERBOSE=${VERBOSE:-0} ASAN=$ASAN ALL_SHARED=$ALL_SHARED SANITIZE=${SANITIZE:-address} ALLHGBINS=${ALLHGBINS:-0} PUBLISH=${PUBLISH:-0} jen --no-cleanup "$@" 2>&1) | tee $tmp | ${filtercat:-$filtergccerr}
 }
 jen() {
     echo jen:
@@ -6044,7 +6302,7 @@ jen() {
     fi
     local nightlyargs
     if [[ ${nightly:-} ]] ; then
-        nightlyargs="--memcheck --speedtest"
+        nightlyargs="--speedtest"
     fi
     local threads=${MAKEPROC:-`ncpus`}
     UPDATE=${UPDATE:-0}
@@ -6060,7 +6318,7 @@ jen() {
     if [[ $nohup ]] ; then
         nohupcmd=nohup
     fi
-    cmake=${cmake:-} CC=$CC CXX=$CXX GCC_SUFFIX=$GCC_SUFFIX gccprefix=$gccprefix SDL_ETS_BUILD=$SDL_ETS_BUILD GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} NOPIPES=${NOPIPES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} $nohupcmd jenkins/jenkins_buildscript --regthreads 2 --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
+    cmake=${cmake:-} CC=$CC CXX=$CXX GCC_SUFFIX=$GCC_SUFFIX gccprefix=$gccprefix SDL_ETS_BUILD=$SDL_ETS_BUILD GCCVERSION=$GCCVERSION SDL_NEW_BOOST=$SDL_NEW_BOOST NOLOCALGCC=$NOLOCALGCC RULEDEPENDENCIES=${RULEDEPENDENCIES:-1} NOPIPES=${NOPIPES:-1} SDL_BLM_MODEL=${SDL_BLM_MODEL:-1} USEBUILDSUBDIR=${USEBUILDSUBDIR:-1} NOKILL=${NOKILL:-1} CLEANUP=${CLEANUP:-0} UPDATE=$UPDATE MEMCHECKUNITTEST=$MEMCHECKUNITTEST MEMCHECKALL=$MEMCHECKALL DAYS_AGO=14 EARLY_PUBLISH=${pub2:-0} PUBLISH=${PUBLISH:-0} SDL_BUILD_TYPE=$SDL_BUILD_TYPE NO_CCACHE=$NO_CCACHE NORESET=1 SDL_BUILD_TYPE=${SDL_BUILD_TYPE:-Production} $nohupcmd jenkins/jenkins_buildscript --regthreads 2 --threads $threads --regverbose $build ${nightlyargs:-} "$@" 2>&1 | tee $log
     if [[ ${pub2:-} ]] ; then
         BUILD=$build bakxmt $pub2
     fi
@@ -6133,7 +6391,7 @@ rcjen() {
     chost=c-jgraehl linjen Release "$@"
 }
 cjen() {
-    chost=c-graehl linjen "$@"
+    chost=c-graehl2 linjen "$@"
 }
 ymk() {
     chost=c-ydong c-make "$@"
@@ -6142,7 +6400,7 @@ dmk() {
     chost=c-mdreyer c-make "$@"
 }
 cmk() {
-    chost=c-graehl c-make "$@"
+    chost=c-graehl2 c-make "$@"
 }
 macjen() {
     (set -e
@@ -6205,7 +6463,7 @@ xmtm() {
         else
             (
                 set -x
-                CCC_CC=$CCC_CC CCC_CXX=$CCC_CXX $premake make -j$MAKEPROC $maketar VERBOSE=${verbose:-0}
+                CCC_CC=$CCC_CC CCC_CXX=$CCC_CXX $premake make -j$MAKEPROC $maketar
             )
             #VERBOSE=1
         fi
@@ -6260,48 +6518,14 @@ xcmake() {
         CFLAGS= CXXFLAGS=${cxxf:-} CPPFLAGS= LDFLAGS=-v cmake $xmt_global_cmake_args $d -Wno-dev "$@"
     )
 }
+
 savecppch() {
     local code_path=${1:-.}
     local OUT=${2:-$HOME/tmp/cppcheck-$(basename `realpath $code_path`)}
     save12 $OUT cppch "$code_path"
     echo2 $cppcheck_cmd
 }
-cppch() {
-    # Suppressions are comments of the form "// cppcheck-suppress ErrorType" on the line preceeding the error
-    # see https://www.icts.uiowa.edu/confluence/pages/viewpage.action?pageId=63471714
-    local code_path=${1:-.}
-    local extra_include_paths=${extra_include_paths:-$code_path}
-    if [[ $cppcheck_externals ]] ; then
-        extra_include_paths+=" $(echo $SDL_EXTERNALS_PATH/libraries/*/include)"
-    fi
-    local extrachecks=${extrachecks:-performance}
-    if [[ $extrachecks = none ]] ; then
-        extrachecks=
-    fi
-    local ignoreargs
-    local ignorefiles="" # list of (basename) filenames to skip
-    if [[ $ignorefiles ]] ; then
-        for f in $ignores ; do
-            ignoreargs+=" -i $f"
-        done
-    fi
-    local includeargs
-    if [[ $extra_include_paths ]] ; then
-        for f in $extra_include_paths ; do
-            includeargs+=" -I $f"
-        done
-    fi
-    local extraargs
-    if [[ $extrachecks ]] ; then
-        for f in $extracheck ; do
-            extraargs+=" --enable=$f"
-        done
-    fi
-    cppcheck_cmd="cppcheck -j 3 --inconclusive --quiet --force --inline-suppr \
-        --template ' {file}: {line}: {severity},{id},{message}' \
-        $includeargs $ignoreargs "$code_path" --error-exitcode=2"
-    cppcheck -j 3 --inconclusive --quiet --force --inline-suppr --template ' {file}: {line}: {severity},{id},{message}'     $includeargs $ignoreargs "$code_path" --error-exitcode=2
-}
+
 coma() {
     git commit -a -m "$*"
 }
@@ -6481,9 +6705,11 @@ sherp() {
         shift
         set -x
         # PATH=`dirname $CTPERL`:$PATH $CTPERL $CTPERLLIB
-        perl $CT/sherpa/App/sherpa --force --apex=$apex "$@"
+        nohup perl $CT/sherpa/App/sherpa --force --apex=$apex "$@" &
+        pid=$!
         #        PATH=`dirname $CTPERL`:$PATH $CTPERL $CTPERLLIB $CT/sherpa/App/sherpa --apex=$apex "$@"
         sleep 3
+        wait $pid
     )
 }
 resherp() {
@@ -6861,12 +7087,24 @@ withcc() {
     )
 }
 dumbmake() {
-    if [[ ${DUMB:-} ]] ; then
-        /usr/bin/make VERBOSE=1 "$@" 2>&1
-        #| sed -e 's%^.*: error: .*$%\x1b[37;41m&\x1b[m%' -e 's%^.*: warning: .*$%\x1b[30;43m&\x1b[m%'
+    local threadarg
+    local verbosearg
+    local make
+    if [[ -f build.ninja && -f CMakeFiles/rules.ninja ]] ; then
+        threadarg="-j $((threads+3)) -l $((threads-1))"
+        verbosearg="-v"
+        make=ninja
     else
-        /usr/bin/make "$@"
+        make=/usr/bin/make
     fi
+    if [[ ! ${DUMB:-} ]] ; then
+        verbosearg=
+    fi
+    if [[ ! $threads ]] ; then
+        threadarg=
+    fi
+    $make $threadarg $verbosearg "$@" 2>&1
+        #| sed -e 's%^.*: error: .*$%\x1b[37;41m&\x1b[m%' -e 's%^.*: warning: .*$%\x1b[30;43m&\x1b[m%'
 }
 substxmt() {
     (
@@ -7736,7 +7974,8 @@ maketest() {
             valgrindpre="$valgrind --db-attach=yes --tool=memcheck"
         fi
         local test=`find . -name Test$1`
-        make VERBOSE=1 Test$1 && $valgrindpre ${test:-} $targ
+        make Test$1 && $valgrindpre ${test:-} $targ
+        #VERBOSE=1
     )
 }
 makerun() {
@@ -7756,7 +7995,8 @@ makerun() {
         local cpus=${threads:-`ncpus`}
         echo2 "makerun $cpus cpus ... -j$cpus"
         (set -e
-         dumbmake $exe VERBOSE=1 -j$cpus || exit $?
+         dumbmake $exe -j$cpus || exit $?
+         #VERBOSE=1
          if [[ $exe != test ]] ; then
              set +x
              local f=$(echo */$exe)
@@ -8892,10 +9132,6 @@ testlogs() {
         fi
     done
 }
-corac() {
-    svn co http://svn.languageweaver.com/svn/repos2/cme/trunk/xmt
-    cd racerx
-}
 #sets cmarg
 racb() {
     setjavahome
@@ -8995,7 +9231,7 @@ c-l() {
     ssh $chost "$@"
 }
 gl() {
-    chost=c-graehl c-l "$@"
+    chost=c-graehl2 c-l "$@"
 }
 jl() {
     chost=$jhost c-l "$@"
@@ -11040,7 +11276,7 @@ fi
 
 ### ssh tunnel:
 
-chost=c-graehl
+chost=c-graehl2
 ontunnel=
 if [[ $HOST = $graehlmac ]] ; then
     ontunnel=1
@@ -11081,10 +11317,10 @@ sshlog() {
 if ! [[ $MAKEPROC ]] ; then
     if [[ $lwarch = Apple ]] ; then
         MAKEPROC=2
-    elif [[ $HOST = c-graehl ]] ; then
+    elif [[ $HOST = c-graehl2 ]] ; then
         MAKEPROC=13
     else
-        MAKEPROC=7
+        MAKEPROC=15
     fi
 fi
 if [[ -d $SDL_EXTERNALS_PATH ]] ; then
@@ -11337,7 +11573,7 @@ rmtorch() {
 if false && [[ -d /home/graehl/anaconda3/bin ]] ; then
     export PATH="/home/graehl/anaconda3/bin:$PATH"
 fi
-if [[ -d /opt/conda/bin ]] ; then
+if false && [[ -d /opt/conda/bin ]] ; then
     export PATH="/opt/conda/bin:$PATH"
 fi
 condor_rmall() {
@@ -11394,7 +11630,7 @@ gitlogauthors1() {
 }
 uselocalgcc() {
     archflags=${archflags:--march=corei7 -mno-fma4 -mtls-direct-seg-refs -fPIC}
-    stdflags=${stdflags:--D_GLIBCXX_USE_CXX11_ABI=0 -std=c++14}
+    stdflags=${stdflags:--D_GLIBCXX_USE_CXX11_ABI=0 -std=c++17}
     export CXXFLAGS="$archflags $stdflags"
     gccprefix=${gccprefix:-/local/gcc}
     if [[ $NOLOCALGCC = 1 ]] ; then
@@ -11468,7 +11704,7 @@ untidyclang() {
     echo
 }
 ctexec() {
-    env -i PATH=PATH=/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/App:/usr/bin:/bin:/.auto/home/graehl/c/coretraining/main/3rdParty/git:. LD_LIBRARY_PATH=/.auto/home/graehl/c/coretraining/main/lib:/.auto/home/graehl/c/coretraining/main/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/tbb2.1/ia32/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/sh81smp/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/boost-1_33_1/lib;PATH=/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/App:/usr/bin:/bin:/.auto/home/graehl/c/coretraining/main/3rdParty/git:. PERL5LIB=/.auto/home/graehl/c/coretraining/main/kraken/xlearnnnlm/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib:/.auto/home/graehl/c/coretraining/main/3rdParty/perl_libs:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib/TroyPerlLib:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib:/.auto/home/graehl/c/coretraining/main/3rdParty/perl_libs:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib/TroyPerlLib "$@"
+    env -i PATH=/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/App:/usr/bin:/bin:/.auto/home/graehl/c/coretraining/main/3rdParty/git:. LD_LIBRARY_PATH=/.auto/home/graehl/c/coretraining/main/lib:/.auto/home/graehl/c/coretraining/main/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/tbb2.1/ia32/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/sh81smp/lib:/.auto/home/graehl/c/coretraining/main/3rdParty/linux/boost-1_33_1/lib;PATH=/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/kraken/App:/usr/bin:/bin:/.auto/home/graehl/c/coretraining/main/3rdParty/git:. PERL5LIB=/.auto/home/graehl/c/coretraining/main/kraken/xlearnnnlm/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xprep_mono/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib:/.auto/home/graehl/c/coretraining/main/3rdParty/perl_libs:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib/TroyPerlLib:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App:/.auto/home/graehl/c/coretraining/main/LW:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/bin:/.auto/home/graehl/c/coretraining/main/kraken/xlearn/App/scripts:/.auto/home/graehl/c/coretraining/main/Shared/App:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib:/.auto/home/graehl/c/coretraining/main/3rdParty/perl_libs:/.auto/home/graehl/c/coretraining/main/Shared/PerlLib/TroyPerlLib "$@"
 }
 pdfconcat2() {
     pdfconcat -o /tmp/concat2.pdf "$@" && cp "$1" /tmp/ && mv /tmp/concat2.pdf "$1" && open "$1"
